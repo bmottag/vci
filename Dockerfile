@@ -1,0 +1,36 @@
+FROM php:8.2-apache
+
+RUN apt-get update && apt-get install -y \
+    libicu-dev \
+    libzip-dev \
+    unzip \
+    git
+
+RUN docker-php-ext-install mysqli intl pdo pdo_mysql zip
+
+RUN a2enmod rewrite
+
+WORKDIR /var/www/html
+COPY . /var/www/html
+RUN chown -R www-data:www-data /var/www/html
+
+# Crear vhost apuntando a /public
+RUN cat << 'EOF' > /etc/apache2/sites-available/ci4.conf
+<VirtualHost *:80>
+    ServerAdmin webmaster@localhost
+    DocumentRoot /var/www/html/public
+
+    <Directory /var/www/html/public>
+        Options Indexes FollowSymLinks
+        AllowOverride All
+        Require all granted
+    </Directory>
+
+    ErrorLog ${APACHE_LOG_DIR}/error.log
+    CustomLog ${APACHE_LOG_DIR}/access.log combined
+</VirtualHost>
+EOF
+
+RUN a2dissite 000-default.conf && a2ensite ci4.conf
+
+CMD ["apache2-foreground"]
