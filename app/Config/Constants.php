@@ -77,3 +77,46 @@ defined('EXIT_USER_INPUT')     || define('EXIT_USER_INPUT', 7);     // invalid u
 defined('EXIT_DATABASE')       || define('EXIT_DATABASE', 8);       // database error
 defined('EXIT__AUTO_MIN')      || define('EXIT__AUTO_MIN', 9);      // lowest automatically-assigned error code
 defined('EXIT__AUTO_MAX')      || define('EXIT__AUTO_MAX', 125);    // highest automatically-assigned error code
+
+
+/**
+ * Custom defines
+ */
+//ROLES
+defined('ID_ROL_SUPER_ADMIN')   or define('ID_ROL_SUPER_ADMIN', 99);
+defined('ID_ROL_MANAGER')   or define('ID_ROL_MANAGER', 2);
+defined('ID_ROL_ACCOUNTING')   or define('ID_ROL_ACCOUNTING', 3);
+defined('ID_ROL_SAFETY')   or define('ID_ROL_SAFETY', 4);
+defined('ID_ROL_WORKORDER')   or define('ID_ROL_WORKORDER', 5);
+defined('ID_ROL_SUPERVISOR')   or define('ID_ROL_SUPERVISOR', 6);
+defined('ID_ROL_BASIC')   or define('ID_ROL_BASIC', 7);
+defined('ID_ROL_ENGINEER')   or define('ID_ROL_ENGINEER', 8);
+defined('ID_ROL_MECHANIC')   or define('ID_ROL_MECHANIC', 9);
+defined('ID_ROL_ACCOUNTING_ASSISTANT')   or define('ID_ROL_ACCOUNTING_ASSISTANT', 10);
+//NOTIFICATIONS
+defined('ID_NOTIFICATION_CERTIFICATION')   or define('ID_NOTIFICATION_CERTIFICATION', 1);
+defined('ID_NOTIFICATION_FLHA')   or define('ID_NOTIFICATION_FLHA', 2);
+defined('ID_NOTIFICATION_TOOL_BOX')   or define('ID_NOTIFICATION_TOOL_BOX', 3);
+defined('ID_NOTIFICATION_PLANNING')   or define('ID_NOTIFICATION_PLANNING', 4);
+defined('ID_NOTIFICATION_MAINTENANCE')   or define('ID_NOTIFICATION_MAINTENANCE', 5);
+defined('ID_NOTIFICATION_PAYROLL')   or define('ID_NOTIFICATION_PAYROLL', 6);
+defined('ID_NOTIFICATION_TIMESHEET')   or define('ID_NOTIFICATION_TIMESHEET', 7);
+defined('ID_NOTIFICATION_DAYOFF')   or define('ID_NOTIFICATION_DAYOFF', 8);
+defined('ID_NOTIFICATION_HAULING')   or define('ID_NOTIFICATION_HAULING', 9);
+defined('ID_NOTIFICATION_INCIDENT')   or define('ID_NOTIFICATION_INCIDENT', 10);
+defined('ID_NOTIFICATION_WORKORDER')   or define('ID_NOTIFICATION_WORKORDER', 11);
+defined('ID_NOTIFICATION_INSPECTIONS')   or define('ID_NOTIFICATION_INSPECTIONS', 12);
+defined('ID_NOTIFICATION_WORKORDER_CHANGE')   or define('ID_NOTIFICATION_WORKORDER_CHANGE', 13);
+defined('ID_NOTIFICATION_NEW_JOB')   or define('ID_NOTIFICATION_NEW_JOB', 14);
+defined('ID_NOTIFICATION_HOURS_PAYROLL_CHECK')   or define('ID_NOTIFICATION_HOURS_PAYROLL_CHECK', 15);
+//MODULES
+defined('ID_MODULE_SERVICE_ORDER')   or define('ID_MODULE_SERVICE_ORDER', 1);
+defined('DASHBOARD_MAINTENANCE_LIST')   or define('DASHBOARD_MAINTENANCE_LIST', 2);
+defined('INSPECTION_LIST_BY_EQUIPMENT_ID')   or define('INSPECTION_LIST_BY_EQUIPMENT_ID', 3);
+//WO STATUS
+defined('ON_FIELD')   or define('ON_FIELD', 0);
+defined('IN_PROGRESS')   or define('IN_PROGRESS', 1);
+defined('REVISED')   or define('REVISED', 2);
+defined('SEND_TO_CLIENT')   or define('SEND_TO_CLIENT', 3);
+defined('CLOSED')   or define('CLOSED', 4);
+defined('ACCOUNTING')   or define('ACCOUNTING', 5);

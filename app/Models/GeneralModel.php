@@ -34,6 +34,21 @@ class GeneralModel extends Model
     }
 
 	/**
+	 * Update field in a table
+	 * @since 11/12/2016
+	 */
+	public function updateRecord(array $arrDatos)
+	{
+		$builder = $this->db->table($arrDatos["table"]);
+		$data = [
+			$arrDatos["column"] => $arrDatos["value"]
+		];
+		$builder->where($arrDatos["primaryKey"], $arrDatos["id"]);
+
+		return $builder->update($data);
+	}
+
+	/**
 	 * Lista de roles
 	 * Modules: ROL
 	 * @since 30/3/2020
@@ -292,11 +307,8 @@ class GeneralModel extends Model
 
 		if (isset($arrData["limit"])) {
             $builder->limit($arrData["limit"]);
-            $query = $builder->get();
-		} else {
-
-            $query = $builder->get();
 		}
+		$query = $builder->get();
 
         $result = $query->getResultArray();
         return !empty($result) ? $result : false;
@@ -331,10 +343,8 @@ class GeneralModel extends Model
 
 		if (array_key_exists("limit", $arrData)) {
 			$builder->limit($arrData["limit"]);
-			$query = $builder->get();
-		} else {
-            $query = $builder->get();
 		}
+		$query = $builder->get();
 
         $result = $query->getResultArray();
         return !empty($result) ? $result : false;
@@ -517,6 +527,212 @@ class GeneralModel extends Model
     
         $result = $query->getResultArray();
         return !empty($result) ? $result : false;
+	}
+
+	/**
+	 * Hauling list
+	 * Modules: Dashboard 
+	 * @since 13/1/2017
+	 */
+	public function get_hauling($arrData)
+	{
+		$builder = $this->db->table('hauling H');
+		$builder->select("H.*, CONCAT(first_name, ' ', last_name) name, C.company_name, V.unit_number, T.truck_type, J.job_description site_from, Z.job_description site_to, M.material, P.payment");
+		$builder->join('user U', 'U.id_user = H.fk_id_user', 'INNER');
+		$builder->join('param_company C', 'C.id_company = H.fk_id_company', 'INNER');
+		$builder->join('param_vehicle V', 'V.id_vehicle = H.fk_id_truck', 'LEFT');
+		$builder->join('param_truck_type T', 'T.id_truck_type = H.fk_id_truck_type', 'LEFT');
+		$builder->join('param_jobs J', 'J.id_job = H.fk_id_site_from', 'INNER');
+		$builder->join('param_jobs Z', 'Z.id_job = H.fk_id_site_to', 'LEFT');
+		$builder->join('param_material_type M', 'M.id_material = H.fk_id_material', 'LEFT');
+		$builder->join('param_payment P', 'P.id_payment = H.fk_id_payment', 'LEFT');
+
+		if (isset($arrData["idEmployee"])) {
+			$builder->where('U.id_user', $arrData["idEmployee"]);
+		}
+		if (isset($arrData["fecha"])) {
+			$builder->where('H.date_issue', $arrData["fecha"]);
+		}
+		if (isset($arrData["from"]) && $arrData["from"] != '') {
+			$builder->where('H.date_issue >=', $arrData["from"]);
+		}
+		if (isset($arrData["to"]) && $arrData["to"] != '' && $arrData["from"] != '') {
+			$builder->where('H.date_issue <', $arrData["to"]);
+		}
+		if (isset($arrData["state_delete"])) {
+			$builder->where('H.state', 3);
+		}
+		if (isset($arrData["state_active"])) {
+			$builder->where('H.state !=', 3);
+		}
+
+		$builder->orderBy('H.id_hauling', 'desc');
+
+		if (isset($arrData["limit"])) {
+			$builder->limit($arrData["limit"]);
+		}
+		$query = $builder->get();
+
+        $result = $query->getResultArray();
+        return !empty($result) ? $result : false;
+	}
+
+	/**
+	 * Daily inspection list
+	 * Modules: Dashboard 
+	 * @since 14/1/2017
+	 * @review 20/03/2026 - new CI4 version
+	  * @author BMOTTAG	
+	 */
+	public function get_daily_inspection($arrData)
+	{
+		$builder = $this->db->table('inspection_daily I');
+		$builder->select("I.*, CONCAT(first_name, ' ', last_name) name, V.*");
+		$builder->join('user U', 'U.id_user = I.fk_id_user', 'INNER');
+		$builder->join('param_vehicle V', 'V.id_vehicle = I.fk_id_vehicle', 'INNER');
+
+		if (array_key_exists("idEmployee", $arrData)) {
+			$builder->where('U.id_user', $arrData["idEmployee"]);
+		}
+
+		$builder->orderBy('I.date_issue', 'desc');
+		$builder->limit($arrData["limit"]);
+		$query = $builder->get();
+
+        $result = $query->getResultArray();
+        return !empty($result) ? $result : false;
+	}
+
+	/**
+	 * Heavy inspection list
+	 * Modules: Dashboard 
+	 * @since 14/1/2017
+	 * @review 20/03/2026 - new CI4 version
+	  * @author BMOTTAG
+	 */
+	public function get_heavy_inspection($arrData)
+	{
+		$builder = $this->db->table('inspection_heavy I');
+		$builder->select("I.*, CONCAT(first_name, ' ', last_name) name, V.*");
+		$builder->join('user U', 'U.id_user = I.fk_id_user', 'INNER');
+		$builder->join('param_vehicle V', 'V.id_vehicle = I.fk_id_vehicle', 'INNER');
+
+		if (isset($arrData["idEmployee"])) {
+			$builder->where('U.id_user', $arrData["idEmployee"]);
+		}
+
+		$builder->orderBy('I.date_issue', 'desc');
+		$builder->limit($arrData["limit"]);
+		$query = $builder->get();
+
+		$result = $query->getResultArray();
+		return !empty($result) ? $result : false;
+	}
+
+	/**
+	 * Work Order
+	 * @since 21/12/2020
+	 * @review 20/03/2026 - new CI4 version
+	 * @author BMOTTAG
+	 */
+	public function get_workorder_info($arrData)
+	{
+		$builder = $this->db->table('workorder W');
+		$builder->select("W.*, CONCAT(first_name, ' ', last_name) name, J.id_job, J.job_description, C.*");
+		$builder->join('user U', 'U.id_user = W.fk_id_user', 'INNER');
+		$builder->join('param_jobs J', 'J.id_job = W.fk_id_job', 'INNER');
+		$builder->join('param_company C', 'C.id_company = W.fk_id_company', 'LEFT');
+
+		if (isset($arrData["jobId"]) && $arrData["jobId"] != '' && $arrData["jobId"] != 0) {
+			$builder->where('W.fk_id_job', $arrData["jobId"]);
+		}
+		if (isset($arrData["idClaim"])) {
+			$builder->where('W.fk_id_claim', $arrData["idClaim"]);
+		}
+		if (isset($arrData["idWorkOrder"]) && $arrData["idWorkOrder"] != '' && $arrData["idWorkOrder"] != 0) {
+			$builder->where('W.id_workorder', $arrData["idWorkOrder"]);
+		}
+		if (isset($arrData["idWorkOrderFrom"]) && $arrData["idWorkOrderFrom"] != '' && $arrData["idWorkOrderFrom"] != 0) {
+			$builder->where('W.id_workorder >=', $arrData["idWorkOrderFrom"]);
+		}
+		if (isset($arrData["idWorkOrderTo"]) && $arrData["idWorkOrderTo"] != '' && $arrData["idWorkOrderTo"] != 0) {
+			$builder->where('W.id_workorder <=', $arrData["idWorkOrderTo"]);
+		}
+		if (isset($arrData["from"]) && $arrData["from"] != '') {
+			$builder->where('W.date >=', $arrData["from"]);
+		}
+		if (isset($arrData["to"]) && $arrData["to"] != '' && $arrData["from"] != '') {
+			$builder->where('W.date <', $arrData["to"]);
+		}
+		if (isset($arrData["state"]) && $arrData["state"] != '') {
+			$builder->where('W.state', $arrData["state"]);
+		}
+		if (isset($arrData["fecha"])) {
+			$builder->where('W.date', $arrData["fecha"]);
+		}
+
+		$builder->orderBy('W.id_workorder', 'desc');
+		$query = $builder->get();
+
+		$result = $query->getResultArray();
+		return !empty($result) ? $result : false;
+	}
+
+	/**
+	 * Forceaccounts info
+	 * @since 05/05/2025
+	 * @review 20/03/2026 - new CI4 version
+	 */
+	public function get_forceaccount_info($arrData)
+	{
+		$builder = $this->db->table('forceaccount W');
+		$builder->select('W.*, J.id_job, job_description, CONCAT(U.first_name, " ", U.last_name) name, C.company_name company, C.id_company, A.id_acs');
+		$builder->join('param_jobs J', 'J.id_job = W.fk_id_job', 'INNER');
+		$builder->join('param_company C', 'C.id_company = W.fk_id_company', 'LEFT');
+		$builder->join('acs A', 'A.fk_id_workorder = W.id_forceaccount', 'LEFT');
+		$builder->join('user U', 'U.id_user = W.fk_id_user', 'INNER');
+
+		if (isset($arrData["from"]) && $arrData["from"] != '') {
+			$builder->where('W.date >=', $arrData["from"]);
+		}
+		if (isset($arrData["to"]) && $arrData["to"] != '' && $arrData["from"] != '') {
+			$builder->where('W.date <', $arrData["to"]);
+		}
+
+		$builder->orderBy('W.id_forceaccount', 'desc');
+		$query = $builder->get();
+
+		$result = $query->getResultArray();
+		return !empty($result) ? $result : false;
+	}
+
+	/**
+	 * Check In List
+	 * @since 1/6/2022
+	 */
+	public function get_checkin($arrDatos)
+	{
+		$builder = $this->db->table('new_checkin C');
+		$builder->select();
+		$builder->join('new_workers W', 'W.id_worker = C.fk_id_worker', 'INNER');
+		$builder->join('param_jobs J', 'J.id_job = C.fk_id_job', 'INNER');
+		if (isset($arrDatos["idCheckin"])) {
+			$builder->where('C.id_checkin', $arrDatos["idCheckin"]);
+		}
+		if (isset($arrDatos["idJob"])) {
+			$builder->where('C.fk_id_job', $arrDatos["idJob"]);
+		}
+		if (isset($arrDatos["today"])) {
+			$builder->where('C.checkin_date', $arrDatos["today"]);
+		}
+		if (isset($arrDatos["checkout"])) {
+			$builder->where('C.checkout_time', '0000-00-00 00:00:00');
+		}
+		$builder->orderBy('C.fk_id_job, C.id_checkin', 'asc');
+		$query = $builder->get();
+
+		$result = $query->getResultArray();
+		return !empty($result) ? $result : false;
 	}
 
 

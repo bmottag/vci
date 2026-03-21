@@ -1,11 +1,11 @@
 <?php
 namespace App\Modules\Dashboard\Controllers;
 
-use CodeIgniter\Controller;
+use App\Controllers\BaseController;
 use App\Modules\Dashboard\Models\DashboardModel;
 use App\Models\GeneralModel;
 
-class Dashboard extends Controller
+class Dashboard extends BaseController
 {
     protected $dashboardModel;
     protected $generalModel;
@@ -56,11 +56,7 @@ class Dashboard extends Controller
 		$data['infoSweeper'] = $this->generalModel->get_special_inspection_sweeper($arrParam); //info de sweeper
 		$data['infoGenerator'] = $this->generalModel->get_special_inspection_generator($arrParam); //info de generador
 
-        $menuData = $this->prepareMenu();
-		$data['leftMenu'] = $menuData['leftMenu'];
-		$data['topMenu']  = $menuData['topMenu'];
-		$data['view'] = 'App\Modules\Dashboard\Views\dashboard';
-		return view("layout", $data);
+		return $this->render('App\Modules\Dashboard\Views\dashboard', $data);
 	}
 
 	/**
@@ -68,6 +64,7 @@ class Dashboard extends Controller
 	 */
 	public function mechanic()
 	{
+		$data = [];
 		$data['noJobs'] = FALSE;
 		$data['noHauling'] = TRUE;
 		$data['noDailyInspection'] = TRUE;
@@ -79,14 +76,14 @@ class Dashboard extends Controller
 		$data['dayoff'] = $this->dashboardModel->dayOffInfo();
 
 		//info next planning
-		$arrParam = array(
-			"idUser" => $this->session->userdata("id"),
+		$arrParam = [
+			"idUser" => $this->session->get("id"),
 			"nextPlanning" => true
-		);
+		];
 		$data['infoPlanning'] = $this->generalModel->get_planning_for_employee($arrParam); //info planning
 
 		//Filtro datos por id del Usuario
-		$arrParam["idEmployee"] = $this->session->userdata("id");
+		$arrParam["idEmployee"] = $this->session->get("id");
 
 		$arrParam["limit"] = 60; //Limite de registros para la consulta
 		$data['info'] = $this->generalModel->get_task($arrParam); //search the last 5 records 
@@ -99,8 +96,7 @@ class Dashboard extends Controller
 		$data['infoSweeper'] = $this->generalModel->get_special_inspection_sweeper($arrParam); //info de sweeper
 		$data['infoGenerator'] = $this->generalModel->get_special_inspection_generator($arrParam); //info de generador
 
-		$data["view"] = "dashboard";
-		$this->load->view("layout", $data);
+		return $this->render('App\Modules\Dashboard\Views\dashboard', $data);
 	}
 
 	/**
@@ -110,93 +106,93 @@ class Dashboard extends Controller
 	 */
 	public function hauling()
 	{
-		$userRol = $this->session->userdata("rol");
-		$data['dashboardURL'] = $this->session->userdata("dashboardURL");
+		$userRol = $this->session->get("rol");
+		$data = [];
+		$data['dashboardURL'] = $this->session->get("dashboardURL");
 
-		if ($userRol == 7) { //If it is a BASIC USER, just show the records of the user session
-			$arrParam["idEmployee"] = $this->session->userdata("id");
+		if ($userRol == ID_ROL_BASIC) { //If it is a BASIC USER, just show the records of the user session
+			$arrParam["idEmployee"] = $this->session->get("id");
 		}
 		$arrParam["limit"] = 30; //Limite de registros para la consulta
 		$arrParam["state_active"] = true;
 		$data['infoHauling'] = $this->generalModel->get_hauling($arrParam); //info de hauling
 
 		$data['active'] = 1;
-		$data["view"] = 'hauling_list';
-		$this->load->view("layout", $data);
+		return $this->render('App\Modules\Dashboard\Views\hauling_list', $data);
 	}
 
 	public function hauling_delete()
 	{
-		$userRol = $this->session->userdata("rol");
-		$data['dashboardURL'] = $this->session->userdata("dashboardURL");
+		$userRol = $this->session->get("rol");
+		$data['dashboardURL'] = $this->session->get("dashboardURL");
 
-		if ($userRol == 7) { //If it is a BASIC USER, just show the records of the user session
-			$arrParam["idEmployee"] = $this->session->userdata("id");
+		if ($userRol == ID_ROL_BASIC) { //If it is a BASIC USER, just show the records of the user session
+			$arrParam["idEmployee"] = $this->session->get("id");
 		}
 		$arrParam["limit"] = 30; //Limite de registros para la consulta
 		$arrParam["state_delete"] = true;
 		$data['infoHauling'] = $this->generalModel->get_hauling($arrParam); //info de hauling
 
 		$data['active'] = 2;
-		$data["view"] = 'hauling_list_delete';
-		$this->load->view("layout", $data);
+		return $this->render('App\Modules\Dashboard\Views\hauling_list_delete', $data);
 	}
 
 	/**
 	 * pickup inpection list
 	 * @since 31/1/2018
 	 * @author BMOTTAG
+	 * @review 21/03/2026 - new CI4 version
 	 */
 	public function pickups_inspection()
 	{
-		$userRol = $this->session->userdata("rol");
-		$data['dashboardURL'] = $this->session->userdata("dashboardURL");
+		$userRol = $this->session->get("rol");
+		$data = [];
+		$data['dashboardURL'] = $this->session->get("dashboardURL");
 
-		if ($userRol == 7) { //If it is a BASIC USER, just show the records of the user session
-			$arrParam["idEmployee"] = $this->session->userdata("id");
+		if ($userRol == ID_ROL_BASIC) { //If it is a BASIC USER, just show the records of the user session
+			$arrParam["idEmployee"] = $this->session->get("id");
 		}
 		$arrParam["limit"] = 30; //Limite de registros para la consulta
 
 		$data['infoDaily'] = $this->generalModel->get_daily_inspection($arrParam); //info pickups inspection
 
-		$data["view"] = 'pickups_inspection_list';
-		$this->load->view("layout", $data);
+		return $this->render('App\Modules\Dashboard\Views\pickups_inspection_list', $data);
 	}
 
 	/**
 	 * construction equipment inpection list
 	 * @since 31/1/2018
 	 * @author BMOTTAG
+	 * @review 21/03/2026 - new CI4 version
 	 */
 	public function construction_equipment_inspection()
 	{
-		$userRol = $this->session->userdata("rol");
-		$data['dashboardURL'] = $this->session->userdata("dashboardURL");
+		$userRol = $this->session->get("rol");
+		$data['dashboardURL'] = $this->session->get("dashboardURL");
 
-		if ($userRol == 7) { //If it is a BASIC USER, just show the records of the user session
-			$arrParam["idEmployee"] = $this->session->userdata("id");
+		if ($userRol == ID_ROL_BASIC) { //If it is a BASIC USER, just show the records of the user session
+			$arrParam["idEmployee"] = $this->session->get("id");
 		}
 		$arrParam["limit"] = 30; //Limite de registros para la consulta
 
 		$data['infoHeavy'] = $this->generalModel->get_heavy_inspection($arrParam); //info de contruction
 
-		$data["view"] = 'construction_equipment_inspection_list';
-		$this->load->view("layout", $data);
+		return $this->render('App\Modules\Dashboard\Views\construction_equipment_inspection_list', $data);
 	}
 
 	/**
 	 * Maintenance list
 	 * @since 14/3/2020
 	 * @author BMOTTAG
+	 * @review 21/03/2026 - new CI4 version
 	 */
 	public function maintenance()
 	{
-		$data['dashboardURL'] = $this->session->userdata("dashboardURL");
+		$data['dashboardURL'] = $this->session->get("dashboardURL");
 
 		$data['infoMaintenance'] = $this->generalModel->get_maintenance_check();
 
-		$data["view"] = 'maintenance_list';
-		$this->load->view("layout", $data);
+		return $this->render('App\Modules\Dashboard\Views\maintenance_list', $data);
 	}
 
 	/**
@@ -206,8 +202,7 @@ class Dashboard extends Controller
 	 */
 	public function info()
 	{
-		$data["view"] = 'general_info';
-		$this->load->view("layout", $data);
+		return $this->render('App\Modules\Dashboard\Views\general_info');
 	}
 
 	/**
@@ -215,8 +210,9 @@ class Dashboard extends Controller
 	 */
 	public function supervisor()
 	{
-		$userRol = $this->session->userdata("rol");
+		$userRol = $this->session->get("rol");
 
+		$data = [];
 		$data['noJobs'] = TRUE;
 		$data['noHauling'] = TRUE;
 		$data['noDailyInspection'] = TRUE;
@@ -229,7 +225,7 @@ class Dashboard extends Controller
 
 		//info next planning
 		$arrParam = array(
-			"idUser" => $this->session->userdata("id"),
+			"idUser" => $this->session->get("id"),
 			"nextPlanning" => true
 		);
 		$data['infoPlanning'] = $this->generalModel->get_planning_for_employee($arrParam); //info planning
@@ -245,8 +241,7 @@ class Dashboard extends Controller
 		$data['infoSweeper'] = $this->generalModel->get_special_inspection_sweeper($arrParam); //info de sweeper
 		$data['infoGenerator'] = $this->generalModel->get_special_inspection_generator($arrParam); //info de generador
 
-		$data["view"] = "dashboard";
-		$this->load->view("layout", $data);
+		return $this->render('App\Modules\Dashboard\Views\dashboard', $data);
 	}
 
 	/**
@@ -254,6 +249,7 @@ class Dashboard extends Controller
 	 */
 	public function work_order()
 	{
+		$data = [];
 		$data['infoMaintenance'] = FALSE;
 		$data['noJobs'] = FALSE;
 		$data['noHauling'] = TRUE;
@@ -267,7 +263,7 @@ class Dashboard extends Controller
 
 		//info next planning
 		$arrParam = array(
-			"idUser" => $this->session->userdata("id"),
+			"idUser" => $this->session->get("id"),
 			"nextPlanning" => true
 		);
 		$data['infoPlanning'] = $this->generalModel->get_planning_for_employee($arrParam); //info planning
@@ -283,8 +279,7 @@ class Dashboard extends Controller
 		$data['infoSweeper'] = $this->generalModel->get_special_inspection_sweeper($arrParam); //info de sweeper
 		$data['infoGenerator'] = $this->generalModel->get_special_inspection_generator($arrParam); //info de generador
 
-		$data["view"] = "dashboard";
-		$this->load->view("layout", $data);
+		return $this->render('App\Modules\Dashboard\Views\dashboard', $data);
 	}
 
 	/**
@@ -292,6 +287,7 @@ class Dashboard extends Controller
 	 */
 	public function safety()
 	{
+		$data = [];
 		$data['noJobs'] = TRUE;
 		$data['noHauling'] = FALSE;
 		$data['noDailyInspection'] = TRUE;
@@ -303,12 +299,12 @@ class Dashboard extends Controller
 
 		//info next planning
 		$arrParam = array(
-			"idUser" => $this->session->userdata("id"),
+			"idUser" => $this->session->get("id"),
 			"nextPlanning" => true
 		);
 		$data['infoPlanning'] = $this->generalModel->get_planning_for_employee($arrParam); //info planning
 
-		$arrParam["idEmployee"] = $this->session->userdata("id");
+		$arrParam["idEmployee"] = $this->session->get("id");
 
 		$data['infoMaintenance'] = $this->generalModel->get_maintenance_check();
 
@@ -323,8 +319,7 @@ class Dashboard extends Controller
 		$data['infoSweeper'] = $this->generalModel->get_special_inspection_sweeper($arrParamEquipment); //info de sweeper
 		$data['infoGenerator'] = $this->generalModel->get_special_inspection_generator($arrParamEquipment); //info de generador
 
-		$data["view"] = "dashboard";
-		$this->load->view("layout", $data);
+		return $this->render('App\Modules\Dashboard\Views\dashboard', $data);
 	}
 
 	/**
@@ -332,6 +327,7 @@ class Dashboard extends Controller
 	 */
 	public function accounting()
 	{
+		$data = [];
 		$data['noJobs'] = FALSE;
 		$data['noHauling'] = TRUE;
 		$data['noDailyInspection'] = FALSE;
@@ -347,7 +343,7 @@ class Dashboard extends Controller
 
 		//info next planning
 		$arrParam = array(
-			"idUser" => $this->session->userdata("id"),
+			"idUser" => $this->session->get("id"),
 			"nextPlanning" => true
 		);
 		$data['infoPlanning'] = $this->generalModel->get_planning_for_employee($arrParam); //info planning
@@ -357,8 +353,7 @@ class Dashboard extends Controller
 
 		$data['infoSafety'] = $this->generalModel->get_safety($arrParam); //info de safety
 
-		$data["view"] = "dashboard";
-		$this->load->view("layout", $data);
+		return $this->render('App\Modules\Dashboard\Views\dashboard', $data);
 	}
 
 	/**
@@ -366,6 +361,7 @@ class Dashboard extends Controller
 	 */
 	public function management()
 	{
+		$data = [];
 		$data['noJobs'] = TRUE;
 		$data['noHauling'] = TRUE;
 		$data['noDailyInspection'] = TRUE;
@@ -377,7 +373,7 @@ class Dashboard extends Controller
 
 		//info next planning
 		$arrParam = array(
-			"idUser" => $this->session->userdata("id"),
+			"idUser" => $this->session->get("id"),
 			"nextPlanning" => true
 		);
 		$data['infoPlanning'] = $this->generalModel->get_planning_for_employee($arrParam); //info planning
@@ -393,8 +389,7 @@ class Dashboard extends Controller
 		$data['infoSweeper'] = $this->generalModel->get_special_inspection_sweeper($arrParam); //info de sweeper
 		$data['infoGenerator'] = $this->generalModel->get_special_inspection_generator($arrParam); //info de generador
 
-		$data["view"] = "dashboard";
-		$this->load->view("layout", $data);
+		return $this->render('App\Modules\Dashboard\Views\dashboard', $data);
 	}
 
 	/**
@@ -404,9 +399,8 @@ class Dashboard extends Controller
 	 */
 	public function calendar()
 	{
-		$data["view"] = 'calendar';
-		$data['dashboardURL'] = $this->session->userdata("dashboardURL");
-		$this->load->view("layout_calendar", $data);
+		$data['dashboardURL'] = $this->session->get("dashboardURL");
+		return $this->renderTopOnly('App\Modules\Dashboard\Views\calendar', $data);
 	}
 
 	/**
@@ -418,8 +412,8 @@ class Dashboard extends Controller
 	{
 		header("Content-Type: text/plain; charset=utf-8"); //Para evitar problemas de acentos
 
-		$start = $this->input->post('start');
-		$end = $this->input->post('end');
+		$start = $this->request->getPost('start');
+		$end = $this->request->getPost('end');
 		$start = substr($start, 0, 10);
 		$end = substr($end, 0, 10);
 
@@ -652,8 +646,7 @@ class Dashboard extends Controller
 			$data["error"] = "Vista no encontrada";
 		}
 	
-		$data["view"] = "info_by_day";
-		$this->load->view("layout_calendar", $data);
+		return $this->renderTopOnly('App\Modules\Dashboard\Views\info_by_day', $data);
 	}
 
 	/**
@@ -664,15 +657,14 @@ class Dashboard extends Controller
 	public function settings()
 	{
 		//busco datos parametricos
-		$arrParam = array(
+		$arrParam = [
 			"table" => "parametric",
 			"order" => "id_parametric",
 			"id" => "x"
-		);
+		];
 		$data['parametric'] = $this->generalModel->get_basic_search($arrParam);
 
-		$data["view"] = 'settings';
-		$this->load->view("layout", $data);
+		return $this->render('App\Modules\Dashboard\Views\settings', $data);
 	}
 
 	/**
@@ -682,17 +674,16 @@ class Dashboard extends Controller
 	 */
 	public function checkin()
 	{
-		$data['dashboardURL'] = $this->session->userdata("dashboardURL");
+		$data['dashboardURL'] = $this->session->get("dashboardURL");
 
 		$data['requestDate'] = date('Y-m-d');
 		if ($_POST) {
-			$data['requestDate'] = $this->input->post('date');
+			$data['requestDate'] = $this->request->getPost('date');
 		}
 		$arrParam = array("today" => $data['requestDate']);
 		$data['checkinList'] = $this->generalModel->get_checkin($arrParam);
 
-		$data["view"] = 'checkin_list';
-		$this->load->view("layout", $data);
+		return $this->render('App\Modules\Dashboard\Views\checkin_list', $data);
 	}
 
 	/**
@@ -702,8 +693,7 @@ class Dashboard extends Controller
 	 */
 	public function versions()
 	{
-		$data["view"] = 'versions';
-		$this->load->view("layout", $data);
+		return $this->render('App\Modules\Dashboard\Views\versions');
 	}
 
 	/**
@@ -714,11 +704,11 @@ class Dashboard extends Controller
 	{
 		header('Content-Type: application/json');
 
-		$data["dashboardURL"] = $this->session->userdata("dashboardURL");
+		$data["dashboardURL"] = $this->session->get("dashboardURL");
 		$arrParam = array(
 			"table" => "programming_worker",
 			"primaryKey" => "id_programming_worker",
-			"id" => $this->input->post('identificador'),
+			"id" => $this->request->getPost('identificador'),
 			"column" => "confirmation",
 			"value" => 1
 		);
@@ -741,12 +731,9 @@ class Dashboard extends Controller
 	 */
 	public function without_work_order()
 	{
-		$data['dashboardURL'] = $this->session->userdata("dashboardURL");
-
+		$data['dashboardURL'] = $this->session->get("dashboardURL");
 		$data['infoTask'] = $this->generalModel->get_without_work_order();
-
-		$data["view"] = 'dashboard/without_work_order';
-		$this->load->view("layout", $data);
+		return $this->render('App\Modules\Dashboard\Views\without_work_order', $data);
 	}
 
 	/**
@@ -757,16 +744,16 @@ class Dashboard extends Controller
 	{
 		header('Content-Type: application/json');
 
-		$data["taskId"] = $this->input->post("taskId");
+		$data["taskId"] = $this->request->getPost("taskId");
 
-		$time = $this->input->post("time");
+		$time = $this->request->getPost("time");
 
 		//task INFO
 		$arrParam = array(
 			"table" => "task",
 			"order" => "id_task",
 			"column" => "id_task",
-			"id" => $this->input->post("taskId")
+			"id" => $this->request->getPost("taskId")
 		);
 		$data['task'] = $this->generalModel->get_basic_search($arrParam); //employee type list
 
@@ -804,14 +791,14 @@ class Dashboard extends Controller
 			"table" => "task",
 			"order" => "id_task",
 			"column" => "id_task",
-			"id" => $this->input->post("taskId")
+			"id" => $this->request->getPost("taskId")
 		);
 		$task = $this->generalModel->get_basic_search($arrParam); //employee type list
 
-		$data["woID"] = $this->input->post("woID");
-		$wo = $this->input->post("woID");
+		$data["woID"] = $this->request->getPost("woID");
+		$wo = $this->request->getPost("woID");
 
-		$flagTime = $this->input->post("time");
+		$flagTime = $this->request->getPost("time");
 		if($flagTime == 'start'){
 			$column = 'wo_start_project';
 		}elseif($flagTime == 'end'){
@@ -820,19 +807,19 @@ class Dashboard extends Controller
 			$column = 'bothColumns';
 		}
 
-		$data["dashboardURL"] = $this->session->userdata("dashboardURL");
+		$data["dashboardURL"] = $this->session->get("dashboardURL");
 
 		$arrParam = array(
-			"id" => $this->input->post("taskId"),
+			"id" => $this->request->getPost("taskId"),
 			"column" => $column,
-			"value" => $this->input->post("woID")
+			"value" => $this->request->getPost("woID")
 		);
 		if ($this->generalModel->updateWOTasks($arrParam)) {
 			$data["result"] = true;
 
-			if ($this->input->post("time") == 'start') {
+			if ($this->request->getPost("time") == 'start') {
 				$hours_project = $task[0]['hours_start_project'];
-			}elseif ($this->input->post("time") == 'end') {
+			}elseif ($this->request->getPost("time") == 'end') {
 				$hours_project = $task[0]['hours_end_project'];
 			} else {
 				$hours_project = $task[0]['working_hours'];
@@ -857,7 +844,7 @@ class Dashboard extends Controller
 				$this->db->update('workorder_personal', $data);
 			} else {
 				$data = array(
-					'fk_id_workorder' => $this->input->post("woID"),
+					'fk_id_workorder' => $this->request->getPost("woID"),
 					'fk_id_user' => $fk_id_user,
 					'fk_id_employee_type' => 1,
 					'hours' => $hours_project,
@@ -876,111 +863,6 @@ class Dashboard extends Controller
 
 		echo json_encode($data);
 	}
-
-    /**
-     * Prepara los datos del menú
-     */
-    protected function prepareMenu()
-    {
-        $userRol = $this->session->get('rol');
-
-        $menuData = [
-            'leftMenu' => [],
-            'topMenu' => []
-        ];
-
-        // Left Menu
-        $itemsLeftMenu = $this->generalModel->get_role_menu([
-            'idRole' => $userRol,
-            'menuType' => 1,
-            'menuState' => 1
-        ]);
-
-		$menuIndex = [];
-
-		if ($itemsLeftMenu) {
-			foreach ($itemsLeftMenu as $item) {
-
-				$menuId = $item['fk_id_menu'];
-
-				// 🔹 Si el menú NO existe aún → lo creamos
-				if (!isset($menuIndex[$menuId])) {
-
-					$links = [];
-
-					if (!$item['menu_url']) {
-						$links = $this->generalModel->get_role_access([
-							'idRole' => $userRol,
-							'idMenu' => $menuId,
-							'linkState' => 1,
-							'menuType' => 1
-						]);
-					}
-
-					$menuIndex[$menuId] = [
-						'name' => $item['menu_name'],
-						'icon' => $item['menu_icon'],
-						'url'  => $item['menu_url'] ? base_url($item['menu_url']) : null,
-						'links'=> $links
-					];
-				}
-
-			}
-		}
-
-		$menuData['leftMenu'] = array_values($menuIndex);
-
-		// Top Menu
-		$itemsTopMenu = $this->generalModel->get_role_menu([
-			'idRole' => $userRol,
-			'menuType' => 2,
-			'menuState' => 1
-		]);
-
-		$topIndex = [];
-
-		if ($itemsTopMenu) {
-			foreach ($itemsTopMenu as $item) {
-
-				$menuId = $item['fk_id_menu'];
-
-				if (!isset($topIndex[$menuId])) {
-
-					$links = [];
-
-					if (!$item['menu_url']) {
-						$links = $this->generalModel->get_role_access([
-							'idRole' => $userRol,
-							'idMenu' => $menuId,
-							'linkState' => 1,
-							'menuType' => 2
-						]);
-					}
-
-					$topIndex[$menuId] = [
-						'name'  => $item['menu_name'],
-						'icon'  => $item['menu_icon'],
-						'url'   => $item['menu_url'] ? base_url($item['menu_url']) : null,
-						'links' => $links
-					];
-				}
-			}
-		}
-
-		$menuData['topMenu'] = array_values($topIndex);
-
-        return $menuData;
-    }
-
- 
-
-
-
-
-
-
-
-
 
 
 }
