@@ -1,62 +1,78 @@
 <?php
 namespace App\Modules\Admin\Controllers;
 
-use CodeIgniter\Controller;
+use App\Controllers\BaseController;
 use App\Modules\Admin\Models\AdminModel;
 use App\Models\GeneralModel;
 
-class Admin extends Controller
+class Admin extends BaseController
 {
     protected $adminModel;
     protected $generalModel;
     protected $helpers = ['form'];
     
-
     public function __construct()
     {
         $this->adminModel   = new AdminModel();
         $this->generalModel   = new GeneralModel();
-
-    }
-
-    public function index()
-    {
-
     }
 
 	/**
 	 * employee List
 	 * @since 15/12/2016
 	 * @author BMOTTAG
+	 * @review 21/03/2026 - new CI4 version
 	 */
 	public function employee($state)
 	{
+		$data = [];
 		$data['state'] = $state;
 		if ($state == 1) {
-			$arrParam = array("filtroState" => TRUE);
+			$arrParam = ["filtroState" => TRUE];
 		} else {
-			$arrParam = array("state" => $state);
+			$arrParam = ["state" => $state];
 		}
 
-		$data['info'] = $this->general_model->get_user($arrParam);
+		// 1. Obtener usuarios
+		$info = $this->generalModel->get_user($arrParam);
 
-		$data["view"] = 'employee';
-		$this->load->view("layout", $data);
+		// 2. Obtener TODOS los certificados (una sola consulta)
+		$certificates = $this->generalModel->get_user_certificates([]);
+
+		// 3. Agrupar certificados por usuario
+		$groupedCertificates = [];
+		if ($certificates) {
+			foreach ($certificates as $cert) {
+				$groupedCertificates[$cert['fk_id_user']][] = $cert;
+			}
+		}
+
+		// 4. Asignar certificados a cada usuario
+		if ($info) {
+			foreach ($info as &$user) {
+				$user['certificates'] = $groupedCertificates[$user['id_user']] ?? [];
+			}
+		}
+
+		$data['info'] = $info;
+
+		return $this->render('App\Modules\Admin\Views\employee', $data);
 	}
 
 	/**
 	 * Cargo modal - formulario Employee
 	 * @since 15/12/2016
+	 * @review 21/03/2026 - new CI4 version
 	 */
 	public function cargarModalEmployee()
 	{
 		header("Content-Type: text/plain; charset=utf-8"); //Para evitar problemas de acentos
 
 		$data['information'] = FALSE;
-		$data["idEmployee"] = $this->input->post("idEmployee");
+		$data["idEmployee"] = $this->request->getPost("idEmployee");
 
 		$arrParam = array("filtro" => TRUE);
-		$data['roles'] = $this->general_model->get_roles($arrParam);
+		$data['roles'] = $this->generalModel->get_roles($arrParam);
 
 		if ($data["idEmployee"] != 'x') {
 			$arrParam = array(
@@ -65,77 +81,77 @@ class Admin extends Controller
 				"column" => "id_user",
 				"id" => $data["idEmployee"]
 			);
-			$data['information'] = $this->general_model->get_basic_search($arrParam);
+			$data['information'] = $this->generalModel->get_basic_search($arrParam);
 		}
 
-		$this->load->view("employee_modal", $data);
+		return view('App\Modules\Admin\Views\employee_modal', $data);
 	}
 
 	/**
 	 * Update Employee
 	 * @since 15/12/2016
 	 * @author BMOTTAG
+	 * @review 21/03/2026 - new CI4 version
 	 */
 	public function save_employee()
 	{
-		header('Content-Type: application/json');
-		$data = array();
+		$post = $this->request->getPost();
+		$idUser = $post['hddId'] ?? null;
 
-		$idUser = $this->input->post('hddId');
+		$msj = $idUser ? "You have updated an Employee!!" : "You have added a new Employee!!";
 
-		$msj = "You have added a new Employee!!";
-		if ($idUser != '') {
-			$msj = "You have updated an Employee!!";
-		}
-
-		$log_user = $this->input->post('user');
-		$social_insurance = $this->input->post('insuranceNumber');
+		$log_user = $post['user'];
+		$social_insurance = $post['insuranceNumber'];
 
 		$result_user = false;
 		$result_insurance = false;
-		$data["state"] = $this->input->post('state');
-		if ($idUser == '') {
-			$data["state"] = 1; //para el direccionamiento del JS, cuando es usuario nuevo no se envia state
 
-			//Verify if the user already exist by the user name
-			$arrParam = array(
+		if (empty($idUser)) {
+			$result_user = $this->generalModel->verifyUser([
 				"column" => "log_user",
 				"value" => $log_user
-			);
-			$result_user = $this->general_model->verifyUser($arrParam);
-			//Verify if the user already exist by the social insurance number
-			$arrParam = array(
+			]);
+			$result_insurance = $this->generalModel->verifyUser([
 				"column" => "social_insurance",
 				"value" => $social_insurance
-			);
-			$result_insurance = $this->general_model->verifyUser($arrParam);
+			]);
 		}
 
 		if ($result_user || $result_insurance) {
-			$data["result"] = "error";
-			if ($result_user) {
-				$data["mensaje"] = " Error. The user already exist by the user name.";
-				$this->session->set_flashdata('retornoError', '<strong>Error!!!</strong> The user already exist by the user name.');
-			}
-			if ($result_insurance) {
-				$data["mensaje"] = " Error. The user already exist by the Social Insurance Number.";
-				$this->session->set_flashdata('retornoError', '<strong>Error!!!</strong> The user already exist by the social insurance number.');
-			}
-			if ($result_user && $result_insurance) {
-				$data["mensaje"] = " Error. The user already exist by the user name and the Social Insurance Number.";
-				$this->session->set_flashdata('retornoError', '<strong>Error!!!</strong> The user already exist by the user name and the Social Insurance Number.');
-			}
+
+			$mensaje = $result_user && $result_insurance
+				? "User and SIN already exist."
+				: ($result_user ? "User already exists." : "Social Insurance Number already exists.");
+
+			session()->setFlashdata('retornoError', '<strong>Error!!!</strong> ' . $mensaje);
+
+			return $this->response->setJSON([
+				"result" => "error",
+				"mensaje" => $mensaje
+			]);
+
 		} else {
-			if ($this->admin_model->saveEmployee()) {
-				$data["result"] = true;
-				$this->session->set_flashdata('retornoExito', $msj);
+			if ($this->adminModel->saveEmployee($post)) {
+				session()->setFlashdata('retornoExito', $msj);
+
+				// ⚡ IMPORTANTE: enviar 'state' para la redirección
+				$state = $post['state'] ?? 1;
+
+				return $this->response->setJSON([
+					"result" => true,
+					"mensaje" => $msj,
+					"state" => $state
+				]);
 			} else {
-				$data["result"] = "error";
-				$this->session->set_flashdata('retornoError', '<strong>Error!!!</strong> Ask for help');
+				$error = "Error saving data";
+				session()->setFlashdata('retornoError', '<strong>Error!!!</strong> ' . $error);
+
+				return $this->response->setJSON([
+					"result" => "error",
+					"mensaje" => $error
+				]);
 			}
 		}
-
-		echo json_encode($data);
 	}
 
 	/**
@@ -147,7 +163,7 @@ class Admin extends Controller
 	 */
 	public function resetPassword($idUser)
 	{
-		if ($this->admin_model->resetEmployeePassword($idUser)) {
+		if ($this->adminModel->resetEmployeePassword($idUser)) {
 			$this->session->set_flashdata('retornoExito', 'You have reset the Employee pasword to: 123456');
 		} else {
 			$this->session->set_flashdata('retornoError', '<strong>Error!!!</strong> Ask for help');
@@ -163,7 +179,7 @@ class Admin extends Controller
 	 */
 	public function material()
 	{
-		$data['info'] = $this->admin_model->get_material_with_shop();
+		$data['info'] = $this->adminModel->get_material_with_shop();
 		$data["view"] = 'material';
 		$this->load->view("layout", $data);
 	}
@@ -177,7 +193,7 @@ class Admin extends Controller
 		header("Content-Type: text/plain; charset=utf-8"); //Para evitar problemas de acentos
 
 		$data['information'] = FALSE;
-		$data["idMaterial"] = $this->input->post("idMaterial");
+		$data["idMaterial"] = $this->request->getPost("idMaterial");
 
 		if ($data["idMaterial"] != 'x') {
 			$arrParam = array(
@@ -186,10 +202,10 @@ class Admin extends Controller
 				"column" => "id_material",
 				"id" => $data["idMaterial"]
 			);
-			$data['information'] = $this->general_model->get_basic_search($arrParam);
+			$data['information'] = $this->generalModel->get_basic_search($arrParam);
 		}
 
-		$this->load->view("material_modal", $data);
+		return view('App\Modules\Admin\Views\material_modal', $data);
 	}
 
 	/**
@@ -202,14 +218,14 @@ class Admin extends Controller
 		header('Content-Type: application/json');
 		$data = array();
 
-		$idMaterial = $this->input->post('hddId');
+		$idMaterial = $this->request->getPost('hddId');
 
 		$msj = "You have added a new Material Type!!";
 		if ($idMaterial != '') {
 			$msj = "You have updated a Material Type!!";
 		}
 
-		if ($idMaterial = $this->admin_model->saveMaterial()) {
+		if ($idMaterial = $this->adminModel->saveMaterial()) {
 			$data["result"] = true;
 			$data["idRecord"] = $idMaterial;
 
@@ -232,16 +248,16 @@ class Admin extends Controller
 	{
 		header("Content-Type: text/plain; charset=utf-8"); //Para evitar problemas de acentos
 
-		$data["idMaterial"] = $this->input->post("idMaterial");
+		$data["idMaterial"] = $this->request->getPost("idMaterial");
 
 		$arrParam = array(
 			"table" => "param_shop",
 			"order" => "shop_name",
 			"id" => "x"
 		);
-		$data['shopList'] = $this->general_model->get_basic_search($arrParam);
+		$data['shopList'] = $this->generalModel->get_basic_search($arrParam);
 
-		$this->load->view("shop_modal", $data);
+		return view('App\Modules\Admin\Views\shop_modal', $data);
 	}
 
 	/**
@@ -254,14 +270,14 @@ class Admin extends Controller
 		header('Content-Type: application/json');
 		$data = array();
 
-		$idMaterial = $this->input->post('hddId');
+		$idMaterial = $this->request->getPost('hddId');
 
 		$msj = "You have added the Shop Information for Material!!";
 		if ($idMaterial != '') {
 			$msj = "You have updated the Shop Information for Material!!";
 		}
 
-		if ($idMaterial = $this->admin_model->saveShopParts()) {
+		if ($idMaterial = $this->adminModel->saveShopParts()) {
 			$data["result"] = true;
 			$this->session->set_flashdata('retornoExito', $msj);
 		} else {
@@ -286,7 +302,7 @@ class Admin extends Controller
 			"column" => "company_type",
 			"id" => 2
 		);
-		$data['info'] = $this->general_model->get_basic_search($arrParam);
+		$data['info'] = $this->generalModel->get_basic_search($arrParam);
 
 		$data["view"] = 'company';
 		$this->load->view("layout", $data);
@@ -301,7 +317,7 @@ class Admin extends Controller
 		header("Content-Type: text/plain; charset=utf-8"); //Para evitar problemas de acentos
 
 		$data['information'] = FALSE;
-		$data["idCompany"] = $this->input->post("idCompany");
+		$data["idCompany"] = $this->request->getPost("idCompany");
 
 		if ($data["idCompany"] != 'x') {
 			$arrParam = array(
@@ -310,10 +326,10 @@ class Admin extends Controller
 				"column" => "id_company",
 				"id" => $data["idCompany"]
 			);
-			$data['information'] = $this->general_model->get_basic_search($arrParam);
+			$data['information'] = $this->generalModel->get_basic_search($arrParam);
 		}
 
-		$this->load->view("company_modal", $data);
+		return view('App\Modules\Admin\Views\company_modal', $data);
 	}
 
 	/**
@@ -326,14 +342,14 @@ class Admin extends Controller
 		header('Content-Type: application/json');
 		$data = array();
 
-		$idCompany = $this->input->post('hddId');
+		$idCompany = $this->request->getPost('hddId');
 
 		$msj = "You have added a new company!!";
 		if ($idCompany != '') {
 			$msj = "You have updated a company!!";
 		}
 
-		if ($idCompany = $this->admin_model->saveCompany()) {
+		if ($idCompany = $this->adminModel->saveCompany()) {
 			$data["result"] = true;
 			$data["idRecord"] = $idCompany;
 
@@ -355,7 +371,7 @@ class Admin extends Controller
 	 */
 	public function hazard()
 	{
-		$data['info'] = $this->admin_model->get_hazard_list();
+		$data['info'] = $this->adminModel->get_hazard_list();
 
 		$data["view"] = 'hazard';
 		$this->load->view("layout", $data);
@@ -370,21 +386,21 @@ class Admin extends Controller
 		header("Content-Type: text/plain; charset=utf-8"); //Para evitar problemas de acentos
 
 		$data['information'] = FALSE;
-		$data["idHazard"] = $this->input->post("idHazard");
+		$data["idHazard"] = $this->request->getPost("idHazard");
 
 		$arrParam = array(
 			"table" => "param_hazard_activity",
 			"order" => "hazard_activity",
 			"id" => "x"
 		);
-		$data['activityList'] = $this->general_model->get_basic_search($arrParam);
+		$data['activityList'] = $this->generalModel->get_basic_search($arrParam);
 
 		$arrParam = array(
 			"table" => "param_hazard_priority",
 			"order" => "priority_description",
 			"id" => "x"
 		);
-		$data['priorityList'] = $this->general_model->get_basic_search($arrParam);
+		$data['priorityList'] = $this->generalModel->get_basic_search($arrParam);
 
 		if ($data["idHazard"] != 'x') {
 			$arrParam = array(
@@ -393,10 +409,10 @@ class Admin extends Controller
 				"column" => "id_hazard",
 				"id" => $data["idHazard"]
 			);
-			$data['information'] = $this->general_model->get_basic_search($arrParam);
+			$data['information'] = $this->generalModel->get_basic_search($arrParam);
 		}
 
-		$this->load->view("hazard_modal", $data);
+		return view('App\Modules\Admin\Views\hazard_modal', $data);
 	}
 
 	/**
@@ -409,14 +425,14 @@ class Admin extends Controller
 		header('Content-Type: application/json');
 		$data = array();
 
-		$idHazard = $this->input->post('hddId');
+		$idHazard = $this->request->getPost('hddId');
 
 		$msj = "You have added a new hazard!!";
 		if ($idHazard != '') {
 			$msj = "You have updated a hazard!!";
 		}
 
-		if ($idHazard = $this->admin_model->saveHazard()) {
+		if ($idHazard = $this->adminModel->saveHazard()) {
 			$data["result"] = true;
 			$data["mensaje"] = "Solicitud guardada correctamente.";
 			$data["idRecord"] = $idHazard;
@@ -443,14 +459,14 @@ class Admin extends Controller
 		if ($state == 'log') {
 
 			//job list
-			$this->load->model("general_model");
+			$this->load->model("generalModel");
 			$arrParam = array(
 				"table" => "param_jobs",
 				"order" => "job_description",
 				"column" => "state",
 				"id" => 1
 			);
-			$data['jobList'] = $this->general_model->get_basic_search($arrParam); //job list
+			$data['jobList'] = $this->generalModel->get_basic_search($arrParam); //job list
 
 			$arrParam = array(
 				"table" => "user",
@@ -458,14 +474,14 @@ class Admin extends Controller
 				"column" => "id_user",
 				"id" => "x"
 			);
-			$data['user'] = $this->general_model->get_basic_search($arrParam); //job list
+			$data['user'] = $this->generalModel->get_basic_search($arrParam); //job list
 
-			if ($this->input->post('jobName') || $this->input->post('user') || $this->input->post('from')) {
+			if ($this->request->getPost('jobName') || $this->request->getPost('user') || $this->request->getPost('from')) {
 
-				$data['jobName'] =  $this->input->post('jobName');
-				$data['user'] =  $this->input->post('user');
-				$data['from'] =  $this->input->post('from');
-				$data['to'] =  $this->input->post('to');
+				$data['jobName'] =  $this->request->getPost('jobName');
+				$data['user'] =  $this->request->getPost('user');
+				$data['from'] =  $this->request->getPost('from');
+				$data['to'] =  $this->request->getPost('to');
 
 				//le sumo un dia al dia final para que ingrese ese dia en la consulta
 				if ($data['to']) {
@@ -480,14 +496,14 @@ class Admin extends Controller
 				}
 
 				$arrParam = array(
-					"jobId" => $this->input->post('jobName'),
-					"userId" => $this->input->post('user'),
+					"jobId" => $this->request->getPost('jobName'),
+					"userId" => $this->request->getPost('user'),
 					"from" => $from,
 					"to" => $to
 				);
 
 				//informacion Work Order
-				$data['workOrderInfo'] = $this->admin_model->get_job_log($arrParam);
+				$data['workOrderInfo'] = $this->adminModel->get_job_log($arrParam);
 
 				$data["view"] = "log_list";
 				$this->load->view("layout_calendar", $data);
@@ -499,7 +515,7 @@ class Admin extends Controller
 			$data['state'] = $state;
 
 			$arrParam['state'] = $state;
-			$data['info'] = $this->general_model->get_job($arrParam);
+			$data['info'] = $this->generalModel->get_job($arrParam);
 			$data['dashboardURL'] = $this->session->userdata("dashboardURL");
 			$data["view"] = 'job';
 			$this->load->view("layout_calendar", $data);
@@ -515,7 +531,7 @@ class Admin extends Controller
 		header("Content-Type: text/plain; charset=utf-8"); //Para evitar problemas de acentos
 
 		$data['information'] = FALSE;
-		$data["idJob"] = $this->input->post("idJob");
+		$data["idJob"] = $this->request->getPost("idJob");
 
 		//company list
 		$arrParam = array(
@@ -524,14 +540,14 @@ class Admin extends Controller
 			"column" => "company_type",
 			"id" => 2
 		);
-		$data['companyList'] = $this->general_model->get_basic_search($arrParam);
+		$data['companyList'] = $this->generalModel->get_basic_search($arrParam);
 
 		if ($data["idJob"] != 'x') {
 			$arrParam['idJob'] = $data["idJob"];
-			$data['information'] = $this->general_model->get_job($arrParam);
+			$data['information'] = $this->generalModel->get_job($arrParam);
 		}
 
-		$this->load->view("job_modal", $data);
+		return view('App\Modules\Admin\Views\job_modal', $data);
 	}
 
 	/**
@@ -544,11 +560,11 @@ class Admin extends Controller
 		header('Content-Type: application/json');
 		$data = array();
 
-		$idJob = $this->input->post('hddId');
-		$jobCode = trim($this->security->xss_clean($this->input->post('jobCode')));
-		$jobName = trim($this->security->xss_clean($this->input->post('jobName')));
+		$idJob = $this->request->getPost('hddId');
+		$jobCode = trim($this->security->xss_clean($this->request->getPost('jobCode')));
+		$jobName = trim($this->security->xss_clean($this->request->getPost('jobName')));
 		$jobDescription = $jobCode . " " . $jobName;
-		$companyId = trim($this->security->xss_clean($this->input->post('company')));
+		$companyId = trim($this->security->xss_clean($this->request->getPost('company')));
 
 		$msj = "You have added a new job!!";
 		if ($idJob != '') {
@@ -561,20 +577,20 @@ class Admin extends Controller
 			"column" => "job_code",
 			"value" => $jobCode
 		);
-		$result_job = $this->general_model->jobCodeVerify($arrParam);
+		$result_job = $this->generalModel->jobCodeVerify($arrParam);
 
 		if ($result_job) {
 			$data["result"] = "error";
 			$data["mensaje"] = " Error. The Job Code already exist.";
 			$this->session->set_flashdata('retornoError', '<strong>Error!!!</strong> The Job Code already exist.');
 		} else {
-			if ($idJobSaved = $this->admin_model->saveJob()) {
+			if ($idJobSaved = $this->adminModel->saveJob()) {
 
 				//If it is a new JOB, then send text messague to SAFETY USER
 				if ($idJob == '') {
 					//revisar si se envia mensaje de texto y a quien se le envia
 					$arrParam = array("idNotification" => ID_NOTIFICATION_NEW_JOB);
-					$configuracionAlertas = $this->general_model->get_notifications_access($arrParam);
+					$configuracionAlertas = $this->generalModel->get_notifications_access($arrParam);
 
 					if ($configuracionAlertas) {
 
@@ -590,7 +606,7 @@ class Admin extends Controller
 								"column" => "id_company",
 								"id" => $companyId
 							);
-							$company = $this->general_model->get_basic_search($arrParam); //company list
+							$company = $this->generalModel->get_basic_search($arrParam); //company list
 
 							$company = $company[0]['company_name'];
 
@@ -603,7 +619,7 @@ class Admin extends Controller
 								"column" => "fk_id_param_company",
 								"id" => $companyId
 							);
-							$company_foreman = $this->general_model->get_basic_search($arrParam); //company list
+							$company_foreman = $this->generalModel->get_basic_search($arrParam); //company list
 
 							if ($company_foreman) {
 								$company_foreman = $company_foreman[0]['foreman_name'];
@@ -628,9 +644,9 @@ class Admin extends Controller
 				}
 
 				//save info FOREMAN
-				$nameForeman = $this->input->post('foreman');
+				$nameForeman = $this->request->getPost('foreman');
 				if ($nameForeman != '') {
-					$this->admin_model->save_foreman($idJobSaved);
+					$this->adminModel->save_foreman($idJobSaved);
 				}
 
 				$data["result"] = true;
@@ -666,7 +682,7 @@ class Admin extends Controller
 			$arrParam['vehicleType'] = $vehicleType;
 		}
 
-		$data['info'] = $this->admin_model->get_vehicle_info_by($arrParam); //vehicle list
+		$data['info'] = $this->adminModel->get_vehicle_info_by($arrParam); //vehicle list
 		$data["view"] = 'vehicle';
 		$this->load->view("layout", $data);
 	}
@@ -681,7 +697,7 @@ class Admin extends Controller
 		header("Content-Type: text/plain; charset=utf-8"); //Para evitar problemas de acentos
 
 		$data['information'] = FALSE;
-		$idVehicle = $this->input->post("idVehicle");
+		$idVehicle = $this->request->getPost("idVehicle");
 		//como se coloca un ID diferente para que no entre en conflicto con los otros modales, toca sacar el ID
 		$porciones = explode("-", $idVehicle);
 
@@ -694,7 +710,7 @@ class Admin extends Controller
 			"column" => "company_type",
 			"id" => 2
 		);
-		$data['company'] = $this->general_model->get_basic_search($arrParam); //company list
+		$data['company'] = $this->generalModel->get_basic_search($arrParam); //company list
 
 		//buscar la lista de tipo de vehiculo
 		$arrParam = array(
@@ -703,7 +719,7 @@ class Admin extends Controller
 			"column" => "show_vehicle",
 			"id" => 1
 		);
-		$data['vehicleType'] = $this->general_model->get_basic_search($arrParam); //vehicleType list
+		$data['vehicleType'] = $this->generalModel->get_basic_search($arrParam); //vehicleType list
 
 		if ($data["idVehicle"] != 'x') {
 			$arrParam = array(
@@ -712,10 +728,10 @@ class Admin extends Controller
 				"column" => "id_vehicle",
 				"id" => $data["idVehicle"]
 			);
-			$data['information'] = $this->general_model->get_basic_search($arrParam);
+			$data['information'] = $this->generalModel->get_basic_search($arrParam);
 		}
 
-		$this->load->view("vehicle_modal", $data);
+		return view('App\Modules\Admin\Views\vehicle_modal', $data);
 	}
 
 	/**
@@ -729,8 +745,8 @@ class Admin extends Controller
 		header('Content-Type: application/json');
 		$data = array();
 
-		$idVehicle = $this->input->post('hddId');
-		$idCompany = $this->input->post('company');
+		$idVehicle = $this->request->getPost('hddId');
+		$idCompany = $this->request->getPost('company');
 		$data["compannyType"] = $idCompany == 1 ? 1 : 2; //1:VCI; 2:Subcontractor
 
 		$pass = $this->generaPass(); //clave para colocarle al codigo QR
@@ -742,11 +758,11 @@ class Admin extends Controller
 			$flag = false;
 		}
 
-		if ($idVehicle = $this->admin_model->saveVehicle($pass)) {
+		if ($idVehicle = $this->adminModel->saveVehicle($pass)) {
 
 			if ($flag) { //si es un registro nuevo entonces guardo el historial de cambio de aceite
 				$state = 0; //primer registro
-				$this->admin_model->saveVehicleNextOilChange($idVehicle, $state);
+				$this->adminModel->saveVehicleNextOilChange($idVehicle, $state);
 
 				//si es un registro nuevo genero el codigo QR y subo la imagen
 				//INCIO - genero imagen con la libreria y la subo 
@@ -809,7 +825,7 @@ class Admin extends Controller
 		$arrParam = array(
 			"idVehicle" => $idVehicle
 		);
-		$data['vehicleInfo'] = $this->admin_model->get_vehicle_info_by($arrParam);
+		$data['vehicleInfo'] = $this->adminModel->get_vehicle_info_by($arrParam);
 
 		$data['error'] = $error; //se usa para mostrar los errores al cargar la imagen 
 		$data['idVehicle'] = $idVehicle;
@@ -829,7 +845,7 @@ class Admin extends Controller
 		$config['max_size'] = '3000';
 		$config['max_width'] = '2024';
 		$config['max_height'] = '2008';
-		$idVehicle = $this->input->post("hddId");
+		$idVehicle = $this->request->getPost("hddId");
 		$config['file_name'] = $idVehicle . "_" . $type;
 
 		$this->load->library('upload', $config);
@@ -863,7 +879,7 @@ class Admin extends Controller
 			$data['linkBack'] = "admin/vehicle/" . $vistaRegreso;
 			$data['titulo'] = "<i class='fa fa-automobile'></i>VEHICLE";
 
-			if ($this->general_model->updateRecord($arrParam)) {
+			if ($this->generalModel->updateRecord($arrParam)) {
 				$data['clase'] = "alert-success";
 				$data['msj'] = "Good job, you have uploaded the photo.";
 			} else {
@@ -906,7 +922,7 @@ class Admin extends Controller
 		$arrParam = array(
 			"idVehicle" => $idVehicle
 		);
-		$data['vehicleInfo'] = $this->admin_model->get_vehicle_info_by($arrParam);
+		$data['vehicleInfo'] = $this->adminModel->get_vehicle_info_by($arrParam);
 
 		$data['error'] = $error; //se usa para mostrar los errores al cargar la imagen 
 		$data['idVehicle'] = $idVehicle;
@@ -927,11 +943,11 @@ class Admin extends Controller
 
 		//busco datos del vehiculo
 		$arrParam['idVehicle'] = $idVehicle;
-		$data['vehicleInfo'] = $this->general_model->get_vehicle_by($arrParam);
+		$data['vehicleInfo'] = $this->generalModel->get_vehicle_by($arrParam);
 
 		$data['info'] = false;
 		if($data['vehicleInfo'][0]['table_inspection']){
-			$data['info'] = $this->general_model->get_vehicle_oil_change($data['vehicleInfo']); //vehicle oil change history
+			$data['info'] = $this->generalModel->get_vehicle_oil_change($data['vehicleInfo']); //vehicle oil change history
 		}
 
 		$data['idVehicle'] = $idVehicle;
@@ -949,10 +965,10 @@ class Admin extends Controller
 		header('Content-Type: application/json');
 		$data = array();
 
-		$data["idRecord"] = $this->input->post('hddId');
+		$data["idRecord"] = $this->request->getPost('hddId');
 		$state = 2; //next oil change
 
-		if ($this->admin_model->saveVehicleNextOilChange($data["idRecord"], $state)) {
+		if ($this->adminModel->saveVehicleNextOilChange($data["idRecord"], $state)) {
 			$data["result"] = true;
 			$this->session->set_flashdata('retornoExito', "You have added the Next Oil Change");
 		} else {
@@ -974,7 +990,7 @@ class Admin extends Controller
 			"order" => "employee_type",
 			"id" => "x"
 		);
-		$data['info'] = $this->general_model->get_basic_search($arrParam);
+		$data['info'] = $this->generalModel->get_basic_search($arrParam);
 
 		$data["view"] = 'employee_type';
 		$this->load->view("layout", $data);
@@ -989,7 +1005,7 @@ class Admin extends Controller
 		header("Content-Type: text/plain; charset=utf-8"); //Para evitar problemas de acentos
 
 		$data['information'] = FALSE;
-		$data["idEmployeeType"] = $this->input->post("idEmployeeType");
+		$data["idEmployeeType"] = $this->request->getPost("idEmployeeType");
 
 		if ($data["idEmployeeType"] != 'x') {
 			$arrParam = array(
@@ -998,10 +1014,10 @@ class Admin extends Controller
 				"column" => "id_employee_type",
 				"id" => $data["idEmployeeType"]
 			);
-			$data['information'] = $this->general_model->get_basic_search($arrParam);
+			$data['information'] = $this->generalModel->get_basic_search($arrParam);
 		}
 
-		$this->load->view("employee_type_modal", $data);
+		return view('App\Modules\Admin\Views\employee_type_modal', $data);
 	}
 
 	/**
@@ -1014,14 +1030,14 @@ class Admin extends Controller
 		header('Content-Type: application/json');
 		$data = array();
 
-		$idEmployeeType = $this->input->post('hddId');
+		$idEmployeeType = $this->request->getPost('hddId');
 
 		$msj = "You have added a new Employee Type!!";
 		if ($idEmployeeType != '') {
 			$msj = "You have updated an Employee Type!!";
 		}
 
-		if ($idEmployeeType = $this->admin_model->saveEmployeeType()) {
+		if ($idEmployeeType = $this->adminModel->saveEmployeeType()) {
 			$data["result"] = true;
 			$data["idRecord"] = $idEmployeeType;
 
@@ -1048,7 +1064,7 @@ class Admin extends Controller
 			"order" => "hazard_activity",
 			"id" => "x"
 		);
-		$data['info'] = $this->general_model->get_basic_search($arrParam);
+		$data['info'] = $this->generalModel->get_basic_search($arrParam);
 
 		$data["view"] = 'hazard_activity';
 		$this->load->view("layout", $data);
@@ -1063,7 +1079,7 @@ class Admin extends Controller
 		header("Content-Type: text/plain; charset=utf-8"); //Para evitar problemas de acentos
 
 		$data['information'] = FALSE;
-		$data["idHazardActivity"] = $this->input->post("idHazardActivity");
+		$data["idHazardActivity"] = $this->request->getPost("idHazardActivity");
 
 		if ($data["idHazardActivity"] != 'x') {
 			$arrParam = array(
@@ -1072,10 +1088,10 @@ class Admin extends Controller
 				"column" => "id_hazard_activity",
 				"id" => $data["idHazardActivity"]
 			);
-			$data['information'] = $this->general_model->get_basic_search($arrParam);
+			$data['information'] = $this->generalModel->get_basic_search($arrParam);
 		}
 
-		$this->load->view("hazard_activity_modal", $data);
+		return view('App\Modules\Admin\Views\hazard_activity_modal', $data);
 	}
 
 	/**
@@ -1088,14 +1104,14 @@ class Admin extends Controller
 		header('Content-Type: application/json');
 		$data = array();
 
-		$idHazardActivity = $this->input->post('hddId');
+		$idHazardActivity = $this->request->getPost('hddId');
 
 		$msj = "You have added a new Activity!!";
 		if ($idHazardActivity != '') {
 			$msj = "You have updated an Activity!!";
 		}
 
-		if ($idHazardActivity = $this->admin_model->saveHazardActivity()) {
+		if ($idHazardActivity = $this->adminModel->saveHazardActivity()) {
 			$data["result"] = true;
 			$data["idRecord"] = $idHazardActivity;
 
@@ -1127,7 +1143,7 @@ class Admin extends Controller
 			"column" => "id_user",
 			"id" => $idUser
 		);
-		$data['information'] = $this->general_model->get_basic_search($arrParam);
+		$data['information'] = $this->generalModel->get_basic_search($arrParam);
 
 		$data["view"] = "form_password";
 		$this->load->view("layout", $data);
@@ -1141,17 +1157,17 @@ class Admin extends Controller
 		$data = array();
 		$data["titulo"] = "UPDATE PASSWORD";
 
-		$newPassword = $this->input->post("inputPassword");
-		$confirm = $this->input->post("inputConfirm");
+		$newPassword = $this->request->getPost("inputPassword");
+		$confirm = $this->request->getPost("inputConfirm");
 		$passwd = str_replace(array("<", ">", "[", "]", "*", "^", "-", "'", "="), "", $newPassword);
 
 		$data['linkBack'] = "admin/employee/1";
 		$data['titulo'] = "<i class='fa fa-unlock fa-fw'></i>CHANGE PASSWORD";
 
 		if ($newPassword == $confirm) {
-			if ($this->admin_model->updatePassword()) {
+			if ($this->adminModel->updatePassword()) {
 				$data["msj"] = "You have updated the password.";
-				$data["msj"] .= "<br><strong>User name: </strong>" . $this->input->post("hddUser");
+				$data["msj"] .= "<br><strong>User name: </strong>" . $this->request->getPost("hddUser");
 				$data["msj"] .= "<br><strong>Password: </strong>" . $passwd;
 				$data["clase"] = "alert-success";
 			} else {
@@ -1174,14 +1190,14 @@ class Admin extends Controller
 	 */
 	public function jobs_state($state)
 	{
-		if (empty($this->input->post('job'))) {
+		if (empty($this->request->getPost('job'))) {
 			$data["result"] = "error";
 			$this->session->set_flashdata('retornoError', '<strong>Error!!!</strong> If you want to change the state of a single JOB CODE, you must do it through the form. This functionality is intended for all JOB CODES.');
 			redirect(base_url('admin/job/1'), 'refresh');
 			return; 
 		}
 
-		if ($this->admin_model->updateJobsState($state)) {
+		if ($this->adminModel->updateJobsState($state)) {
 			$data["result"] = true;
 			$this->session->set_flashdata('retornoExito', "You have updated the state!!");
 		} else {
@@ -1201,8 +1217,8 @@ class Admin extends Controller
 		header("Content-Type: text/plain; charset=utf-8"); //Para evitar problemas de acentos
 
 		//busco datos del vehiculo
-		$arrParam['idVehicle'] = $this->input->post("idVehicle");
-		$data['vehicleInfo'] = $this->general_model->get_vehicle_by($arrParam);
+		$arrParam['idVehicle'] = $this->request->getPost("idVehicle");
+		$data['vehicleInfo'] = $this->generalModel->get_vehicle_by($arrParam);
 
 		$tipo = $data['vehicleInfo'][0]['type_level_2'];
 
@@ -1215,8 +1231,8 @@ class Admin extends Controller
 			$vista = "modal_oil_change_normal";
 		}
 
-
-		$this->load->view($vista, $data);
+		$view = "App\Modules\Admin/Views/" . $vista;
+		return view($view, $data);
 	}
 
 	/**
@@ -1232,7 +1248,7 @@ class Admin extends Controller
 			"order" => "stock_description",
 			"id" => "x"
 		);
-		$data['info'] = $this->general_model->get_basic_search($arrParam);
+		$data['info'] = $this->generalModel->get_basic_search($arrParam);
 
 		$data["view"] = 'stock';
 		$this->load->view("layout", $data);
@@ -1247,7 +1263,7 @@ class Admin extends Controller
 		header("Content-Type: text/plain; charset=utf-8"); //Para evitar problemas de acentos
 
 		$data['information'] = FALSE;
-		$data["idStock"] = $this->input->post("idStock");
+		$data["idStock"] = $this->request->getPost("idStock");
 
 		if ($data["idStock"] != 'x') {
 			$arrParam = array(
@@ -1256,10 +1272,10 @@ class Admin extends Controller
 				"column" => "id_stock",
 				"id" => $data["idStock"]
 			);
-			$data['information'] = $this->general_model->get_basic_search($arrParam);
+			$data['information'] = $this->generalModel->get_basic_search($arrParam);
 		}
 
-		$this->load->view("stock_modal", $data);
+		return view('App\Modules\Admin\Views\stock_modal', $data);
 	}
 
 	/**
@@ -1272,14 +1288,14 @@ class Admin extends Controller
 		header('Content-Type: application/json');
 		$data = array();
 
-		$idStock = $this->input->post('hddId');
+		$idStock = $this->request->getPost('hddId');
 
 		$msj = "You have added a new stock!!";
 		if ($idStock != '') {
 			$msj = "You have updated a stock!!";
 		}
 
-		if ($idStock = $this->admin_model->saveStock()) {
+		if ($idStock = $this->adminModel->saveStock()) {
 			$data["result"] = true;
 			$data["idRecord"] = $idStock;
 
@@ -1302,13 +1318,13 @@ class Admin extends Controller
 	public function certificate()
 	{
 		$arrParam = array();
-		$data['certificateList'] = $this->general_model->get_certificate_list($arrParam);
+		$data['certificateList'] = $this->generalModel->get_certificate_list($arrParam);
 
 		//se filtra por id_certificate
 		if ($_POST && $_POST['idCertificate'] != "") {
-			$arrParam['idCertificate'] = $this->input->post('idCertificate');
+			$arrParam['idCertificate'] = $this->request->getPost('idCertificate');
 		}
-		$data['info'] = $this->general_model->get_certificate_list($arrParam);
+		$data['info'] = $this->generalModel->get_certificate_list($arrParam);
 
 		$data["view"] = 'certificate';
 		$this->load->view("layout", $data);
@@ -1323,7 +1339,7 @@ class Admin extends Controller
 		header("Content-Type: text/plain; charset=utf-8"); //Para evitar problemas de acentos
 
 		$data['information'] = FALSE;
-		$data["idCertificate"] = $this->input->post("idCertificate");
+		$data["idCertificate"] = $this->request->getPost("idCertificate");
 
 		if ($data["idCertificate"] != 'x') {
 			$arrParam = array(
@@ -1332,10 +1348,10 @@ class Admin extends Controller
 				"column" => "id_certificate",
 				"id" => $data["idCertificate"]
 			);
-			$data['information'] = $this->general_model->get_basic_search($arrParam);
+			$data['information'] = $this->generalModel->get_basic_search($arrParam);
 		}
 
-		$this->load->view("certificate_modal", $data);
+		return view('App\Modules\Admin\Views\certificate_modal', $data);
 	}
 
 	/**
@@ -1345,32 +1361,32 @@ class Admin extends Controller
 	 */
 	public function save_certificate()
 	{
-		header('Content-Type: application/json');
-		$data = array();
+		$post = $this->request->getPost();
 
-		$idCertificate = $this->input->post('hddId');
+		$idCertificate = $post['hddId'] ?? null;
+		$msj = $idCertificate 
+			? "You have updated a Certificate!!" 
+			: "You have added a new Certificate!!";
 
-		$msj = "You have added a new Certificate!!";
-		if ($idCertificate != '') {
-			$msj = "You have updated a Certificate!!";
-		}
+		$data = [];
 
-		if ($this->admin_model->saveCertificate()) {
+		// Llamar al modelo pasando $post
+		if ($this->adminModel->saveCertificate($post)) {
 			$data["result"] = true;
-			$this->session->set_flashdata('retornoExito', $msj);
+			session()->setFlashdata('retornoExito', $msj);
 		} else {
 			$data["result"] = "error";
-			$this->session->set_flashdata('retornoError', '<strong>Error!!!</strong> Ask for help');
+			session()->setFlashdata('retornoError', '<strong>Error!!!</strong> Ask for help');
 		}
 
-		echo json_encode($data);
+		return $this->response->setJSON($data);
 	}
-
 
 	/**
 	 * User Certificates
 	 * @param int $idEmployee
 	 * @since 15/1/2022
+	 * @review 21/03/2026 - new CI4 version
 	 */
 	public function userCertificates($idUser)
 	{
@@ -1380,12 +1396,12 @@ class Admin extends Controller
 
 		//busco datos del vehiculo
 		$arrParam['idUser'] = $idUser;
-		$data['UserInfo'] = $this->general_model->get_user($arrParam);
+		$data = [];
+		$data['UserInfo'] = $this->generalModel->get_user($arrParam);
 
-		$data['info'] = $this->general_model->get_user_certificates($arrParam);
+		$data['info'] = $this->generalModel->get_user_certificates($arrParam);
 
-		$data["view"] = 'employee_certificates';
-		$this->load->view("layout", $data);
+		return $this->render('App\Modules\Admin\Views\employee_certificates', $data);
 	}
 
 	/**
@@ -1396,16 +1412,16 @@ class Admin extends Controller
 	{
 		header("Content-Type: text/plain; charset=utf-8"); //Para evitar problemas de acentos
 
-		$data["idEmployee"] = $this->input->post("idEmployee");
+		$data["idEmployee"] = $this->request->getPost("idEmployee");
 
 		$arrParam = array(
 			"table" => "param_certificates ",
 			"order" => "certificate",
 			"id" => "x"
 		);
-		$data['certificateList'] = $this->general_model->get_basic_search($arrParam);
+		$data['certificateList'] = $this->generalModel->get_basic_search($arrParam);
 
-		$this->load->view("employee_certificates_modal", $data);
+		return view('App\Modules\Admin\Views\employee_certificates_modal', $data);
 	}
 
 	/**
@@ -1415,41 +1431,58 @@ class Admin extends Controller
 	 */
 	public function save_employee_certificate()
 	{
-		header('Content-Type: application/json');
-		$data = array();
+		$post = $this->request->getPost();
 
-		$idEmployee = $this->input->post('hddidEmployee');
-		$idEmployeeCertificate = $this->input->post('hddidEmployeeCertificate');
+		$data = [];
+
+		$idEmployee = $post['hddidEmployee'] ?? null;
+		$idEmployeeCertificate = $post['hddidEmployeeCertificate'] ?? null;
 
 		$data["idRecord"] = $idEmployee;
 		$msj = "You have added a new Certificate!!";
 
-		//para verificar si ya existe este certificado asigando al empleado
-		$certificate_exist = FALSE;
+		$certificate_exist = false;
 
-		if ($idEmployeeCertificate == '') {
-			$arrParam = array(
+		// Validar si ya existe el certificado
+		if (empty($idEmployeeCertificate)) {
+			$certificate_exist = $this->generalModel->get_user_certificates([
 				"idUser" => $idEmployee,
-				"idCertificate" => $this->input->post('certificate')
-			);
-			$certificate_exist = $this->general_model->get_user_certificates($arrParam);
+				"idCertificate" => $post['certificate']
+			]);
 		}
 
 		if ($certificate_exist) {
+
 			$data["result"] = "error";
-			$data["mensaje"] = " Error. The Employee already has the certificate.";
-			$this->session->set_flashdata('retornoError', '<strong>Error!!!</strong> The access already exist.');
+			$data["mensaje"] = "Error. The Employee already has the certificate.";
+
+			session()->setFlashdata(
+				'retornoError',
+				'<strong>Error!!!</strong> The certificate already exists.'
+			);
+
 		} else {
-			if ($this->admin_model->saveEmployeeCertificate()) {
+
+			// 🔥 PASAMOS $post AL MODELO
+			if ($this->adminModel->saveEmployeeCertificate($post)) {
+
 				$data["result"] = true;
-				$this->session->set_flashdata('retornoExito', $msj);
+
+				session()->setFlashdata('retornoExito', $msj);
+
 			} else {
+
 				$data["result"] = "error";
-				$this->session->set_flashdata('retornoError', '<strong>Error!!!</strong> Ask for help');
+				$data["mensaje"] = "Error saving data";
+
+				session()->setFlashdata(
+					'retornoError',
+					'<strong>Error!!!</strong> Ask for help'
+				);
 			}
 		}
 
-		echo json_encode($data);
+		return $this->response->setJSON($data);
 	}
 
 	/**
@@ -1461,8 +1494,8 @@ class Admin extends Controller
 		header('Content-Type: application/json');
 		$data = array();
 
-		$arrParam['idUserCertificate']  = $this->input->post('identificador');
-		$certificate_exist = $this->general_model->get_user_certificates($arrParam);
+		$arrParam['idUserCertificate']  = $this->request->getPost('identificador');
+		$certificate_exist = $this->generalModel->get_user_certificates($arrParam);
 		$data["idRecord"] = $certificate_exist[0]['fk_id_user'];
 
 		//eliminaos registros
@@ -1472,7 +1505,7 @@ class Admin extends Controller
 			"id" => $arrParam['idUserCertificate']
 		);
 
-		if ($this->general_model->deleteRecord($arrParam)) {
+		if ($this->generalModel->deleteRecord($arrParam)) {
 			$data["result"] = true;
 			$data["mensaje"] = "You have deleted one record.";
 			$this->session->set_flashdata('retornoExito', 'You have deleted one record');
@@ -1492,11 +1525,11 @@ class Admin extends Controller
 	 */
 	public function update_user_certificate()
 	{
-		$arrParam['idUserCertificate']  = $this->input->post('hddidEmployeeCertificate');
-		$certificate_exist = $this->general_model->get_user_certificates($arrParam);
+		$arrParam['idUserCertificate']  = $this->request->getPost('hddidEmployeeCertificate');
+		$certificate_exist = $this->generalModel->get_user_certificates($arrParam);
 		$data["idRecord"] = $certificate_exist[0]['fk_id_user'];
 
-		if ($this->admin_model->saveEmployeeCertificate()) {
+		if ($this->adminModel->saveEmployeeCertificate()) {
 			$data["result"] = true;
 			$this->session->set_flashdata('retornoExito', "You have update the Date!!");
 		} else {
@@ -1516,7 +1549,7 @@ class Admin extends Controller
 	public function notifications()
 	{
 		$arrParam = array();
-		$data['info'] = $this->general_model->get_notifications_access_view($arrParam);
+		$data['info'] = $this->generalModel->get_notifications_access_view($arrParam);
 
 		$data["view"] = 'notifications';
 		$this->load->view("layout", $data);
@@ -1531,10 +1564,10 @@ class Admin extends Controller
 		header("Content-Type: text/plain; charset=utf-8"); //Para evitar problemas de acentos
 
 		$data['information'] = FALSE;
-		$data["idNotificationAccess"] = $this->input->post("idNotificationAccess");
+		$data["idNotificationAccess"] = $this->request->getPost("idNotificationAccess");
 
 		$arrParam = array("state" => 1);
-		$data['workersList'] = $this->general_model->get_user($arrParam);
+		$data['workersList'] = $this->generalModel->get_user($arrParam);
 
 		$sql = "SELECT n.*
 			FROM notifications n
@@ -1554,10 +1587,10 @@ class Admin extends Controller
 			$arrParam = array(
 				"idNotificationAccess" => $data["idNotificationAccess"]
 			);
-			$data['information'] = $this->general_model->get_notifications_access_view($arrParam);
+			$data['information'] = $this->generalModel->get_notifications_access_view($arrParam);
 		}
 
-		$this->load->view("notifications_modal", $data);
+		return view('App\Modules\Admin\Views\notifications_modal', $data);
 	}
 
 	/**
@@ -1571,14 +1604,14 @@ class Admin extends Controller
 		header('Content-Type: application/json');
 		$data = array();
 
-		$idNotificationAccess = $this->input->post('hddId');
+		$idNotificationAccess = $this->request->getPost('hddId');
 
 		$msj = "You have added a new Notification Access!!";
 		if ($idNotificationAccess != '') {
 			$msj = "You have updated the Notification Access!!";
 		}
 
-		if ($this->admin_model->saveNotification()) {
+		if ($this->adminModel->saveNotification()) {
 			$data["result"] = true;
 			$this->session->set_flashdata('retornoExito', $msj);
 		} else {
@@ -1601,12 +1634,12 @@ class Admin extends Controller
 			"state" => 1,
 			"expires" => 1,
 		);
-		$information  = $this->general_model->get_user_certificates($arrParam);
+		$information  = $this->generalModel->get_user_certificates($arrParam);
 
 		if ($information) {
 			//revisar si se envia correo o se envia mensaje de texto y a quien se le envia
 			$arrParam = array("idNotification" => ID_NOTIFICATION_CERTIFICATION);
-			$configuracionAlertas = $this->general_model->get_notifications_access($arrParam);
+			$configuracionAlertas = $this->generalModel->get_notifications_access($arrParam);
 
 			if ($configuracionAlertas) {
 				$filtroFecha = strtotime(date('Y-m-d'));
@@ -1648,7 +1681,7 @@ class Admin extends Controller
 							"column" => "alerts_sent",
 							"value" => $alerts_sent
 						);
-						$this->general_model->updateRecord($arrParam);
+						$this->generalModel->updateRecord($arrParam);
 					}
 				endforeach;
 
@@ -1662,7 +1695,7 @@ class Admin extends Controller
 					"order" => "id_parametric",
 					"id" => "x"
 				);
-				$parametric = $this->general_model->get_basic_search($arrParam);
+				$parametric = $this->generalModel->get_basic_search($arrParam);
 				$dato1 = $this->encrypt->decode($parametric[3]["value"]);
 				$dato2 = $this->encrypt->decode($parametric[4]["value"]);
 				$twilioPhone = $parametric[5]["value"];
@@ -1727,7 +1760,7 @@ class Admin extends Controller
 	public function employeeSettings()
 	{
 		$arrParam = array("filtroState" => TRUE);
-		$data['info'] = $this->general_model->get_user($arrParam);
+		$data['info'] = $this->generalModel->get_user($arrParam);
 
 		$data['dashboardURL'] = $this->session->userdata("dashboardURL");
 		$data["view"] = 'employee_settings';
@@ -1741,7 +1774,7 @@ class Admin extends Controller
 	 */
 	public function update_employee_rate()
 	{
-		if ($this->admin_model->updateEmployeeRate()) {
+		if ($this->adminModel->updateEmployeeRate()) {
 			$data["result"] = true;
 			$this->session->set_flashdata('retornoExito', "You have updated the Employee Rate List!!");
 		} else {
@@ -1769,7 +1802,7 @@ class Admin extends Controller
 			"order" => "id_parametric",
 			"id" => "x"
 		);
-		$parametric = $this->general_model->get_basic_search($arrParam);
+		$parametric = $this->generalModel->get_basic_search($arrParam);
 		$twilioSID = $this->encrypt->decode($parametric[3]["value"]);
 		$twilioToken = $this->encrypt->decode($parametric[4]["value"]);
 		$twilioPhone = $parametric[5]["value"];
@@ -1780,7 +1813,7 @@ class Admin extends Controller
 			"today" => date('Y-m-d'),
 			"checkout" => true
 		);
-		$checkinList = $this->general_model->get_checkin($arrParam);
+		$checkinList = $this->generalModel->get_checkin($arrParam);
 
 		if ($checkinList) {
 			$x = 0;
@@ -1821,7 +1854,7 @@ class Admin extends Controller
 		$data["idUser"] = $idUser;
 
 		$arrParam = array("idUser" => $idUser);
-		$data['info'] = $this->general_model->get_bank_time($arrParam);
+		$data['info'] = $this->generalModel->get_bank_time($arrParam);
 
 		$data["view"] = 'employee_bank_time';
 		$this->load->view("layout_calendar", $data);
@@ -1836,14 +1869,14 @@ class Admin extends Controller
 		header("Content-Type: text/plain; charset=utf-8"); //Para evitar problemas de acentos
 
 		$data['information'] = FALSE;
-		$data["idEmployee"] = $this->input->post("idEmployee");
+		$data["idEmployee"] = $this->request->getPost("idEmployee");
 
 		$arrParam = array(
 			"idUser" => $data["idEmployee"]
 		);
-		$data['information'] = $this->general_model->get_user($arrParam);
+		$data['information'] = $this->generalModel->get_user($arrParam);
 
-		$this->load->view("employee_bank_time_modal", $data);
+		return view('App\Modules\Admin\Views\employee_bank_time_modal', $data);
 	}
 
 	/**
@@ -1856,15 +1889,15 @@ class Admin extends Controller
 		header('Content-Type: application/json');
 		$data = array();
 
-		$data["idEmployee"] = $this->input->post('hddId');
-		$bankTimeAdd = $this->input->post('time');
+		$data["idEmployee"] = $this->request->getPost('hddId');
+		$bankTimeAdd = $this->request->getPost('time');
 		$msj = "You have added Balance to Bank Time!!";
 
 		$arrParam = array(
 			"idUser" => $data["idEmployee"],
 			"limit" => 1
 		);
-		$infoBankTime = $this->general_model->get_bank_time($arrParam);
+		$infoBankTime = $this->generalModel->get_bank_time($arrParam);
 
 		$bankNewBalance = $infoBankTime ? $infoBankTime[0]["balance"] + $bankTimeAdd : $bankTimeAdd;
 
@@ -1876,7 +1909,7 @@ class Admin extends Controller
 			"bankNewBalance" => $bankNewBalance,
 			"observation" => "Bank Time Added"
 		);
-		if ($this->general_model->saveBankTimeBalance($arrParamBankTime)) {
+		if ($this->generalModel->saveBankTimeBalance($arrParamBankTime)) {
 			$data["result"] = true;
 			$this->session->set_flashdata('retornoExito', $msj);
 		} else {
@@ -1905,7 +1938,7 @@ class Admin extends Controller
 			"column" => "id_job",
 			"id" => $idJob
 		);
-		$data['jobInfo'] = $this->general_model->get_basic_search($arrParam);
+		$data['jobInfo'] = $this->generalModel->get_basic_search($arrParam);
 
 		//if there is not a QR CORE then it generate the QR CODE
 		if (!$data['jobInfo'][0]["qr_code_timesheet"]) {
@@ -1931,7 +1964,7 @@ class Admin extends Controller
 				"column" => "qr_code_timesheet",
 				"value" => $rutaImagen
 			);
-			$this->general_model->updateRecord($arrParam);
+			$this->generalModel->updateRecord($arrParam);
 		}
 
 		$data['idJob'] = $idJob;
@@ -1950,7 +1983,7 @@ class Admin extends Controller
 		$arrParam = array(
 			"status" => $status
 		);
-		$data['info'] = $this->admin_model->get_attachments($arrParam);
+		$data['info'] = $this->adminModel->get_attachments($arrParam);
 
 		$data["view"] = 'attachment';
 		$this->load->view("layout", $data);
@@ -1966,19 +1999,19 @@ class Admin extends Controller
 
 		$data['information'] = FALSE;
 		$data['informationAttachments'] = FALSE;
-		$data["idAttachment"] = $this->input->post("idAttachment");
+		$data["idAttachment"] = $this->request->getPost("idAttachment");
 
-		$data['equipmentType'] = $this->general_model->equipmentByTypeList();
+		$data['equipmentType'] = $this->generalModel->equipmentByTypeList();
 
 		if ($data["idAttachment"] != 'x') {
 			$arrParam = array(
 				"idAttachment" => $data["idAttachment"]
 			);
-			$data['information'] = $this->admin_model->get_attachments($arrParam);
-			$data['informationAttachments'] = $this->admin_model->get_attachments_equipment($arrParam);
+			$data['information'] = $this->adminModel->get_attachments($arrParam);
+			$data['informationAttachments'] = $this->adminModel->get_attachments_equipment($arrParam);
 		}
 
-		$this->load->view("attachment_modal", $data);
+		return view('App\Modules\Admin\Views\attachment_modal', $data);
 	}
 
 	/**
@@ -1991,15 +2024,15 @@ class Admin extends Controller
 		header('Content-Type: application/json');
 		$data = array();
 
-		$idAttachment = $this->input->post('hddId');
+		$idAttachment = $this->request->getPost('hddId');
 
 		$msj = "You have added a new Attachment!!";
 		if ($idAttachment != '') {
 			$msj = "You have updated an Attachment!!";
 		}
 
-		if ($idAttachment = $this->admin_model->saveAttachment()) {
-			$this->admin_model->add_equipment_attachement($idAttachment);
+		if ($idAttachment = $this->adminModel->saveAttachment()) {
+			$this->adminModel->add_equipment_attachement($idAttachment);
 			$data["result"] = true;
 			$this->session->set_flashdata('retornoExito', $msj);
 		} else {
@@ -2021,8 +2054,8 @@ class Admin extends Controller
 
 		$data = array();
 
-		$idAttachment = $this->input->post('attachmentId');
-		$status = $this->input->post('status');
+		$idAttachment = $this->request->getPost('attachmentId');
+		$status = $this->request->getPost('status');
 		$value = $status == "active" ? "inactive" : "active";
 
 		$arrParam = array(
@@ -2032,7 +2065,7 @@ class Admin extends Controller
 			"column" => "attachment_status",
 			"value" => $value
 		);
-		if ($this->general_model->updateRecord($arrParam)) {
+		if ($this->generalModel->updateRecord($arrParam)) {
 			$data["result"] = true;
 			$this->session->set_flashdata('retornoExito', "You have changed the Attachment status!!");
 		} else {
@@ -2053,17 +2086,17 @@ class Admin extends Controller
 		header("Content-Type: text/plain; charset=utf-8"); //Para evitar problemas de acentos
 
 		$arrParam = array(
-			"vehicleType" => $this->input->post('type'),
+			"vehicleType" => $this->request->getPost('type'),
 			"vehicleState" => 1
 		);
-		$lista = $this->general_model->get_vehicle_by($arrParam);
+		$lista = $this->generalModel->get_vehicle_by($arrParam);
 
-		if ($this->input->post('idAttachment') != "") {
+		if ($this->request->getPost('idAttachment') != "") {
 			$arrParam = array(
-				"idAttachment" => $this->input->post('idAttachment'),
+				"idAttachment" => $this->request->getPost('idAttachment'),
 				"relation" => true
 			);
-			$arrayInformationAttachments = $this->admin_model->get_attachments_equipment($arrParam);
+			$arrayInformationAttachments = $this->adminModel->get_attachments_equipment($arrParam);
 		}
 
 		echo "<option value=''>Select...</option>";
@@ -2102,7 +2135,7 @@ class Admin extends Controller
 			"order" => "id_parametric",
 			"id" => "x"
 		);
-		$parametric = $this->general_model->get_basic_search($arrParam);
+		$parametric = $this->generalModel->get_basic_search($arrParam);
 		$dato1 = $this->encrypt->decode($parametric[3]["value"]);
 		$dato2 = $this->encrypt->decode($parametric[4]["value"]);
 		$twilioPhone = $parametric[5]["value"];

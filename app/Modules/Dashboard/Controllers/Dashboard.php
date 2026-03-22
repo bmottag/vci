@@ -10,7 +10,6 @@ class Dashboard extends BaseController
     protected $dashboardModel;
     protected $generalModel;
     protected $session;
-    
 
     public function __construct()
     {

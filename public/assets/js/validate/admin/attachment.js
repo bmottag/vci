@@ -1,25 +1,29 @@
 $( document ).ready( function () {
 
-	$("#nombre").bloquearNumeros().maxlength(25);
-	$("#primerApellido").bloquearNumeros().maxlength(25);		
-	$("#segundoApellido").bloquearNumeros().maxlength(25);	
-	$("#numero_unico").bloquearTexto().maxlength(12);
-	$("#telefono").bloquearTexto().maxlength(10);
+    $('#type').change(function () {
+		$("#loader").addClass("loader");
+        $('#type option:selected').each(function () {
+			var type = $('#type').val();
+			var idAttachment = $('#hddId').val();
+			loadEquipmentList(type,idAttachment);
+
+        });
+    });
+
+	$(function() {
+		$("#loader").addClass("loader");
+		var type = $('#type').val();
+		var idAttachment = $('#hddId').val();
+		loadEquipmentList(type,idAttachment);
+	})
+
+	$("#contact").bloquearNumeros().maxlength(50);		
+	$("#movilNumber").bloquearTexto().maxlength(10);
 	
 	$( "#form" ).validate( {
 		rules: {
-			nombre: 			{ required: true, minlength: 3, maxlength:25 },
-			primerApellido: 	{ required: true, minlength: 3, maxlength:25 },
-			segundoApellido: 	{ required: true, minlength: 3, maxlength:25 },
-			numero_unico: 		{ required: true, maxlength: 12 },
-			email: 				{ required: true, email: true, maxlength:60 },
-			empresa: 			{ minlength: 4, maxlength:200},
-			direccion: 			{ minlength: 4, maxlength:200},
-			rol: 				{ required: true },
-			fecha_ingreso: 		{ required: true },
-			fecha_expedicion: 	{ required: true },
-			cargo: 				{ required: true },
-			telefono:			{ required: true, maxlength: 10 },
+			attachment_number:				{ required: true, minlength: 3, maxlength:10 },
+			attachment_description:			{ required: true, minlength: 3, maxlength:60 }
 		},
 		errorElement: "em",
 		errorPlacement: function ( error, element ) {
@@ -29,11 +33,9 @@ $( document ).ready( function () {
 
 		},
 		highlight: function ( element, errorClass, validClass ) {
-			$( element ).parents( ".col-sm-4" ).addClass( "has-error" ).removeClass( "has-success" );
 			$( element ).parents( ".col-sm-12" ).addClass( "has-error" ).removeClass( "has-success" );
 		},
 		unhighlight: function (element, errorClass, validClass) {
-			$( element ).parents( ".col-sm-4" ).addClass( "has-success" ).removeClass( "has-error" );
 			$( element ).parents( ".col-sm-12" ).addClass( "has-success" ).removeClass( "has-error" );
 		},
 		submitHandler: function (form) {
@@ -52,7 +54,7 @@ $( document ).ready( function () {
 			
 				$.ajax({
 					type: "POST",	
-					url: base_url + "admin/save_employee",	
+					url: base_url + "admin/save_attachments",	
 					data: $("#form").serialize(),
 					dataType: "json",
 					contentType: "application/x-www-form-urlencoded;charset=UTF-8",
@@ -63,8 +65,6 @@ $( document ).ready( function () {
 						if( data.result == "error" )
 						{
 							$("#div_load").css("display", "none");
-							$("#div_error").css("display", "inline");
-							$("#span_msj").html(data.mensaje);
 							$('#btnSubmit').removeAttr('disabled');							
 							return false;
 						} 
@@ -74,7 +74,7 @@ $( document ).ready( function () {
 							$("#div_load").css("display", "none");
 							$('#btnSubmit').removeAttr('disabled');
 
-							var url = base_url + "admin/empleados";
+							var url = base_url + "admin/attachments/active";
 							$(location).attr("href", url);
 						}
 						else
@@ -91,7 +91,34 @@ $( document ).ready( function () {
 						$("#div_error").css("display", "inline");
 						$('#btnSubmit').removeAttr('disabled');
 					}
+					
+		
 				});	
-		}	
+		
+		}//if			
 	});
 });
+
+/*
+* Function to load Equipment List
+*/
+function loadEquipmentList(type,idAttachment) {
+	if (type > 0 || type != '') {
+		$.ajax ({
+			type: 'POST',
+			url: base_url + 'admin/equipmentList',
+			data: {'type': type, idAttachment},
+			cache: false,
+			success: function (data)
+			{
+				$('#equipment').html(data);
+			}
+		});
+		$("#div_equipment").css("display", "inline");
+		$('#equipment').val("");
+	} else {
+		var data = '';
+		$('#equipment').html(data);
+	}
+	$("#loader").removeClass("loader");
+}

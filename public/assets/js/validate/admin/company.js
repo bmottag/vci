@@ -1,15 +1,16 @@
 $( document ).ready( function () {
 
-	$("#numero_compra").bloquearTexto().maxlength(12);
-			
+	$("#contact").bloquearNumeros().maxlength(50);		
+	$("#movilNumber").bloquearTexto().maxlength(10);
+	
+	
 	$( "#form" ).validate( {
 		rules: {
-			numero_compra: 	{ required: true, maxlength: 12 },
-			cliente: 		{ required: true },
-			ciudad:			{ required: true },
-			fecha_llegada:	{ required: true },
-			fecha_entraga: 	{ required: true },
-			fecha_pago: 	{ required: true }
+			company:				{ required: true, minlength: 3, maxlength:50 },
+			contact:				{ required: true, minlength: 3, maxlength:50 },
+			movilNumber:			{ required: true },
+			email:					{ required: true, email: true, maxlength:50 }
+			
 		},
 		errorElement: "em",
 		errorPlacement: function ( error, element ) {
@@ -19,10 +20,10 @@ $( document ).ready( function () {
 
 		},
 		highlight: function ( element, errorClass, validClass ) {
-			$( element ).parents( ".col-sm-5" ).addClass( "has-error" ).removeClass( "has-success" );
+			$( element ).parents( ".col-sm-6" ).addClass( "has-error" ).removeClass( "has-success" );
 		},
 		unhighlight: function (element, errorClass, validClass) {
-			$( element ).parents( ".col-sm-5" ).addClass( "has-success" ).removeClass( "has-error" );
+			$( element ).parents( ".col-sm-6" ).addClass( "has-success" ).removeClass( "has-error" );
 		},
 		submitHandler: function (form) {
 			return true;
@@ -35,14 +36,12 @@ $( document ).ready( function () {
 		
 				//Activa icono guardando
 				$('#btnSubmit').attr('disabled','-1');
-				$("#div_guardado").css("display", "none");
 				$("#div_error").css("display", "none");
-				$("#div_msj").css("display", "none");
-				$("#div_cargando").css("display", "inline");
-
+				$("#div_load").css("display", "inline");
+			
 				$.ajax({
 					type: "POST",	
-					url: base_url + "admin/save_ordenes_compra",	
+					url: base_url + "admin/save_company",	
 					data: $("#form").serialize(),
 					dataType: "json",
 					contentType: "application/x-www-form-urlencoded;charset=UTF-8",
@@ -52,41 +51,37 @@ $( document ).ready( function () {
                                             
 						if( data.result == "error" )
 						{
-							//alert(data.mensaje);
-							$("#div_cargando").css("display", "none");
+							$("#div_load").css("display", "none");
 							$('#btnSubmit').removeAttr('disabled');							
-							$("#div_error").css("display", "inline");
-							$("#span_msj").html(data.mensaje);
 							return false;
 						} 
 
 						if( data.result )//true
 						{	                                                        
-							$("#div_cargando").css("display", "none");
-							$("#div_guardado").css("display", "inline");
+							$("#div_load").css("display", "none");
 							$('#btnSubmit').removeAttr('disabled');
 
-							var url = base_url + "admin/ordenes_compra";
+							var url = base_url + "admin/company/";
 							$(location).attr("href", url);
 						}
 						else
 						{
 							alert('Error. Reload the web page.');
-							$("#div_cargando").css("display", "none");
+							$("#div_load").css("display", "none");
 							$("#div_error").css("display", "inline");
 							$('#btnSubmit').removeAttr('disabled');
 						}	
 					},
 					error: function(result) {
 						alert('Error. Reload the web page.');
-						$("#div_cargando").css("display", "none");
+						$("#div_load").css("display", "none");
 						$("#div_error").css("display", "inline");
 						$('#btnSubmit').removeAttr('disabled');
 					}
 					
+		
 				});	
 		
 		}//if			
 	});
-
 });

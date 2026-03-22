@@ -49,6 +49,20 @@ class GeneralModel extends Model
 	}
 
 	/**
+	 * Verify if the user already exist by specific column
+	 * @author BMOTTAG
+	 * @since  8/11/2016
+	 * @review 31/01/2022
+	 */
+	public function verifyUser($arrData)
+	{
+		$builder = $this->db->table("user");
+		$builder->where($arrData["column"], $arrData["value"]);
+
+		return $builder->countAllResults() > 0;
+	}
+
+	/**
 	 * Lista de roles
 	 * Modules: ROL
 	 * @since 30/3/2020
@@ -729,6 +743,85 @@ class GeneralModel extends Model
 			$builder->where('C.checkout_time', '0000-00-00 00:00:00');
 		}
 		$builder->orderBy('C.fk_id_job, C.id_checkin', 'asc');
+		$query = $builder->get();
+
+		$result = $query->getResultArray();
+		return !empty($result) ? $result : false;
+	}
+
+
+	/**
+	 * User list
+	 * @since 30/3/2020
+	 * @review 20/03/2026 - new CI4 version
+	 */
+	public function get_user($arrData)
+	{
+		$builder = $this->db->table('user U');
+		$builder->select();
+		$builder->join('param_rol R', 'R.id_rol = U.perfil', 'INNER');
+		if (isset($arrData["idUser"])) {
+			$builder->where('U.id_user', $arrData["idUser"]);
+		}
+		if (isset($arrData["idUserMANAGERS"])) {
+			$IDmagers = array(2, 3);
+			$builder->where_in('U.id_user', $IDmagers);
+		}
+		if (isset($arrData["state"])) {
+			$builder->where('U.state', $arrData["state"]);
+		}
+		//list without inactive users
+		if (isset($arrData["filtroState"])) {
+			$builder->where('U.state !=', 2);
+		}
+		if (isset($arrData["employee_subcontractor"])) {
+			$builder->where('U.employee_subcontractor', $arrData["employee_subcontractor"]);
+		}
+		if (isset($arrData["idRolesSupervisors"])) {
+			$idRoles = array(ID_ROL_SUPER_ADMIN, ID_ROL_MANAGER, ID_ROL_SAFETY, ID_ROL_SUPERVISOR);
+			$builder->where_in('U.perfil', $idRoles);
+			$builder->where('U.id_user !=', 1);
+		}
+
+		$builder->orderBy("first_name, last_name", "ASC");
+		$query = $builder->get();
+
+		$result = $query->getResultArray();
+		return !empty($result) ? $result : false;
+	}
+
+
+	/**
+	 * Get user certificates
+	 * @since 15/1/2022
+	 * @review 20/03/2026 - new CI4 version
+	 */
+	public function get_user_certificates($arrData)
+	{
+		$builder = $this->db->table('user_certificates X');
+		$builder->select();
+		$builder->join('user U', 'U.id_user = X.fk_id_user', 'INNER');
+		$builder->join('param_certificates C', 'C.id_certificate = X.fk_id_certificate ', 'INNER');
+		if (isset($arrData["idUserCertificate"])) {
+			$builder->where('X.id_user_certificate', $arrData["idUserCertificate"]);
+		}
+		if (isset($arrData["idUser"])) {
+			$builder->where('U.id_user', $arrData["idUser"]);
+		}
+		if (isset($arrData["state"])) {
+			$builder->where('U.state', $arrData["state"]);
+		}
+		if (isset($arrData["expires"])) {
+			$builder->where('X.expires', $arrData["expires"]);
+		}
+		if (isset($arrData["idCertificate"])) {
+			$builder->where('C.id_certificate', $arrData["idCertificate"]);
+		}
+		if (isset($arrData["date"])) {
+			$builder->where('X.date_through <=', $arrData["date"]);
+			$builder->where('X.expires', 1);
+		}
+		$builder->orderBy('C.certificate', 'asc');
 		$query = $builder->get();
 
 		$result = $query->getResultArray();
