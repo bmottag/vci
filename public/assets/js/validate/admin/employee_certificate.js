@@ -44,6 +44,7 @@ $( document ).ready( function () {
 						type: 'POST',
 						url: base_url + 'admin/delete_user_certificate',
 						data: {'identificador': oID},
+						dataType: 'json',
 						cache: false,
 						success: function(data){
 												

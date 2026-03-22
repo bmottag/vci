@@ -49,6 +49,17 @@ class GeneralModel extends Model
 	}
 
 	/**
+	 * Delete Record
+	 * @since 5/12/2016
+	 */
+	public function deleteRecord($arrDatos)
+	{
+		return $this->db->table($arrDatos["table"])
+						->where($arrDatos["primaryKey"], $arrDatos["id"])
+						->delete();
+	}
+
+	/**
 	 * Verify if the user already exist by specific column
 	 * @author BMOTTAG
 	 * @since  8/11/2016
@@ -789,7 +800,6 @@ class GeneralModel extends Model
 		$result = $query->getResultArray();
 		return !empty($result) ? $result : false;
 	}
-
 
 	/**
 	 * Get user certificates

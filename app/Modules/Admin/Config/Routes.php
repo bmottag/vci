@@ -12,4 +12,6 @@ $routes->group('admin', ['namespace' => 'App\Modules\Admin\Controllers'], functi
     $routes->post('save_employee', 'Admin::save_employee');
     $routes->post('cargar-modal-user-certificate', 'Admin::cargarModalUserCertificate');
     $routes->post('save_employee_certificate', 'Admin::save_employee_certificate');
+    $routes->post('update_user_certificate', 'Admin::update_user_certificate');
+    $routes->post('delete_user_certificate', 'Admin::delete_user_certificate');
 });

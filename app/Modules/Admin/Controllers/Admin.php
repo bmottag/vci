@@ -1437,13 +1437,13 @@ class Admin extends BaseController
 
 		$idEmployee = $post['hddidEmployee'] ?? null;
 		$idEmployeeCertificate = $post['hddidEmployeeCertificate'] ?? null;
-
 		$data["idRecord"] = $idEmployee;
+
 		$msj = "You have added a new Certificate!!";
 
 		$certificate_exist = false;
 
-		// Validar si ya existe el certificado
+		// Validar si ya existe
 		if (empty($idEmployeeCertificate)) {
 			$certificate_exist = $this->generalModel->get_user_certificates([
 				"idUser" => $idEmployee,
@@ -1463,13 +1463,9 @@ class Admin extends BaseController
 
 		} else {
 
-			// 🔥 PASAMOS $post AL MODELO
 			if ($this->adminModel->saveEmployeeCertificate($post)) {
-
 				$data["result"] = true;
-
 				session()->setFlashdata('retornoExito', $msj);
-
 			} else {
 
 				$data["result"] = "error";
@@ -1491,31 +1487,56 @@ class Admin extends BaseController
 	 */
 	public function delete_user_certificate()
 	{
-		header('Content-Type: application/json');
-		$data = array();
+		$post = $this->request->getPost();
 
-		$arrParam['idUserCertificate']  = $this->request->getPost('identificador');
-		$certificate_exist = $this->generalModel->get_user_certificates($arrParam);
-		$data["idRecord"] = $certificate_exist[0]['fk_id_user'];
+		$data = [];
 
-		//eliminaos registros
-		$arrParam = array(
-			"table" => "user_certificates",
-			"primaryKey" => "id_user_certificate ",
-			"id" => $arrParam['idUserCertificate']
-		);
+		$idUserCertificate = $post['identificador'] ?? null;
 
-		if ($this->generalModel->deleteRecord($arrParam)) {
-			$data["result"] = true;
-			$data["mensaje"] = "You have deleted one record.";
-			$this->session->set_flashdata('retornoExito', 'You have deleted one record');
-		} else {
+		// Buscar certificado
+		$certificate = $this->generalModel->get_user_certificates([
+			'idUserCertificate' => $idUserCertificate
+		]);
+
+		if (!$certificate) {
 			$data["result"] = "error";
-			$data["mensaje"] = "Error!!! Ask for help.";
-			$this->session->set_flashdata('retornoError', '<strong>Error!!!</strong> Ask for help');
+			$data["mensaje"] = "Record not found";
+
+			return $this->response->setJSON($data);
 		}
 
-		echo json_encode($data);
+		$idUser = $certificate[0]['fk_id_user'];
+		$data["idRecord"] = $idUser;
+
+		// Eliminar registro
+		$arrParam = [
+			"table" => "user_certificates",
+			"primaryKey" => "id_user_certificate",
+			"id" => $idUserCertificate
+		];
+
+		if ($this->generalModel->deleteRecord($arrParam)) {
+
+			$data["result"] = true;
+			$data["mensaje"] = "You have deleted one record.";
+
+			session()->setFlashdata(
+				'retornoExito',
+				'You have deleted one record'
+			);
+
+		} else {
+
+			$data["result"] = "error";
+			$data["mensaje"] = "Error!!! Ask for help.";
+
+			session()->setFlashdata(
+				'retornoError',
+				'<strong>Error!!!</strong> Ask for help'
+			);
+		}
+
+		return $this->response->setJSON($data);
 	}
 
 	/**
@@ -1525,19 +1546,42 @@ class Admin extends BaseController
 	 */
 	public function update_user_certificate()
 	{
-		$arrParam['idUserCertificate']  = $this->request->getPost('hddidEmployeeCertificate');
-		$certificate_exist = $this->generalModel->get_user_certificates($arrParam);
-		$data["idRecord"] = $certificate_exist[0]['fk_id_user'];
+		$post = $this->request->getPost();
 
-		if ($this->adminModel->saveEmployeeCertificate()) {
-			$data["result"] = true;
-			$this->session->set_flashdata('retornoExito', "You have update the Date!!");
-		} else {
-			$data["result"] = "error";
-			$this->session->set_flashdata('retornoError', '<strong>Error!!!</strong> Ask for help');
+		$idUserCertificate = $post['hddidEmployeeCertificate'] ?? null;
+
+		// Buscar info del certificado
+		$certificate_exist = $this->generalModel->get_user_certificates([
+			'idUserCertificate' => $idUserCertificate
+		]);
+
+		if (!$certificate_exist) {
+			session()->setFlashdata(
+				'retornoError',
+				'<strong>Error!!!</strong> Record not found'
+			);
+
+			return redirect()->to(base_url('admin/employee/1'));
 		}
 
-		redirect(base_url('admin/userCertificates/' . $data["idRecord"]), 'refresh');
+		$idUser = $certificate_exist[0]['fk_id_user'];
+
+		// Guardar (UPDATE)
+		if ($this->adminModel->saveEmployeeCertificate($post)) {
+
+			session()->setFlashdata(
+				'retornoExito',
+				"You have updated the Date!!"
+			);
+
+		} else {
+
+			session()->setFlashdata(
+				'retornoError',
+				'<strong>Error!!!</strong> Ask for help'
+			);
+		}
+		return redirect()->to(base_url('admin/userCertificates/' . $idUser));
 	}
 
 	/**

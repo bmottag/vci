@@ -44,7 +44,7 @@ $(function(){
 				</div>
 				<div class="panel-body">
 
-					<button type="button" class="btn btn-success btn-block" data-toggle="modal" data-target="#modal" id="<?php echo $UserInfo[0]["id_user"] . '-X'; ?>">
+					<button type="button" class="btn btn-success btn-block" data-toggle="modal" data-target="#modal" id="<?php echo $UserInfo[0]["id_user"]; ?>">
 							<span class="glyphicon glyphicon-plus" aria-hidden="true"></span> Add Certificate
 					</button><br>
 				
@@ -146,7 +146,7 @@ if ($session->getFlashdata('retornoExito')): ?>
 									</td>
 
 									<td class='text-center'>
-										<input type="text" class="form-control" id="dateThroughUpdate" name="dateThroughUpdate" value="<?php echo $date; ?>" placeholder="YYYY-MM-DD" />
+										<input type="date" class="form-control" id="dateThroughUpdate" name="dateThroughUpdate" value="<?php echo $date; ?>" placeholder="YYYY-MM-DD" />
 									</td>
 									<td class='text-center'>
 										<button type="submit" id="btnUpdate" name="btnUpdate" class="btn btn-info btn-xs" title="Update">
