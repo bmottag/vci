@@ -7,11 +7,11 @@
 				},
 				messages: {
 					inputPassword: {
-						required: "Ingresar Contraseña",
+						required: "Please provide a password",
 					},
 					inputConfirm: {
-						required: "Ingresar Contraseña",
-						equalTo: "Ingresar la misma Contraseña"
+						required: "Please provide a password",
+						equalTo: "Please enter the same password as above"
 					}
 				},
 				errorElement: "em",

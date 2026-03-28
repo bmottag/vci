@@ -6,6 +6,7 @@ use CodeIgniter\Model;
 class AdminModel extends Model
 {
 
+	protected $protectFields = false;
 	/**
 	 * Add/Edit USER
 	 * @since 8/11/2016
@@ -531,25 +532,13 @@ class AdminModel extends Model
 	 * @author BMOTTAG
 	 * @since  8/11/2016
 	 */
-	public function updatePassword()
+	public function updatePassword($idUser, $plainPassword)
 	{
-		$idUser = $this->request->getPost("hddId");
-		$newPassword = $this->request->getPost("inputPassword");
-		$passwd = str_replace(array("<", ">", "[", "]", "*", "^", "-", "'", "="), "", $newPassword);
-		$passwd = md5($passwd);
+		$hashedPassword = password_hash($plainPassword, PASSWORD_DEFAULT);
 
-		$data = array(
-			'password' => $passwd
-		);
-
-		$this->db->where('id_user', $idUser);
-		$query = $this->db->update('user', $data);
-
-		if ($query) {
-			return true;
-		} else {
-			return false;
-		}
+		return $this->db->table('user')
+				->where('id_user', $idUser)
+				->update(['password' => $hashedPassword]);
 	}
 
 	/**

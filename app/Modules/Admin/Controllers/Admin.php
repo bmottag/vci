@@ -1130,6 +1130,7 @@ class Admin extends BaseController
 	 * Change password
 	 * @since 15/4/2017
 	 * @author BMOTTAG
+	 * @review 21/03/2026 - new CI4 version
 	 */
 	public function change_password($idUser)
 	{
@@ -1145,42 +1146,47 @@ class Admin extends BaseController
 		);
 		$data['information'] = $this->generalModel->get_basic_search($arrParam);
 
-		$data["view"] = "form_password";
-		$this->load->view("layout", $data);
+		return $this->render('App\Modules\Admin\Views\form_password', $data);
 	}
 
 	/**
 	 * Update user´s password
+	 * @review 27/03/2026 - new CI4 version
 	 */
 	public function update_password()
 	{
-		$data = array();
-		$data["titulo"] = "UPDATE PASSWORD";
+		$data = [];
+		$data["titulo"] = "<i class='fa fa-unlock fa-fw'></i>CHANGE PASSWORD";
+		$data['linkBack'] = "admin/employee/1";
 
 		$newPassword = $this->request->getPost("inputPassword");
-		$confirm = $this->request->getPost("inputConfirm");
-		$passwd = str_replace(array("<", ">", "[", "]", "*", "^", "-", "'", "="), "", $newPassword);
+		$confirm     = $this->request->getPost("inputConfirm");
+		$user        = $this->request->getPost("hddUser");
+		$idUser = $this->request->getPost("hddId");
 
-		$data['linkBack'] = "admin/employee/1";
-		$data['titulo'] = "<i class='fa fa-unlock fa-fw'></i>CHANGE PASSWORD";
-
-		if ($newPassword == $confirm) {
-			if ($this->adminModel->updatePassword()) {
-				$data["msj"] = "You have updated the password.";
-				$data["msj"] .= "<br><strong>User name: </strong>" . $this->request->getPost("hddUser");
-				$data["msj"] .= "<br><strong>Password: </strong>" . $passwd;
-				$data["clase"] = "alert-success";
-			} else {
-				$data["msj"] = "<strong>Error!!!</strong> Ask for help.";
-				$data["clase"] = "alert-danger";
-			}
-		} else {
-			//definir mensaje de error
-			echo "pailas no son iguales";
+		// Validación básica
+		if (!$newPassword || !$confirm) {
+			$data["msj"] = "Password is required.";
+			$data["clase"] = "alert-danger";
+			return $this->render('App\Views\template\answer', $data);
 		}
 
-		$data["view"] = "template/answer";
-		$this->load->view("layout", $data);
+		if ($newPassword !== $confirm) {
+			$data["msj"] = "Passwords do not match.";
+			$data["clase"] = "alert-danger";
+			return $this->render('App\Views\template\answer', $data);
+		}
+
+		// Enviar al modelo
+		if ($this->adminModel->updatePassword($idUser, $newPassword)) {
+			$data["msj"] = "Password updated successfully.<br><strong>User:</strong> " . $user;
+			$data["clase"] = "alert-success";
+		} else {
+			$data["msj"] = "<strong>Error!</strong> Please try again.";
+			$data["clase"] = "alert-danger";
+		}
+
+		return $this->render('App\Views\template\answer', $data);
 	}
 
 	/**
