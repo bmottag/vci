@@ -9,6 +9,7 @@ $routes->group('admin', ['namespace' => 'App\Modules\Admin\Controllers'], functi
     $routes->get('change_password/(:any)', 'Admin::change_password/$1');
     $routes->get('material', 'Admin::material');
     $routes->get('company', 'Admin::company');
+    $routes->get('hazard', 'Admin::hazard');
 
     $routes->post('cargar-modal-employee', 'Admin::cargarModalEmployee');
     $routes->post('save_employee', 'Admin::save_employee');
@@ -23,6 +24,8 @@ $routes->group('admin', ['namespace' => 'App\Modules\Admin\Controllers'], functi
     $routes->post('save_material', 'Admin::save_material');
     $routes->post('cargar-modal-company', 'Admin::cargarModalCompany');
     $routes->post('save_company', 'Admin::save_company');
+    $routes->post('cargar-modal-hazard', 'Admin::cargarModalHazard');
+    $routes->post('save_hazard', 'Admin::save_hazard');
 
     $routes->match(['get', 'post'], 'certificate', 'Admin::certificate');
 });

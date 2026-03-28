@@ -367,25 +367,26 @@ class Admin extends BaseController
 	 * hazard List
 	 * @since 15/12/2016
 	 * @author BMOTTAG
+	 * @review 28/03/2026 - new CI4 version
 	 */
 	public function hazard()
 	{
 		$data['info'] = $this->adminModel->get_hazard_list();
-
-		$data["view"] = 'hazard';
-		$this->load->view("layout", $data);
+		return $this->render('App\Modules\Admin\Views\hazard', $data);
 	}
 
 	/**
 	 * Cargo modal - formulario hazard
 	 * @since 15/12/2016
+	 * @review 28/03/2026 - new CI4 version
 	 */
 	public function cargarModalHazard()
 	{
-		header("Content-Type: text/plain; charset=utf-8"); //Para evitar problemas de acentos
+		$data = [];
+		$data['information'] = null;
 
-		$data['information'] = FALSE;
-		$data["idHazard"] = $this->request->getPost("idHazard");
+		$idHazard = $this->request->getPost("idHazard");
+		$data["idHazard"] = $idHazard;
 
 		$arrParam = array(
 			"table" => "param_hazard_activity",
@@ -401,51 +402,47 @@ class Admin extends BaseController
 		);
 		$data['priorityList'] = $this->generalModel->get_basic_search($arrParam);
 
-		if ($data["idHazard"] != 'x') {
+		if (!empty($idHazard) && $idHazard !== 'x') {
 			$arrParam = array(
 				"table" => "param_hazard",
 				"order" => "id_hazard",
 				"column" => "id_hazard",
-				"id" => $data["idHazard"]
+				"id" => $idHazard
 			);
 			$data['information'] = $this->generalModel->get_basic_search($arrParam);
 		}
 
-		return view('App\Modules\Admin\Views\hazard_modal', $data);
+		return $this->response
+					->setContentType('text/html')
+					->setBody(view('App\Modules\Admin\Views\hazard_modal', $data));
 	}
 
 	/**
 	 * Update hazard
 	 * @since 15/12/2016
 	 * @author BMOTTAG
+	 * @review 28/03/2026 - new CI4 version
 	 */
 	public function save_hazard()
 	{
-		header('Content-Type: application/json');
-		$data = array();
+		$post = $this->request->getPost();
 
-		$idHazard = $this->request->getPost('hddId');
+		$id = $post['hddId'] ?? null;
+		$msj = $id 
+			? "You have updated a Hazard!!" 
+			: "You have added a new Hazard!!";
 
-		$msj = "You have added a new hazard!!";
-		if ($idHazard != '') {
-			$msj = "You have updated a hazard!!";
-		}
+		$data = [];
 
-		if ($idHazard = $this->adminModel->saveHazard()) {
-			$data["result"] = true;
-			$data["mensaje"] = "Solicitud guardada correctamente.";
-			$data["idRecord"] = $idHazard;
-
-			$this->session->set_flashdata('retornoExito', $msj);
+		if ($this->adminModel->saveHazard($post)) {
+			$data["status"] = "success";
+			session()->setFlashdata('retornoExito', $msj);
 		} else {
-			$data["result"] = "error";
-			$data["mensaje"] = "Error al guardar. Intente nuevamente o actualice la p\u00e1gina.";
-			$data["idRecord"] = "";
-
-			$this->session->set_flashdata('retornoError', '<strong>Error!!!</strong> Ask for help');
+			$data["status"] = "error";
+			session()->setFlashdata('retornoError', '<strong>Error!!!</strong> Ask for help');
 		}
 
-		echo json_encode($data);
+		return $this->response->setJSON($data);
 	}
 
 	/**

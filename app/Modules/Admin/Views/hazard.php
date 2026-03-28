@@ -4,7 +4,7 @@ $(function(){
 			var oID = $(this).attr("id");
             $.ajax ({
                 type: 'POST',
-				url: base_url + 'admin/cargarModalHazard',
+				url: base_url + 'admin/cargar-modal-hazard',
                 data: {'idHazard': oID},
                 cache: false,
                 success: function (data) {
@@ -28,31 +28,31 @@ $(function(){
 					<button type="button" class="btn btn-outline btn-primary btn-block" data-toggle="modal" data-target="#modal" id="x">
 							<span class="glyphicon glyphicon-plus" aria-hidden="true"></span> Add a Hazard
 					</button><br>
-<?php
-$retornoExito = $this->session->flashdata('retornoExito');
-if ($retornoExito) {
-    ?>
-	<div class="col-lg-12">	
-		<div class="alert alert-success ">
-			<span class="glyphicon glyphicon-ok" aria-hidden="true"></span>
-			<?php echo $retornoExito ?>		
-		</div>
-	</div>
     <?php
-}
+	$session = session();
+    // Mensaje de éxito
+    if ($session->getFlashdata('retornoExito')): ?>
+        <div class="row">
+            <div class="col-lg-12">
+                <div class="alert alert-success">
+                    <span class="glyphicon glyphicon-ok" aria-hidden="true"></span>
+                    <?= $session->getFlashdata('retornoExito') ?>
+                </div>
+            </div>
+        </div>
+    <?php endif; ?>
 
-$retornoError = $this->session->flashdata('retornoError');
-if ($retornoError) {
-    ?>
-	<div class="col-lg-12">	
-		<div class="alert alert-danger ">
-			<span class="glyphicon glyphicon-exclamation-sign" aria-hidden="true"></span>
-			<?php echo $retornoError ?>
-		</div>
-	</div>
-    <?php
-}
-?> 
+    <!-- Mensaje de error -->
+    <?php if ($session->getFlashdata('retornoError')): ?>
+        <div class="row">
+            <div class="col-lg-12">
+                <div class="alert alert-danger">
+                    <span class="glyphicon glyphicon-exclamation-sign" aria-hidden="true"></span>
+                    <?= $session->getFlashdata('retornoError') ?>
+                </div>
+            </div>
+        </div>
+    <?php endif; ?>
 				<?php
 					if($info){
 				?>				

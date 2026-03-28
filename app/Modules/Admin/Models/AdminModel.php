@@ -125,29 +125,24 @@ class AdminModel extends Model
 	 * Add/Edit HAZARD
 	 * @since 11/12/2016
 	 */
-	public function saveHazard()
+	public function saveHazard($post)
 	{
-		$idHazard = $this->request->getPost('hddId');
+		$id = $post['hddId'] ?? null;
 
-		$data = array(
-			'fk_id_hazard_activity' => $this->request->getPost('activity'),
-			'hazard_description' => $this->request->getPost('hazardName'),
-			'solution' => $this->request->getPost('solution'),
-			'fk_id_priority' => $this->request->getPost('priority')
-		);
+		$data = [
+			'fk_id_hazard_activity' => $post['activity'] ?? null,
+			'hazard_description' => $post['hazardName'] ?? null,
+			'solution' => $post['solution'] ?? null,
+			'fk_id_priority' => $post['priority'] ?? null
+		];
 
-		//revisar si es para adicionar o editar
-		if ($idHazard == '') {
-			$query = $this->db->insert('param_hazard', $data);
-			$idHazard = $this->db->insert_id();
+		$builder = $this->db->table('param_hazard');
+
+		if (empty($id)) {
+			return $builder->insert($data);
 		} else {
-			$this->db->where('id_hazard', $idHazard);
-			$query = $this->db->update('param_hazard', $data);
-		}
-		if ($query) {
-			return $idHazard;
-		} else {
-			return false;
+			return $builder->where('id_hazard', $id)
+						->update($data);
 		}
 	}
 
@@ -515,17 +510,13 @@ class AdminModel extends Model
 	 */
 	public function get_hazard_list()
 	{
-		$this->db->select();
-		$this->db->join('param_hazard_activity A', 'A.id_hazard_activity = H.fk_id_hazard_activity', 'INNER');
-		$this->db->join('param_hazard_priority P', 'P.id_priority = H.fk_id_priority', 'INNER');
-		$this->db->order_by('A.hazard_activity, H.hazard_description', 'asc');
-		$query = $this->db->get('param_hazard H');
-
-		if ($query->num_rows() > 0) {
-			return $query->result_array();
-		} else {
-			return false;
-		}
+		return $this->db->table('param_hazard H')
+			->select('H.*, A.hazard_activity, P.*')
+			->join('param_hazard_activity A', 'A.id_hazard_activity = H.fk_id_hazard_activity', 'inner')
+			->join('param_hazard_priority P', 'P.id_priority = H.fk_id_priority', 'inner')
+			->orderBy('A.hazard_activity, H.hazard_description', 'asc')
+			->get()
+			->getResultArray();
 	}
 
 	/**
