@@ -55,7 +55,6 @@ class Admin extends BaseController
 		}
 
 		$data['info'] = $info;
-
 		return $this->render('App\Modules\Admin\Views\employee', $data);
 	}
 
@@ -1320,44 +1319,69 @@ class Admin extends BaseController
 	 * Certificate List
 	 * @since 14/1/2022
 	 * @author BMOTTAG
+	 * @review 28/03/2026 - new CI4 version
 	 */
 	public function certificate()
 	{
-		$arrParam = array();
-		$data['certificateList'] = $this->generalModel->get_certificate_list($arrParam);
-
-		//se filtra por id_certificate
-		if ($_POST && $_POST['idCertificate'] != "") {
-			$arrParam['idCertificate'] = $this->request->getPost('idCertificate');
+		$params = [];
+		$data['certificateList'] = $this->generalModel->get_certificate_list($params);
+		$idCertificate = $this->request->getPost('idCertificate');
+		$date = $this->request->getPost('date');
+		if (!empty($idCertificate)) {
+			$params['idCertificate'] = $idCertificate;
 		}
-		$data['info'] = $this->generalModel->get_certificate_list($arrParam);
+		if (!empty($date)) {
+			$params['date'] = $date;
+		}
+		$rows = $this->generalModel->get_certificates_with_users($params);
 
-		$data["view"] = 'certificate';
-		$this->load->view("layout", $data);
+		$data['info'] = [];
+		foreach ($rows as $row) {
+
+			$id = $row['id_certificate'];
+
+			if (!isset($data['info'][$id])) {
+				$data['info'][$id] = [
+					'id_certificate' => $row['id_certificate'],
+					'certificate' => $row['certificate'],
+					'certificate_description' => $row['certificate_description'],
+					'employees' => []
+				];
+			}
+
+			if (!empty($row['id_user'])) {
+				$data['info'][$id]['employees'][] = [
+					'first_name' => $row['first_name'],
+					'last_name' => $row['last_name'],
+					'date_through' => $row['date_through']
+				];
+			}
+		}
+
+		return $this->render('App\Modules\Admin\Views\certificate', $data);
 	}
 
 	/**
 	 * Cargo modal - Certificados
 	 * @since 14/1/2022
+	 * @review 28/03/2026 - new CI4 version
 	 */
 	public function cargarModalCertificate()
 	{
-		header("Content-Type: text/plain; charset=utf-8"); //Para evitar problemas de acentos
+		$data = [];
+		$data['information'] = null;
 
-		$data['information'] = FALSE;
-		$data["idCertificate"] = $this->request->getPost("idCertificate");
+		$idCertificate = $this->request->getPost("idCertificate");
+		$data["idCertificate"] = $idCertificate;
 
-		if ($data["idCertificate"] != 'x') {
-			$arrParam = array(
-				"table" => "param_certificates",
-				"order" => "id_certificate",
-				"column" => "id_certificate",
-				"id" => $data["idCertificate"]
-			);
-			$data['information'] = $this->generalModel->get_basic_search($arrParam);
+		if (!empty($idCertificate) && $idCertificate !== 'x') {
+			$params['idCertificate'] = $idCertificate;
+			$data['information'] = $this->generalModel->get_certificate_list($params);
 		}
 
-		return view('App\Modules\Admin\Views\certificate_modal', $data);
+		return $this->response
+					->setContentType('text/html')
+					->setBody(view('App\Modules\Admin\Views\certificate_modal', $data));
 	}
 
 	/**
@@ -1376,12 +1400,11 @@ class Admin extends BaseController
 
 		$data = [];
 
-		// Llamar al modelo pasando $post
 		if ($this->adminModel->saveCertificate($post)) {
-			$data["result"] = true;
+			$data["status"] = "success";
 			session()->setFlashdata('retornoExito', $msj);
 		} else {
-			$data["result"] = "error";
+			$data["status"] = "error";
 			session()->setFlashdata('retornoError', '<strong>Error!!!</strong> Ask for help');
 		}
 

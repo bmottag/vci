@@ -655,10 +655,8 @@ class AdminModel extends Model
 		$builder = $this->db->table('param_certificates');
 
 		if (empty($idCertificate)) {
-			// Insertar nuevo certificado
 			return $builder->insert($data);
 		} else {
-			// Actualizar certificado existente
 			return $builder->where('id_certificate', $idCertificate)
 						->update($data);
 		}

@@ -838,5 +838,56 @@ class GeneralModel extends Model
 		return !empty($result) ? $result : false;
 	}
 
+	/**
+	 * Get workorder expenses info
+	 * @since 18/4/2023
+	 */
+	public function get_certificate_list($arrData)
+	{
+		$builder = $this->db->table('param_certificates');
+		if (isset($arrData["idCertificate"])) {
+			$builder->where('id_certificate', $arrData["idCertificate"]);
+		}
+		$builder->orderBy('certificate', 'asc');
+		$query = $builder->get();
+
+		$result = $query->getResultArray();
+		return !empty($result) ? $result : false;
+	}
+
+	public function get_certificates_with_users($arrData = [])
+	{
+		$builder = $this->db->table('param_certificates C');
+
+		$builder->select('
+			C.id_certificate,
+			C.certificate,
+			C.certificate_description,
+			U.id_user,
+			U.first_name,
+			U.last_name,
+			X.date_through
+		');
+
+		$builder->join('user_certificates X', 'X.fk_id_certificate = C.id_certificate', 'left');
+		$builder->join('user U', 'U.id_user = X.fk_id_user', 'left');
+
+		// filtros
+		if (!empty($arrData["idCertificate"])) {
+			$builder->where('C.id_certificate', $arrData["idCertificate"]);
+		}
+
+		if (!empty($arrData["date"])) {
+			$builder->where('X.date_through <=', $arrData["date"]);
+			$builder->where('X.expires', 1);
+		}
+
+		$builder->orderBy('C.certificate', 'asc');
+
+		$query = $builder->get();
+
+		return $query->getResultArray();
+	}
+
 
 }

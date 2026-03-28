@@ -7,7 +7,7 @@ $(function(){
 			var oID = $(this).attr("id");
             $.ajax ({
                 type: 'POST',
-				url: base_url + 'admin/cargarModalCertificate',
+				url: base_url + 'admin/cargar-modal-certificate',
                 data: {'idCertificate': oID},
                 cache: false,
                 success: function (data) {
@@ -31,7 +31,8 @@ $(function(){
 <?php
 	//DESHABILITAR EDICION
 	$deshabilitar = '';
-	$userRol = $this->session->rol;
+	$session = session();
+	$userRol = $session->rol;
 	//SOLO SE HABILITA EL BOTON DE CERTIFICADOS PARA EL USUARIO SUPER ADMINISTRADOR Y SAFETY 
 ?>
 				<?php if($userRol == 99 || $userRol == 4){ ?>
@@ -39,35 +40,30 @@ $(function(){
 							<span class="glyphicon glyphicon-plus" aria-hidden="true"></span> Add Certificate
 					</button><br>
 				<?php } ?>
-<?php
-$retornoExito = $this->session->flashdata('retornoExito');
-if ($retornoExito) {
-    ?>
-    <div class="row">
-		<div class="col-lg-12">	
-			<div class="alert alert-success ">
-				<span class="glyphicon glyphicon-ok" aria-hidden="true"></span>
-				<?php echo $retornoExito ?>		
-			</div>
-		</div>
-	</div>
     <?php
-}
+    // Mensaje de éxito
+    if ($session->getFlashdata('retornoExito')): ?>
+        <div class="row">
+            <div class="col-lg-12">
+                <div class="alert alert-success">
+                    <span class="glyphicon glyphicon-ok" aria-hidden="true"></span>
+                    <?= $session->getFlashdata('retornoExito') ?>
+                </div>
+            </div>
+        </div>
+    <?php endif; ?>
 
-$retornoError = $this->session->flashdata('retornoError');
-if ($retornoError) {
-    ?>
-    <div class="row">
-		<div class="col-lg-12">	
-			<div class="alert alert-danger ">
-				<span class="glyphicon glyphicon-exclamation-sign" aria-hidden="true"></span>
-				<?php echo $retornoError ?>
-			</div>
-		</div>
-	</div>
-    <?php
-}
-?>
+    <!-- Mensaje de error -->
+    <?php if ($session->getFlashdata('retornoError')): ?>
+        <div class="row">
+            <div class="col-lg-12">
+                <div class="alert alert-danger">
+                    <span class="glyphicon glyphicon-exclamation-sign" aria-hidden="true"></span>
+                    <?= $session->getFlashdata('retornoError') ?>
+                </div>
+            </div>
+        </div>
+    <?php endif; ?>
 
 					<form name="formCheckin" id="formCheckin" method="post">
 						<div class="panel panel-default">
@@ -132,19 +128,17 @@ if ($retornoError) {
 						<?php
 							foreach ($info as $lista):
 								echo "<tr>";
-								echo "<td><small>" . $lista['certificate'] . "</small></td>";
-								echo "<td><small>" . $lista['certificate_description'] . "</small></td>";
+								echo "<td><small>{$lista['certificate']}</small></td>";
+								echo "<td><small>{$lista['certificate_description']}</small></td>";
 								echo "<td>";
-								$arrParam['idCertificate'] = $lista['id_certificate'];
-								if($_POST && $_POST["date"]) { $arrParam['date'] = $_POST["date"]; } 		
-								$certificateList = $this->general_model->get_user_certificates($arrParam);
-								if($certificateList){
+								if (!empty($lista['employees'])) {
 									echo "<ol><small>";
-									foreach ($certificateList as $datos):
-										echo "<li>" . $datos['first_name'] . ' ' . $datos['last_name'] . ' - <b>' . $datos['date_through'] . "</b></li>";
+									foreach ($lista['employees'] as $emp):
+										echo "<li>{$emp['first_name']} {$emp['last_name']} - <b>{$emp['date_through']}</b></li>";
 									endforeach;
 									echo "</small></ol>";
 								}
+
 								echo "</td>";
 								if($userRol == 99 || $userRol == 4){
 									echo "<td class='text-center'>";
