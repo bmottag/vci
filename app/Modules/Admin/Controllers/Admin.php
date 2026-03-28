@@ -291,6 +291,7 @@ class Admin extends BaseController
 	 * Company List
 	 * @since 15/12/2016
 	 * @author BMOTTAG
+	 * @review 28/03/2026 - new CI4 version
 	 */
 	public function company()
 	{
@@ -303,64 +304,63 @@ class Admin extends BaseController
 		);
 		$data['info'] = $this->generalModel->get_basic_search($arrParam);
 
-		$data["view"] = 'company';
-		$this->load->view("layout", $data);
+		return $this->render('App\Modules\Admin\Views\company', $data);
 	}
 
 	/**
 	 * Cargo modal - formulario company
 	 * @since 15/12/2016
+	 * @review 28/03/2026 - new CI4 version
 	 */
 	public function cargarModalCompany()
 	{
-		header("Content-Type: text/plain; charset=utf-8"); //Para evitar problemas de acentos
+		$data = [];
+		$data['information'] = null;
 
-		$data['information'] = FALSE;
-		$data["idCompany"] = $this->request->getPost("idCompany");
+		$idCompany = $this->request->getPost("idCompany");
+		$data["idCompany"] = $idCompany;
 
-		if ($data["idCompany"] != 'x') {
+		if (!empty($idCompany) && $idCompany !== 'x') {
 			$arrParam = array(
 				"table" => "param_company",
 				"order" => "id_company",
 				"column" => "id_company",
-				"id" => $data["idCompany"]
+				"id" => $idCompany
 			);
 			$data['information'] = $this->generalModel->get_basic_search($arrParam);
 		}
 
-		return view('App\Modules\Admin\Views\company_modal', $data);
+		return $this->response
+					->setContentType('text/html')
+					->setBody(view('App\Modules\Admin\Views\company_modal', $data));
 	}
 
 	/**
 	 * Update company
 	 * @since 15/12/2016
 	 * @author BMOTTAG
+	 * @review 28/03/2026 - new CI4 version
 	 */
 	public function save_company()
 	{
-		header('Content-Type: application/json');
-		$data = array();
+		$post = $this->request->getPost();
 
-		$idCompany = $this->request->getPost('hddId');
+		$idCompany = $post['hddId'] ?? null;
+		$msj = $idCompany 
+			? "You have updated a Company!!" 
+			: "You have added a new Company!!";
 
-		$msj = "You have added a new company!!";
-		if ($idCompany != '') {
-			$msj = "You have updated a company!!";
-		}
+		$data = [];
 
-		if ($idCompany = $this->adminModel->saveCompany()) {
-			$data["result"] = true;
-			$data["idRecord"] = $idCompany;
-
-			$this->session->set_flashdata('retornoExito', $msj);
+		if ($this->adminModel->saveCompany($post)) {
+			$data["status"] = "success";
+			session()->setFlashdata('retornoExito', $msj);
 		} else {
-			$data["result"] = "error";
-			$data["idRecord"] = "";
-
-			$this->session->set_flashdata('retornoError', '<strong>Error!!!</strong> Ask for help');
+			$data["status"] = "error";
+			session()->setFlashdata('retornoError', '<strong>Error!!!</strong> Ask for help');
 		}
 
-		echo json_encode($data);
+		return $this->response->setJSON($data);
 	}
 
 	/**

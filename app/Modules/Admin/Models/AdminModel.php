@@ -155,30 +155,25 @@ class AdminModel extends Model
 	 * Add/Edit COMPANY
 	 * @since 13/12/2016
 	 */
-	public function saveCompany()
+	public function saveCompany($post)
 	{
-		$idCompany = $this->request->getPost('hddId');
+		$idCompany = $post['hddId'] ?? null;
 
-		$data = array(
-			'company_name' => $this->request->getPost('company'),
-			'contact' => $this->request->getPost('contact'),
-			'movil_number' => $this->request->getPost('movilNumber'),
-			'email' => $this->request->getPost('email'),
-			'does_hauling' => $this->request->getPost('does_hauling')
-		);
+		$data = [
+			'company_name' => $post['company'] ?? null,
+			'contact' => $post['contact'] ?? null,
+			'movil_number' => $post['movilNumber'] ?? null,
+			'email' => $post['email'] ?? null,
+			'does_hauling' => $post['does_hauling'] ?? null
+		];
 
-		//revisar si es para adicionar o editar
-		if ($idCompany == '') {
-			$query = $this->db->insert('param_company', $data);
-			$idCompany = $this->db->insert_id();
+		$builder = $this->db->table('param_company');
+
+		if (empty($idCompany)) {
+			return $builder->insert($data);
 		} else {
-			$this->db->where('id_company', $idCompany);
-			$query = $this->db->update('param_company', $data);
-		}
-		if ($query) {
-			return $idCompany;
-		} else {
-			return false;
+			return $builder->where('id_company', $idCompany)
+						->update($data);
 		}
 	}
 
