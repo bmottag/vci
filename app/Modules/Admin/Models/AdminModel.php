@@ -186,27 +186,22 @@ class AdminModel extends Model
 	 * Add/Edit MATERIAL
 	 * @since 13/12/2016
 	 */
-	public function saveMaterial()
+	public function saveMaterial($post)
 	{
-		$idMaterial = $this->request->getPost('hddId');
+		$idMaterial = $post['hddId'] ?? null;
 
-		$data = array(
-			'material' => $this->request->getPost('material'),
-			'material_price' => $this->request->getPost('unit_price')
-		);
+		$data = [
+			'material' => $post['material'] ?? null,
+			'material_price' => $post['unit_price'] ?? null
+		];
 
-		//revisar si es para adicionar o editar
-		if ($idMaterial == '') {
-			$query = $this->db->insert('param_material_type', $data);
-			$idMaterial = $this->db->insert_id();
+		$builder = $this->db->table('param_material_type');
+
+		if (empty($idMaterial)) {
+			return $builder->insert($data);
 		} else {
-			$this->db->where('id_material', $idMaterial);
-			$query = $this->db->update('param_material_type', $data);
-		}
-		if ($query) {
-			return $idMaterial;
-		} else {
-			return false;
+			return $builder->where('id_material', $idMaterial)
+						->update($data);
 		}
 	}
 
@@ -250,19 +245,30 @@ class AdminModel extends Model
 
 	public function get_material_with_shop()
 	{
-		$this->db->select('P.*,
-						(SELECT GROUP_CONCAT("<b>",V.shop_name,"</b> ",V.shop_contact," - Email: ",V.shop_email," - Address: ",V.shop_address," - Mobile: ", V.mobile_number SEPARATOR "<br>") 
-						FROM material_shop E
-						JOIN param_shop V ON V.id_shop = E.fk_id_shop
- 						WHERE E.fk_id_material = P.id_material
- 						GROUP BY P.id_material) AS shops');
-		$query = $this->db->get('param_material_type P');
+		$builder = $this->db->table('param_material_type P');
 
-		if ($query->num_rows() > 0) {
-			return $query->result_array();
-		} else {
-			return false;
-		}
+		$builder->select('P.*,
+			(
+				SELECT GROUP_CONCAT(
+					"<b>", V.shop_name, "</b> ",
+					V.shop_contact,
+					" - Email: ", V.shop_email,
+					" - Address: ", V.shop_address,
+					" - Mobile: ", V.mobile_number
+					SEPARATOR "<br>"
+				)
+				FROM material_shop E
+				JOIN param_shop V ON V.id_shop = E.fk_id_shop
+				WHERE E.fk_id_material = P.id_material
+				GROUP BY E.fk_id_material
+			) AS shops
+		');
+
+		$query = $builder->get();
+
+		return $query->getNumRows() > 0 
+			? $query->getResultArray() 
+			: false;
 	}
 
 	/**

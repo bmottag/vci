@@ -175,68 +175,68 @@ class Admin extends BaseController
 	 * Material List
 	 * @since 13/12/2016
 	 * @author BMOTTAG
+	 * @review 28/03/2026 - new CI4 version
 	 */
 	public function material()
 	{
 		$data['info'] = $this->adminModel->get_material_with_shop();
-		$data["view"] = 'material';
-		$this->load->view("layout", $data);
+		return $this->render('App\Modules\Admin\Views\material', $data);
 	}
 
 	/**
 	 * Cargo modal - formulario material type
 	 * @since 13/12/2016
+	 * @review 28/03/2026 - new CI4 version
 	 */
 	public function cargarModalMaterial()
 	{
-		header("Content-Type: text/plain; charset=utf-8"); //Para evitar problemas de acentos
+		$data = [];
+		$data['information'] = null;
 
-		$data['information'] = FALSE;
-		$data["idMaterial"] = $this->request->getPost("idMaterial");
+		$idMaterial = $this->request->getPost("idMaterial");
+		$data["idMaterial"] = $idMaterial;
 
-		if ($data["idMaterial"] != 'x') {
+		if (!empty($idMaterial) && $idMaterial !== 'x') {
 			$arrParam = array(
 				"table" => "param_material_type",
 				"order" => "id_material",
 				"column" => "id_material",
-				"id" => $data["idMaterial"]
+				"id" => $idMaterial
 			);
 			$data['information'] = $this->generalModel->get_basic_search($arrParam);
 		}
 
-		return view('App\Modules\Admin\Views\material_modal', $data);
+		return $this->response
+					->setContentType('text/html')
+					->setBody(view('App\Modules\Admin\Views\material_modal', $data));
 	}
 
 	/**
 	 * Update material
 	 * @since 13/12/2016
 	 * @author BMOTTAG
+	 * @review 28/03/2026 - new CI4 version
 	 */
 	public function save_material()
 	{
-		header('Content-Type: application/json');
-		$data = array();
+		$post = $this->request->getPost();
 
-		$idMaterial = $this->request->getPost('hddId');
+		$idMaterial = $post['hddId'] ?? null;
+		$msj = $idMaterial 
+			? "You have updated a Material Type!!" 
+			: "You have added a new Material Type!!";
 
-		$msj = "You have added a new Material Type!!";
-		if ($idMaterial != '') {
-			$msj = "You have updated a Material Type!!";
-		}
+		$data = [];
 
-		if ($idMaterial = $this->adminModel->saveMaterial()) {
-			$data["result"] = true;
-			$data["idRecord"] = $idMaterial;
-
-			$this->session->set_flashdata('retornoExito', $msj);
+		if ($this->adminModel->saveMaterial($post)) {
+			$data["status"] = "success";
+			session()->setFlashdata('retornoExito', $msj);
 		} else {
-			$data["result"] = "error";
-			$data["idRecord"] = "";
-
-			$this->session->set_flashdata('retornoError', '<strong>Error!!!</strong> Ask for help');
+			$data["status"] = "error";
+			session()->setFlashdata('retornoError', '<strong>Error!!!</strong> Ask for help');
 		}
 
-		echo json_encode($data);
+		return $this->response->setJSON($data);
 	}
 
 	/**
@@ -1388,6 +1388,7 @@ class Admin extends BaseController
 	 * Guardar certificados
 	 * @since 14/1/2022
 	 * @author BMOTTAG
+	 * @review 28/03/2026 - new CI4 version
 	 */
 	public function save_certificate()
 	{

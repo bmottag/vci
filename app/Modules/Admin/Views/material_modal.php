@@ -1,4 +1,4 @@
-<script type="text/javascript" src="<?php echo base_url("assets/js/validate/admin/material.js"); ?>"></script>
+<script type="text/javascript" src="<?php echo base_url("assets/js/validate/admin/material.js?v=1.0.0"); ?>"></script>
 <div class="modal-header">
 	<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
 	<h4 class="modal-title" id="exampleModalLabel">Material Type 
