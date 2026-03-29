@@ -449,6 +449,7 @@ class Admin extends BaseController
 	 * job List
 	 * @since 15/12/2016
 	 * @author BMOTTAG
+	 * @review 28/03/2026 - new CI4 version
 	 */
 	public function job($state)
 	{
@@ -509,25 +510,26 @@ class Admin extends BaseController
 			}
 		} else {
 			$data['state'] = $state;
-
 			$arrParam['state'] = $state;
 			$data['info'] = $this->generalModel->get_job($arrParam);
-			$data['dashboardURL'] = $this->session->userdata("dashboardURL");
-			$data["view"] = 'job';
-			$this->load->view("layout_calendar", $data);
+			$data['dashboardURL'] = $this->session->get("dashboardURL");
+			return $this->renderTopOnly('App\Modules\Admin\Views\job', $data);
+
 		}
 	}
 
 	/**
 	 * Cargo modal - formulario job
 	 * @since 15/12/2016
+	 * @review 28/03/2026 - new CI4 version
 	 */
 	public function cargarModalJob()
 	{
-		header("Content-Type: text/plain; charset=utf-8"); //Para evitar problemas de acentos
+		$data = [];
+		$data['information'] = null;
 
-		$data['information'] = FALSE;
-		$data["idJob"] = $this->request->getPost("idJob");
+		$idJob = $this->request->getPost("idJob");
+		$data["idJob"] = $idJob;
 
 		//company list
 		$arrParam = array(
@@ -538,20 +540,76 @@ class Admin extends BaseController
 		);
 		$data['companyList'] = $this->generalModel->get_basic_search($arrParam);
 
-		if ($data["idJob"] != 'x') {
-			$arrParam['idJob'] = $data["idJob"];
+		if (!empty($idJob) && $idJob !== 'x') {
+			$arrParam['idJob'] = $idJob;
 			$data['information'] = $this->generalModel->get_job($arrParam);
 		}
 
-		return view('App\Modules\Admin\Views\job_modal', $data);
+		return $this->response
+					->setContentType('text/html')
+					->setBody(view('App\Modules\Admin\Views\job_modal', $data));
 	}
 
 	/**
 	 * Update job
 	 * @since 15/12/2016
 	 * @author BMOTTAG
+	 * @review 28/03/2026 - new CI4 version
 	 */
 	public function save_job()
+	{
+		$post = $this->request->getPost();
+
+		$id = $post['hddId'] ?? null;
+
+		$jobCode = trim($post['jobCode'] ?? '');
+		$jobName = trim($post['jobName'] ?? '');
+		$jobDescription = $jobCode . " " . $jobName;
+		$companyId = $post['company'] ?? null;
+
+		$msj = $id 
+			? "You have updated a Job!!" 
+			: "You have added a new Job!!";
+
+		// Verificar si ya existe el job_code
+		$arrParam = [
+			"idJob" => $id,
+			"column" => "job_code",
+			"value" => $jobCode
+		];
+
+		$result_job = $this->generalModel->jobCodeVerify($arrParam);
+
+		if ($result_job) {
+			return $this->response->setJSON([
+				"status" => "error",
+				"message" => "The Job Code already exists."
+			]);
+		}
+
+		if ($idJobSaved = $this->adminModel->saveJob($post)) {
+
+			//save info FOREMAN
+			$nameForeman = $this->request->getPost('foreman');
+			if ($nameForeman != '') {
+				$this->adminModel->save_foreman($idJobSaved, $post);
+			}
+
+			session()->setFlashdata('retornoExito', $msj);
+			return $this->response->setJSON([
+				"status" => "success"
+			]);
+		} else {
+			session()->setFlashdata('retornoError', '<strong>Error!!!</strong> Ask for help');
+			return $this->response->setJSON([
+				"status" => "error",
+				"message" => "Database error"
+			]);
+		}
+	}
+
+
+	public function save_job_borrar()
 	{
 		header('Content-Type: application/json');
 		$data = array();

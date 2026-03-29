@@ -889,5 +889,49 @@ class GeneralModel extends Model
 		return $query->getResultArray();
 	}
 
+	/**
+	 * Get JOBs 
+	 * @since 03/01/2025
+	 */
+	public function get_job($arrData)
+	{
+		$builder = $this->db->table('param_jobs J');
+		$builder->join('param_company C', 'C.id_company = J.fk_id_company', 'LEFT');
+		$builder->join('param_company_foreman F', 'F.fk_id_job = J.id_job', 'LEFT');
+		if (isset($arrData["idJob"])) {
+			$builder->where('J.id_job', $arrData["idJob"]);
+		}
+		if (isset($arrData["state"])) {
+			$builder->where('state', $arrData["state"]);
+		}
+		if (isset($arrData["withLIC"])) {
+			$builder->where('flag_upload_details', 1);
+		}
+		$builder->orderBy("J.job_description", "asc");
+		$query = $builder->get();
+
+		$result = $query->getResultArray();
+		return !empty($result) ? $result : false;
+	}
+
+	/**
+	 * Verificar si el job code ya existe en la base de datos
+	 * @author BMOTTAG
+	 * @since  30/12/2022
+	 */
+	public function jobCodeVerify($arrData)
+	{
+		$builder = $this->db->table('param_jobs');
+		if (isset($arrData["idJob"])) {
+			$builder->where('id_job !=', $arrData["idJob"]);
+		}
+
+		$builder->where($arrData["column"], $arrData["value"]);
+		$query = $builder->get();
+
+		$result = $query->getResultArray();
+		return !empty($result) ? true : false;
+	}
+
 
 }

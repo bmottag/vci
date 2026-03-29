@@ -4,7 +4,7 @@
 			var oID = $(this).attr("id");
 			$.ajax({
 				type: 'POST',
-				url: base_url + '/admin/cargarModalJob',
+				url: base_url + '/admin/cargar-modal-job',
 				data: {
 					'idJob': oID
 				},
@@ -55,8 +55,9 @@
 						<i class="fa fa-list fa-fw"></i> <b>PROJECTS</b>
 					</div>
 					<div>
-						<?php 
-							$userRol = $this->session->rol;
+						<?php
+							$session = session();
+							$userRol = $session->rol;
 							if($userRol == ID_ROL_SUPER_ADMIN){ 
 						?>
 							<a href="<?php echo base_url("admin/job/log"); ?>" class="btn btn-outline btn-primary btn-block" style="background-color: #5067f0; color: #ffffff;">
@@ -86,35 +87,30 @@
 						</button>
 					<?php } ?>
 					<br>
-					<?php
-					$retornoExito = $this->session->flashdata('retornoExito');
-					if ($retornoExito) {
-					?>
-						<div class="row">
-							<div class="col-lg-12">
-								<div class="alert alert-success ">
-									<span class="glyphicon glyphicon-ok" aria-hidden="true"></span>
-									<?php echo $retornoExito ?>
-								</div>
-							</div>
-						</div>
-					<?php
-					}
+    <?php
+    // Mensaje de éxito
+    if ($session->getFlashdata('retornoExito')): ?>
+        <div class="row">
+            <div class="col-lg-12">
+                <div class="alert alert-success">
+                    <span class="glyphicon glyphicon-ok" aria-hidden="true"></span>
+                    <?= $session->getFlashdata('retornoExito') ?>
+                </div>
+            </div>
+        </div>
+    <?php endif; ?>
 
-					$retornoError = $this->session->flashdata('retornoError');
-					if ($retornoError) {
-					?>
-						<div class="row">
-							<div class="col-lg-12">
-								<div class="alert alert-danger ">
-									<span class="glyphicon glyphicon-exclamation-sign" aria-hidden="true"></span>
-									<?php echo $retornoError ?>
-								</div>
-							</div>
-						</div>
-					<?php
-					}
-					?>
+    <!-- Mensaje de error -->
+    <?php if ($session->getFlashdata('retornoError')): ?>
+        <div class="row">
+            <div class="col-lg-12">
+                <div class="alert alert-danger">
+                    <span class="glyphicon glyphicon-exclamation-sign" aria-hidden="true"></span>
+                    <?= $session->getFlashdata('retornoError') ?>
+                </div>
+            </div>
+        </div>
+    <?php endif; ?>
 					<?php
 					if ($info) {
 					?>
@@ -122,7 +118,7 @@
 						<form name="jobs_state" id="jobs_state" method="post" action="<?php echo base_url("admin/jobs_state/$state"); ?>">
 
 							<?php 
-								$userRol = $this->session->rol;
+								$userRol = $session->rol;
 								if($userRol == ID_ROL_SUPER_ADMIN){ 
 							?>
 							<!--

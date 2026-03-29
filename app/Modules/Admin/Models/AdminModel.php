@@ -2,6 +2,7 @@
 namespace App\Modules\Admin\Models;
 
 use CodeIgniter\Model;
+use App\Models\GeneralModel;
 
 class AdminModel extends Model
 {
@@ -57,67 +58,86 @@ class AdminModel extends Model
 	 * Add/Edit JOB
 	 * @since 10/11/2016
 	 */
-	public function saveJob()
+	public function saveJob($post)
 	{
-		$this->load->library('logger');
-		$idJob = $this->request->getPost('hddId');
-		$jobCode = trim($this->security->xss_clean($this->request->getPost('jobCode')));
-		$jobName = trim($this->security->xss_clean($this->request->getPost('jobName')));
-		$data = array(
+		$logger = service('appLogger');
+
+		$id = $post['hddId'] ?? null;
+
+		$jobCode = trim($post['jobCode'] ?? '');
+		$jobName = trim($post['jobName'] ?? '');
+		$notes   = $post['notes'] ?? null;
+
+		$data = [
 			'job_code' => $jobCode,
 			'job_name' => $jobName,
 			'job_description' => $jobCode . " " . $jobName,
-			'fk_id_company' => $this->request->getPost('company'),
-			'markup' => $this->request->getPost('markup'),
-			'profit' => $this->request->getPost('profit'),
-			'state' => $this->request->getPost('stateJob'),
-			'notes' => addslashes($this->security->xss_clean($this->request->getPost('notes'))),
-			'planning_message' => $this->request->getPost('planning_message'),
-		);
+			'fk_id_company' => $post['company'] ?? null,
+			'markup' => $post['markup'] ?? null,
+			'profit' => $post['profit'] ?? null,
+			'state' => $post['stateJob'] ?? null,
+			'notes' => $notes,
+			'planning_message' => $post['planning_message'] ?? null
+		];
 
-		//revisar si es para adicionar o editar
-		if ($idJob == '') {
-			$data['created_by'] = $this->session->userdata("id");
-			$query = $this->db->insert('param_jobs', $data);
-			$idJob = $this->db->insert_id();
+		$builder = $this->db->table('param_jobs');
 
-			$log['old'] = null;
-			$log['new'] = json_encode($data);
+		$userId = session()->get("id");
+		if (empty($id)) {
 
-			$this->logger
-				->user($this->session->userdata("id")) //;//Set UserID, who created this  Action ->user($this->session->userdata("id"))
-				->type('job_code') //Entry type like, Post, Page, Entry
-				->id($idJob) //Entry ID
-				->token('insert') //Token identify Action
-				->comment(json_encode($log))
-				->log(); //Add Database Entry
+			$data['created_by'] = $userId;
+			$builder->insert($data);
+			$idJob = $this->db->insertID();
+
+			// LOGGER
+			$logger
+				->user($userId)
+				->type('job_code')
+				->id($idJob)
+				->token('insert')
+				->comment(json_encode([
+					'old' => null,
+					'new' => $data
+				]))
+				->log();
+			//END LOGGER
+
+			return $idJob;
 		} else {
-			$arrParam = array(
+
+			$data['updated_by'] = $userId;
+
+			$generalModel = new GeneralModel();
+
+			$arrParam = [
 				"table" => "param_jobs",
 				"order" => "id_job",
 				"column" => "id_job",
-				"id" => $idJob
-			);
-			$log['old'] = $this->general_model->get_basic_search($arrParam);
-			$log['new'] = json_encode($data);
+				"id" => $id
+			];
 
-			$data['updated_by'] = $this->session->userdata("id");
-			$this->db->where('id_job', $idJob);
-			$query = $this->db->update('param_jobs', $data);
+			$oldData = $generalModel->get_basic_search($arrParam);
+			$oldData = $oldData[0] ?? [];
 
-			$this->logger
-				->user($this->session->userdata("id")) //$this->session->userdata("id");//Set UserID, who created this  Action
-				->type('job_code') //Entry type like, Post, Page, Entry
-				->id($idJob) //Entry ID
-				->token('update') //Token identify Action
-				->comment(json_encode($log))
-				->log(); //Add Database Entry
-		}
+			$builder->where('id_job', $id)->update($data);
 
-		if ($query) {
-			return $idJob;
-		} else {
-			return false;
+			$changes = array_diff_assoc($data, $oldData);
+
+			if (!empty($changes)) {
+
+				$logger
+					->user($userId)
+					->type('job_code')
+					->id($id)
+					->token('update')
+					->comment(json_encode([
+						'old' => $oldData,
+						'new' => $changes
+					]))
+					->log();
+			}
+
+			return $id;
 		}
 	}
 
@@ -875,29 +895,25 @@ class AdminModel extends Model
 	 * Informacion del foreman
 	 * @since 13/01/2025
 	 */
-	public function save_foreman($idJob)
+	public function save_foreman($idJob, $post)
 	{
-		$idForeman = $this->request->getPost('hddIdForeman');
+		$id = $post['hddIdForeman'] ?? null;
 
-		$data = array(
-			'foreman_name' => $this->request->getPost('foreman'),
-			'foreman_movil_number' => $this->request->getPost('movilNumber'),
-			'foreman_email' => $this->request->getPost('email')
-		);
+		$data = [
+			'foreman_name' => $post['foreman'] ?? null,
+			'foreman_movil_number' => $post['movilNumber'] ?? null,
+			'foreman_email' => $post['email'] ?? null
+		];
 
-		//revisar si es para adicionar o editar
-		if ($idForeman == '') {
+		$builder = $this->db->table('param_company_foreman');
+
+		if (empty($id)) {
 			$data['fk_id_job'] = $idJob;
-			$data['fk_id_param_company'] = $this->request->getPost('company');
-			$query = $this->db->insert('param_company_foreman', $data);
+			$data['fk_id_param_company'] = $post['company'];
+			return $builder->insert($data);
 		} else {
-			$this->db->where('id_company_foreman', $idForeman);
-			$query = $this->db->update('param_company_foreman', $data);
-		}
-		if ($query) {
-			return true;
-		} else {
-			return false;
+			return $builder->where('id_company_foreman', $id)
+						->update($data);
 		}
 	}
 

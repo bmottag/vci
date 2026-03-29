@@ -1,4 +1,4 @@
-<script type="text/javascript" src="<?php echo base_url("assets/js/validate/admin/job_v3.js"); ?>"></script>
+<script type="text/javascript" src="<?php echo base_url("assets/js/validate/admin/job.js?v=1.0.0"); ?>"></script>
 <style>
     .select2-container .select2-dropdown .select2-results__option {
         text-align: left;
