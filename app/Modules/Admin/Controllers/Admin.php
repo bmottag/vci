@@ -828,98 +828,95 @@ class Admin extends BaseController
 	/**
 	 * photo
 	 */
-	public function photo($idVehicle, $error = '')
+	public function photo(int $idVehicle)
 	{
 		if (empty($idVehicle)) {
-			show_error('ERROR!!! - You are in the wrong place.');
+			throw new \CodeIgniter\Exceptions\PageNotFoundException('Invalid vehicle');
 		}
 
-		//busco datos del vehiculo
-		$arrParam = array(
+		$arrParam = [
 			"idVehicle" => $idVehicle
-		);
-		$data['vehicleInfo'] = $this->adminModel->get_vehicle_info_by($arrParam);
+		];
+		$vehicleInfo = $this->adminModel->get_vehicle_info_by($arrParam);
 
-		$data['error'] = $error; //se usa para mostrar los errores al cargar la imagen 
-		$data['idVehicle'] = $idVehicle;
-		$data["view"] = 'vehicle_photo';
-		$this->load->view("layout", $data);
+		if (empty($vehicleInfo)) {
+			throw new \CodeIgniter\Exceptions\PageNotFoundException('Vehicle not found');
+		}
+
+		$data = [
+			'vehicleInfo' => $vehicleInfo,
+			'idVehicle'   => $idVehicle,
+			'error'       => session()->getFlashdata('error')
+		];
+
+		return $this->render('App\Modules\Admin\Views\vehicle_photo', $data);
 	}
 
 	/**
 	 * FUNCIÓN PARA SUBIR LA IMAGEN 
 	 * @param int vistaRegreso -> para saber si es de VCI o RENTADA
 	 */
-	function do_upload($type, $vistaRegreso)
+	public function do_upload($type, $vistaRegreso = null)
 	{
-		$config['upload_path'] = './images/vehicle/';
-		$config['overwrite'] = true;
-		$config['allowed_types'] = 'gif|jpg|png|jpeg';
-		$config['max_size'] = '3000';
-		$config['max_width'] = '2024';
-		$config['max_height'] = '2008';
-		$idVehicle = $this->request->getPost("hddId");
-		$config['file_name'] = $idVehicle . "_" . $type;
+		$idVehicle = $this->request->getPost('hddId');
 
-		$this->load->library('upload', $config);
-		//SI LA IMAGEN FALLA AL SUBIR MOSTRAMOS EL ERROR EN LA VISTA 
-		if (!$this->upload->do_upload()) {
-			$error = $this->upload->display_errors();
-			$this->$type($idVehicle, $error);
-		} else {
-			$file_info = $this->upload->data(); //subimos la imagen
+		$file = $this->request->getFile('userfile');
 
-			//USAMOS LA FUNCIÓN create_thumbnail Y LE PASAMOS EL NOMBRE DE LA IMAGEN,
-			//ASÍ YA TENEMOS LA IMAGEN REDIMENSIONADA
-			if ($type == "photo") {
-				$this->_create_thumbnail($file_info['file_name']);
-				$data = array('upload_data' => $this->upload->data());
-				$imagen = $file_info['file_name'];
-				$path = "images/vehicle/thumbs/" . $imagen;
-			} elseif ($type == "qr_code") {
-				$path = "images/vehicle/" . $file_info['file_name'];
-			}
-
-			//actualizamos el campo photo
-			$arrParam = array(
-				"table" => "param_vehicle",
-				"primaryKey" => "id_vehicle",
-				"id" => $idVehicle,
-				"column" => $type,
-				"value" => $path
-			);
-
-			$data['linkBack'] = "admin/vehicle/" . $vistaRegreso;
-			$data['titulo'] = "<i class='fa fa-automobile'></i>VEHICLE";
-
-			if ($this->generalModel->updateRecord($arrParam)) {
-				$data['clase'] = "alert-success";
-				$data['msj'] = "Good job, you have uploaded the photo.";
-			} else {
-				$data['clase'] = "alert-danger";
-				$data['msj'] = "Ask for help.";
-			}
-
-			$data["view"] = 'template/answer';
-			$this->load->view("layout", $data);
-			//redirect('employee/photo');
+		if (!$file->isValid()) {
+			session()->setFlashdata('error', $file->getErrorString());
+			return redirect()->to(base_url('admin/' . ($vistaRegreso ?? 'vehicle')));
 		}
+
+		// Generar nombre seguro
+		$newName = $idVehicle . '_' . $type . '.' . $file->getExtension();
+
+		// Ruta absoluta
+		$path = FCPATH . 'images/vehicle/';
+
+		// Mover archivo
+		$file->move($path, $newName, true); // true = overwrite
+
+		// Crear thumbnail si es photo
+		if ($type === 'photo') {
+			//$this->_create_thumbnail($newName);
+			$pathDb = 'images/vehicle/thumbs/' . $newName;
+		} else {
+			$pathDb = 'images/vehicle/' . $newName;
+		}
+
+		// Actualizar DB
+		$arrParam = [
+			"table" => "param_vehicle",
+			"primaryKey" => "id_vehicle",
+			"id" => $idVehicle,
+			"column" => $type,
+			"value" => $pathDb
+		];
+
+		if ($this->generalModel->updateRecord($arrParam)) {
+			session()->setFlashdata('success', 'Good job, you have uploaded the photo.');
+		} else {
+			session()->setFlashdata('error', 'Ask for help.');
+		}
+
+		// Redirigir a la vista de regreso
+		return redirect()->to(base_url('admin/photo/' . ($idVehicle ?? 'vehicle')));
 	}
 
-	//FUNCIÓN PARA CREAR LA MINIATURA A LA MEDIDA QUE LE DIGAMOS
-	function _create_thumbnail($filename)
+	//FUNCIÓN PARA CREAR LA MINIATURA
+	private function _create_thumbnail(string $filename)
 	{
-		$config['image_library'] = 'gd2';
-		//CARPETA EN LA QUE ESTÁ LA IMAGEN A REDIMENSIONAR
-		$config['source_image'] = 'images/vehicle/' . $filename;
-		$config['create_thumb'] = TRUE;
-		$config['maintain_ratio'] = TRUE;
-		//CARPETA EN LA QUE GUARDAMOS LA MINIATURA
-		$config['new_image'] = 'images/vehicle/thumbs/';
-		$config['width'] = 150;
-		$config['height'] = 150;
-		$this->load->library('image_lib', $config);
-		$this->image_lib->resize();
+		// Ruta absoluta de la imagen original
+		$sourcePath = FCPATH . 'images/vehicle/' . $filename;
+
+		// Ruta donde se guardará el thumbnail
+		$thumbPath = FCPATH . 'images/vehicle/thumbs/' . $filename;
+
+		// Crear thumbnail usando el servicio de imágenes de CI4
+		\Config\Services::image()
+			->withFile($sourcePath)
+			->fit(150, 150, 'center') // recorta y mantiene proporción
+			->save($thumbPath);
 	}
 
 	/**

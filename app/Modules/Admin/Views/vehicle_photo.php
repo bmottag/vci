@@ -22,109 +22,113 @@
 					<i class="fa fa-automobile"></i> VEHICLE PHOTO
 				</div>
 				<div class="panel-body">
-					<form  name="form" id="form" class="form-horizontal" method="post" enctype="multipart/form-data" action="<?php echo base_url("admin/do_upload/photo/" . $vehicleInfo[0]["type_level_1"]); ?>">
-					<input type="hidden" id="hddId" name="hddId" value="<?php echo $idVehicle; ?>"/>
-					
-					<table width="100%" class="table table-striped table-bordered table-hover" id="dataTables">
-						<thead>
-							<tr>
-								<th>Make</th>
-								<th>Model</th>
-								<th>Description</th>
-								<th>Unit Number</th>
-								<th>VIN Number</th>
-								<th>Hours/Kilometers</th>
-							</tr>
-						</thead>
-						<tbody>							
-						<?php
-								echo "<tr>";
-								echo "<td class='text-center'>" . $vehicleInfo[0]["make"] . "</td>";
-								echo "<td class='text-center'>" . $vehicleInfo[0]["model"] . "</td>";
-								echo "<td>" . $vehicleInfo[0]["description"] . "</td>";
-								echo "<td class='text-center'>" . $vehicleInfo[0]["unit_number"] . "</td>";
-								echo "<td class='text-center'>" . $vehicleInfo[0]["vin_number"] . "</td>";
-								echo "<td class='text-right'><strong>" . number_format($vehicleInfo[0]["hours"]) . "</strong></td>";
-								echo "</tr>";
-						?>
-						</tbody>
-					</table>
+					<?php $vehicle = $vehicleInfo[0] ?? null; ?>
 
-					<?php if($vehicleInfo[0]["photo"]){ ?>
-						<div class="form-group">
-							<div class="row" align="center">
-								<div style="width:70%;" align="center">
-									<img src="<?php echo base_url($vehicleInfo[0]["photo"]); ?>" class="img-rounded" alt="Vehicle Photo" />
-								</div>
+					<form 
+						method="post" 
+						enctype="multipart/form-data"
+						action="<?= base_url('admin/do_upload/photo/' . ($vehicle['type_level_1'] ?? 0)) ?>"
+					>
+
+						<?= csrf_field() ?>
+
+						<input type="hidden" name="hddId" value="<?= esc($idVehicle) ?>"/>
+
+						<table class="table table-striped table-bordered table-hover">
+							<thead>
+								<tr>
+									<th>Make</th>
+									<th>Model</th>
+									<th>Description</th>
+									<th>Unit Number</th>
+									<th>VIN Number</th>
+									<th>Hours/Kilometers</th>
+								</tr>
+							</thead>
+							<tbody>
+								<?php if ($vehicle): ?>
+									<tr>
+										<td class="text-center"><?= esc($vehicle['make']) ?></td>
+										<td class="text-center"><?= esc($vehicle['model']) ?></td>
+										<td><?= esc($vehicle['description']) ?></td>
+										<td class="text-center"><?= esc($vehicle['unit_number']) ?></td>
+										<td class="text-center"><?= esc($vehicle['vin_number']) ?></td>
+										<td class="text-right">
+											<strong><?= number_format($vehicle['hours'] ?? 0) ?></strong>
+										</td>
+									</tr>
+								<?php endif; ?>
+							</tbody>
+						</table>
+
+						<?php if (!empty($vehicle['photo'])): ?>
+							<div class="text-center mb-3">
+								<img src="<?= base_url($vehicle['photo']) ?>" 
+									class="img-rounded" 
+									alt="Vehicle Photo" 
+									style="max-width:70%;">
 							</div>
-						</div>
-					<?php } ?>
-					
-						<div class="col-lg-12">				
-							<div class="panel panel-info">
-								<div class="panel-heading">
-									<b>Upload Equipment Photo</b>
-								</div>
-								<div class="panel-body">
-									<div class="form-group">
-										<label class="col-sm-4 control-label" for="hddTask">Photo</label>
-										<div class="col-sm-5">
-											 <input type="file" name="userfile" />
-										</div>
-									</div>
-						
-									<div class="form-group">
-										<div class="row" align="center">
-											<div style="width:50%;" align="center">
-												<input type="submit" id="btnSubmit" name="btnSubmit" value="Submit" class="btn btn-primary"/>
-											</div>
-										</div>
-									</div>
-						
+						<?php endif; ?>
 
-									<?php if($error){ ?>
-									<div class="alert alert-danger">
-										<?php 
-											echo "<strong>Error :</strong>";
-											pr($error); 
-										?><!--$ERROR MUESTRA LOS ERRORES QUE PUEDAN HABER AL SUBIR LA IMAGEN-->
-									</div>
-									<?php } ?>
-									
-									
-									<div class="alert alert-danger">
-											<strong>Note :</strong><br>
-											Allowed format: gif - jpg - png<br>
-											Maximum size: 3000 KB<br>
-											Maximum width: 2024 pixels<br>
-											Maximum height: 2008 pixels<br>
-									</div>
+						<div class="panel panel-info">
+							<div class="panel-heading">
+								<b>Upload Equipment Photo</b>
+							</div>
 
+							<div class="panel-body">
+
+								<div class="form-group">
+									<label class="col-sm-4 control-label">Photo</label>
+									<div class="col-sm-5">
+										<input type="file" 
+											name="userfile" 
+											accept="image/png, image/jpeg, image/gif"
+											required />
+									</div>
 								</div>
+
+								<div class="text-center mt-3">
+									<input type="submit" 
+										value="Submit" 
+										class="btn btn-primary"/>
+								</div>
+
+								<?php if (!empty($error)): ?>
+									<div class="alert alert-danger mt-3">
+										<strong>Error:</strong><br>
+										<?= is_array($error) ? implode('<br>', $error) : esc($error) ?>
+									</div>
+								<?php endif; ?>
+								<br>
+								<div class="form-group">
+									<div class="alert alert-danger">
+										<strong>Note:</strong><br>
+										Allowed format: gif - jpg - png<br>
+										Maximum size: 3000 KB<br>
+										Maximum width: 2024 pixels<br>
+										Maximum height: 2008 pixels<br>
+									</div>
+								</div>
+
 							</div>
 						</div>
 
 					</form>
 				</div>
-				<!-- /.panel-body -->
 			</div>
-			<!-- /.panel -->
 		</div>
-		<!-- /.col-lg-12 -->
 	</div>
-	<!-- /.row -->
 </div>
-<!-- /#page-wrapper -->
 
-    <!-- Tables -->
-    <script>
-    $(document).ready(function() {
-        $('#dataTables').DataTable({
-            responsive: true,
-			 "ordering": false,
-			 paging: false,
-			"searching": false,
-			"info": false
-        });
-    });
-    </script>
+<!-- Tables -->
+<script>
+$(document).ready(function() {
+	$('#dataTables').DataTable({
+		responsive: true,
+			"ordering": false,
+			paging: false,
+		"searching": false,
+		"info": false
+	});
+});
+</script>
