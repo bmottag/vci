@@ -50,7 +50,7 @@ $( document ).ready( function () {
 						}
 
 						if (data.status === "success") {
-							window.location.href = base_url + "admin/employee_type";
+							window.location.href = base_url + "admin/employeeType";
 						} else {
 							alert('Error. Reload the web page.');
 							$("#div_error").show();

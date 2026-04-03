@@ -1070,74 +1070,73 @@ class Admin extends BaseController
 	 * Hazard Activity List
 	 * @since 5/2/2017
 	 * @author BMOTTAG
+	 * @review 03/04/2026 - new CI4 version
 	 */
 	public function hazardActivity()
 	{
-		$arrParam = array(
+		$arrParam = [
 			"table" => "param_hazard_activity",
 			"order" => "hazard_activity",
 			"id" => "x"
-		);
+		];
 		$data['info'] = $this->generalModel->get_basic_search($arrParam);
-
-		$data["view"] = 'hazard_activity';
-		$this->load->view("layout", $data);
+		return $this->render('App\Modules\Admin\Views\hazard_activity', $data);
 	}
 
 	/**
 	 * Cargo modal - formulario hazard Activity
 	 * @since 5/2/2017
+	 * @review 03/04/2026 - new CI4 version
 	 */
 	public function cargarModalHazardActivity()
 	{
-		header("Content-Type: text/plain; charset=utf-8"); //Para evitar problemas de acentos
+		$data = [];
+		$data['information'] = null;
 
-		$data['information'] = FALSE;
-		$data["idHazardActivity"] = $this->request->getPost("idHazardActivity");
+		$idHazardActivity = $this->request->getPost("idHazardActivity");
+		$data["idHazardActivity"] = $idHazardActivity;
 
-		if ($data["idHazardActivity"] != 'x') {
+		if (!empty($idHazardActivity) && $idHazardActivity !== 'x') {
 			$arrParam = array(
 				"table" => "param_hazard_activity",
 				"order" => "id_hazard_activity",
 				"column" => "id_hazard_activity",
-				"id" => $data["idHazardActivity"]
+				"id" => $idHazardActivity
 			);
 			$data['information'] = $this->generalModel->get_basic_search($arrParam);
 		}
 
-		return view('App\Modules\Admin\Views\hazard_activity_modal', $data);
+		return $this->response
+					->setContentType('text/html')
+					->setBody(view('App\Modules\Admin\Views\hazard_activity_modal', $data));
 	}
 
 	/**
 	 * Update Hazard Activity
 	 * @since 5/2/2017
 	 * @author BMOTTAG
+	 * @review 03/04/2026 - new CI4 version
 	 */
 	public function save_hazard_activity()
 	{
-		header('Content-Type: application/json');
-		$data = array();
+		$post = $this->request->getPost();
 
-		$idHazardActivity = $this->request->getPost('hddId');
+		$id = $post['hddId'] ?? null;
+		$msj = $id 
+			? "You have updated an Activity!!" 
+			: "You have added a new Activity!!";
 
-		$msj = "You have added a new Activity!!";
-		if ($idHazardActivity != '') {
-			$msj = "You have updated an Activity!!";
-		}
+		$data = [];
 
-		if ($idHazardActivity = $this->adminModel->saveHazardActivity()) {
-			$data["result"] = true;
-			$data["idRecord"] = $idHazardActivity;
-
-			$this->session->set_flashdata('retornoExito', $msj);
+		if ($this->adminModel->saveHazardActivity($post)) {
+			$data["status"] = "success";
+			session()->setFlashdata('retornoExito', $msj);
 		} else {
-			$data["result"] = "error";
-			$data["idRecord"] = "";
-
-			$this->session->set_flashdata('retornoError', '<strong>Error!!!</strong> Ask for help');
+			$data["status"] = "error";
+			session()->setFlashdata('retornoError', '<strong>Error!!!</strong> Ask for help');
 		}
 
-		echo json_encode($data);
+		return $this->response->setJSON($data);
 	}
 
 	/**

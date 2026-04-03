@@ -477,26 +477,21 @@ class AdminModel extends Model
 	 * Add/Edit HAZARD ACTIVITY
 	 * @since 5/2/2017
 	 */
-	public function saveHazardActivity()
+	public function saveHazardActivity($post)
 	{
-		$idHazardActivity = $this->request->getPost('hddId');
+		$id = $post['hddId'] ?? null;
 
-		$data = array(
-			'hazard_activity' => $this->request->getPost('hazardActivity')
-		);
+		$data = [
+			'hazard_activity' => $post['hazardActivity'] ?? null
+		];
 
-		//revisar si es para adicionar o editar
-		if ($idHazardActivity == '') {
-			$query = $this->db->insert('param_hazard_activity', $data);
-			$idHazardActivity = $this->db->insert_id();
+		$builder = $this->db->table('param_hazard_activity');
+
+		if (empty($id)) {
+			return $builder->insert($data);
 		} else {
-			$this->db->where('id_hazard_activity', $idHazardActivity);
-			$query = $this->db->update('param_hazard_activity', $data);
-		}
-		if ($query) {
-			return $idHazardActivity;
-		} else {
-			return false;
+			return $builder->where('id_hazard_activity', $id)
+						->update($data);
 		}
 	}
 
