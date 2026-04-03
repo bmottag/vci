@@ -753,27 +753,27 @@ class AdminModel extends Model
 	 * Add/Edit Attachment
 	 * @since 23/06/2023
 	 */
-	public function saveAttachment()
+	public function saveAttachment(array $post)
 	{
-		$idAttachment = $this->request->getPost('hddId');
+		$id = $post['hddId'] ?? null;
 
-		$data = array(
-			'attachment_number' => $this->request->getPost('attachment_number'),
-			'attachment_description' => addslashes($this->security->xss_clean($this->request->getPost('attachment_description')))
-		);
+		$data = [
+			'attachment_number' => $post['attachment_number'] ?? null,
+			'attachment_description' => $post['attachment_description'] ?? null,
+		];
 
-		//revisar si es para adicionar o editar
-		if ($idAttachment == '') {
-			$query = $this->db->insert('param_attachments', $data);
-			$idAttachment = $this->db->insert_id();
-		} else {
-			$this->db->where('id_attachment', $idAttachment);
-			$query = $this->db->update('param_attachments', $data);
-		}
-		if ($query) {
-			return $idAttachment;
-		} else {
+		$builder = $this->db->table('param_attachments');
+
+		if (empty($id)) {
+			if ($builder->insert($data)) {
+				return $this->db->insertID();
+			}
 			return false;
+		} else {
+			$update = $builder->where('id_attachment', $id)
+							->update($data);
+
+			return $update ? $id : false;
 		}
 	}
 
@@ -781,56 +781,75 @@ class AdminModel extends Model
 	 * Attachments list
 	 * @since 23/6/2023
 	 */
-	public function get_attachments($arrDatos)
+	public function get_attachments(array $arrDatos = []): array
 	{
-		$this->db->select('P.*, S.*, 
-						(SELECT GROUP_CONCAT(V.unit_number, " -----> ", V.description SEPARATOR "<br>") 
-						FROM param_attachments_equipment A 
-						JOIN param_vehicle V ON V.id_vehicle = A.fk_id_equipment 
-						WHERE A.fk_id_attachment = P.id_attachment 
-						GROUP BY P.id_attachment) AS equipments');
-		$this->db->join('param_status S', 'S.status_slug = P.attachment_status', 'INNER');
-		if (array_key_exists("idAttachment", $arrDatos)) {
-			$this->db->where('id_attachment', $arrDatos["idAttachment"]);
-		}
-		if (array_key_exists("status", $arrDatos)) {
-			$this->db->where('attachment_status', $arrDatos["status"]);
-		}
-		$this->db->orderBy('attachment_number', 'asc');
-		$query = $this->db->get('param_attachments P');
+		$builder = $this->db->table('param_attachments P');
 
-		if ($query->num_rows() > 0) {
-			return $query->result_array();
-		} else {
-			return false;
+		$builder->select("
+			P.*, 
+			S.*, 
+			(
+				SELECT GROUP_CONCAT(
+					CONCAT(V.unit_number, ' -----> ', V.description) 
+					SEPARATOR '<br>'
+				)
+				FROM param_attachments_equipment A
+				JOIN param_vehicle V ON V.id_vehicle = A.fk_id_equipment
+				WHERE A.fk_id_attachment = P.id_attachment
+				GROUP BY A.fk_id_attachment
+			) AS equipments
+		");
+
+		$builder->join('param_status S', 'S.status_slug = P.attachment_status', 'inner');
+
+		// Filtros
+		if (!empty($arrDatos["idAttachment"])) {
+			$builder->where('P.id_attachment', $arrDatos["idAttachment"]);
 		}
+
+		if (!empty($arrDatos["status"])) {
+			$builder->where('P.attachment_status', $arrDatos["status"]);
+		}
+
+		$builder->orderBy('P.attachment_number', 'ASC');
+
+		$query = $builder->get();
+
+		return $query->getNumRows() > 0
+			? $query->getResultArray()
+			: [];
 	}
 
 	/**
 	 * Add Equipment to Attachements
 	 * @since 26/06/2023
 	 */
-	public function add_equipment_attachement($idAttachment)
+	public function add_equipment_attachement(int $idAttachment, array $equipment = []): bool
 	{
-		//delete Attachements 
-		$this->db->delete('param_attachments_equipment', array('fk_id_attachment' => $idAttachment));
-
-		$query = 1;
-		if ($equipment = $this->request->getPost('equipment')) {
-			$tot = count($equipment);
-			for ($i = 0; $i < $tot; $i++) {
-				$data = array(
-					'fk_id_attachment' => $idAttachment,
-					'fk_id_equipment' => $equipment[$i]
-				);
-				$query = $this->db->insert('param_attachments_equipment', $data);
-			}
-		}
-		if ($query) {
-			return true;
-		} else {
+		if (empty($idAttachment)) {
 			return false;
 		}
+
+		// 🔥 DELETE relaciones anteriores
+		$this->db->table('param_attachments_equipment')
+				->where('fk_id_attachment', $idAttachment)
+				->delete();
+
+		// 🔥 INSERT nuevas relaciones si hay equipment
+		if (!empty($equipment)) {
+			$dataBatch = [];
+			foreach ($equipment as $idEquipment) {
+				$dataBatch[] = [
+					'fk_id_attachment' => $idAttachment,
+					'fk_id_equipment' => (int)$idEquipment
+				];
+			}
+
+			return (bool) $this->db->table('param_attachments_equipment')
+								->insertBatch($dataBatch);
+		}
+
+		return true;
 	}
 
 	/**
@@ -839,23 +858,18 @@ class AdminModel extends Model
 	 */
 	public function get_attachments_equipment($arrDatos)
 	{
+		$builder = $this->db->table('param_attachments_equipment P');
 		if (array_key_exists("relation", $arrDatos)) {
-			$this->db->select('P.fk_id_equipment');
+			$builder->select('P.fk_id_equipment');
 		} else {
-			$this->db->select('P.*, T.inspection_type');
-			$this->db->join('param_vehicle V', 'V.id_vehicle = P.fk_id_equipment', 'INNER');
-			$this->db->join('param_vehicle_type_2 T', 'T.id_type_2 = V.type_level_2', 'INNER');
+			$builder->select('P.*, T.inspection_type');
+			$builder->join('param_vehicle V', 'V.id_vehicle = P.fk_id_equipment', 'INNER');
+			$builder->join('param_vehicle_type_2 T', 'T.id_type_2 = V.type_level_2', 'INNER');
 		}
 		if (array_key_exists("idAttachment", $arrDatos)) {
-			$this->db->where('fk_id_attachment', $arrDatos["idAttachment"]);
+			$builder->where('fk_id_attachment', $arrDatos["idAttachment"]);
 		}
-		$query = $this->db->get('param_attachments_equipment P');
-
-		if ($query->num_rows() > 0) {
-			return $query->result_array();
-		} else {
-			return false;
-		}
+		return $builder->get()->getResultArray();
 	}
 
 	/**

@@ -1955,146 +1955,166 @@ class Admin extends BaseController
 	 * Attachments List
 	 * @since 23/06/2023
 	 * @author BMOTTAG
+	 * @review 03/04/2026 - new CI4 version
 	 */
 	public function attachments($status)
 	{
 		$data['status'] = $status;
-		$arrParam = array(
+		$arrParam = [
 			"status" => $status
-		);
+		];
 		$data['info'] = $this->adminModel->get_attachments($arrParam);
-
-		$data["view"] = 'attachment';
-		$this->load->view("layout", $data);
+		return $this->render('App\Modules\Admin\Views\attachment', $data);
 	}
 
 	/**
 	 * Cargo modal - formulario company
 	 * @since 23/06/2023
+	 * @review 03/04/2026 - new CI4 version
 	 */
 	public function cargarModalAttachments()
 	{
-		header("Content-Type: text/plain; charset=utf-8"); //Para evitar problemas de acentos
+		$data = [];
+		$data['information'] = null;
+		$data['informationAttachments'] = null;
 
-		$data['information'] = FALSE;
-		$data['informationAttachments'] = FALSE;
-		$data["idAttachment"] = $this->request->getPost("idAttachment");
+		$idAttachment = $this->request->getPost("idAttachment");
+		$data["idAttachment"] = $idAttachment;
 
 		$data['equipmentType'] = $this->generalModel->equipmentByTypeList();
 
-		if ($data["idAttachment"] != 'x') {
-			$arrParam = array(
+		if (!empty($idAttachment) && $idAttachment !== 'x') {
+			$arrParam = [
 				"idAttachment" => $data["idAttachment"]
-			);
+			];
 			$data['information'] = $this->adminModel->get_attachments($arrParam);
 			$data['informationAttachments'] = $this->adminModel->get_attachments_equipment($arrParam);
 		}
 
-		return view('App\Modules\Admin\Views\attachment_modal', $data);
+		return $this->response
+					->setContentType('text/html')
+					->setBody(view('App\Modules\Admin\Views\attachment_modal', $data));
 	}
 
 	/**
 	 * Update Attachments
 	 * @since 23/06/2023
 	 * @author BMOTTAG
+	 * @review 03/04/2026 - new CI4 version
 	 */
 	public function save_attachments()
 	{
-		header('Content-Type: application/json');
-		$data = array();
+		$post = $this->request->getPost();
 
-		$idAttachment = $this->request->getPost('hddId');
+		$id = $post['hddId'] ?? null;
+		$msj = $id 
+			? "You have updated an Attachment!!" 
+			: "You have added a new Attachment!!";
 
-		$msj = "You have added a new Attachment!!";
-		if ($idAttachment != '') {
-			$msj = "You have updated an Attachment!!";
-		}
+		$data = [];
 
-		if ($idAttachment = $this->adminModel->saveAttachment()) {
-			$this->adminModel->add_equipment_attachement($idAttachment);
-			$data["result"] = true;
-			$this->session->set_flashdata('retornoExito', $msj);
+		if ($idAttachment = $this->adminModel->saveAttachment($post)) {
+			$equipment = $this->request->getPost('equipment'); 
+			$this->adminModel->add_equipment_attachement($idAttachment, $equipment);
+			$data["status"] = "success";
+			session()->setFlashdata('retornoExito', $msj);
 		} else {
-			$data["result"] = "error";
-			$this->session->set_flashdata('retornoError', '<strong>Error!!!</strong> Ask for help');
+			$data["status"] = "error";
+			session()->setFlashdata('retornoError', '<strong>Error!!!</strong> Ask for help');
 		}
 
-		echo json_encode($data);
+		return $this->response->setJSON($data);
 	}
 
 	/**
 	 * Update Attachments
 	 * @since 23/06/2023
 	 * @author BMOTTAG
+	 * @review 03/04/2026 - new CI4 version
 	 */
 	public function update_status()
 	{
-		header('Content-Type: application/json');
+		$post = $this->request->getPost();
 
-		$data = array();
-
-		$idAttachment = $this->request->getPost('attachmentId');
-		$status = $this->request->getPost('status');
+		$idAttachment = $post['attachmentId'] ?? null;
+		$status = $post['status'] ?? null;
 		$value = $status == "active" ? "inactive" : "active";
 
-		$arrParam = array(
+		$arrParam = [
 			"table" => "param_attachments",
 			"primaryKey" => "id_attachment",
 			"id" => $idAttachment,
 			"column" => "attachment_status",
 			"value" => $value
-		);
+		];
+
 		if ($this->generalModel->updateRecord($arrParam)) {
-			$data["result"] = true;
-			$this->session->set_flashdata('retornoExito', "You have changed the Attachment status!!");
+			$data["status"] = "success";
+			session()->setFlashdata('retornoExito', "You have changed the Attachment status!!");
 		} else {
-			$data["result"] = "error";
-			$this->session->set_flashdata('retornoError', '<strong>Error!!!</strong> Ask for help');
+			$data["status"] = "error";
+			session()->setFlashdata('retornoError', '<strong>Error!!!</strong> Ask for help');
 		}
 
-		echo json_encode($data);
+		return $this->response->setJSON($data);
 	}
 
 	/**
 	 * Equipment list
 	 * @since 24/6/2023
 	 * @author BMOTTAG
+	 * @review 03/04/2026 - new CI4 version
 	 */
 	public function equipmentList()
 	{
-		header("Content-Type: text/plain; charset=utf-8"); //Para evitar problemas de acentos
+		$type = $this->request->getPost('type');
+		$idAttachment = $this->request->getPost('idAttachment');
 
-		$arrParam = array(
-			"vehicleType" => $this->request->getPost('type'),
+		// Lista de equipos
+		$lista = $this->generalModel->get_vehicle_by([
+			"vehicleType" => $type,
 			"vehicleState" => 1
-		);
-		$lista = $this->generalModel->get_vehicle_by($arrParam);
+		]);
 
-		if ($this->request->getPost('idAttachment') != "") {
-			$arrParam = array(
-				"idAttachment" => $this->request->getPost('idAttachment'),
-				"relation" => true
-			);
-			$arrayInformationAttachments = $this->adminModel->get_attachments_equipment($arrParam);
+		// Inicializar siempre
+		$arrayInformationAttachments = [];
+
+		if (!empty($idAttachment)) {
+			$arrayInformationAttachments = $this->adminModel
+				->get_attachments_equipment([
+					"idAttachment" => $idAttachment,
+					"relation" => true
+				]);
 		}
 
-		echo "<option value=''>Select...</option>";
-		if ($lista) {
-			foreach ($lista as $fila) {
-				$s = "";
-				if ($arrayInformationAttachments) {
-					$found = false;
-					foreach ($arrayInformationAttachments as $idVehicle) {
-						if (in_array($fila['id_vehicle'], $idVehicle)) {
-							$found = true;
-							break;
-						}
-					}
-					$s = $found ? "selected" : "";
-				}
-				echo "<option value='" . $fila["id_vehicle"] . "'" . $s . ">" . $fila["unit_number"] . " -----> " . $fila["description"]  . "</option>";
+		// Convertir a array plano de IDs (MEJOR PERFORMANCE)
+		$selectedIds = [];
+
+		if (!empty($arrayInformationAttachments)) {
+			foreach ($arrayInformationAttachments as $row) {
+				$selectedIds[] = $row['fk_id_equipment']; // 🔥 clave correcta
 			}
 		}
+
+		// Construir HTML
+		$html = "<option value=''>Select...</option>";
+
+		if (!empty($lista)) {
+			foreach ($lista as $fila) {
+
+				$selected = in_array($fila['id_vehicle'], $selectedIds)
+					? " selected"
+					: "";
+
+				$html .= "<option value='{$fila["id_vehicle"]}'{$selected}>"
+					. $fila["unit_number"] . " -----> " . $fila["description"]
+					. "</option>";
+			}
+		}
+
+		return $this->response
+			->setContentType('text/html')
+			->setBody($html);
 	}
 
 	/**

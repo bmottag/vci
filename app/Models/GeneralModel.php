@@ -998,5 +998,20 @@ class GeneralModel extends Model
 		return $builder->get()->getResultArray();
 	}
 
+	/**
+	 * Equipment by Type
+	 * @author BMOTTAG
+	 * @since  24/06/2023
+	 */
+	public function equipmentByTypeList(): array
+	{
+		$builder = $this->db->table('param_vehicle_type_2');
+
+		$builder->distinct();
+		$builder->select('inspection_type, header_inspection_type');
+
+		return $builder->get()->getResultArray();
+	}
+
 
 }
