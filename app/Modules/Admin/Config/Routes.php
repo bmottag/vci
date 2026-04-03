@@ -15,6 +15,7 @@ $routes->group('admin', ['namespace' => 'App\Modules\Admin\Controllers'], functi
     $routes->get('photo/(:any)', 'Admin::photo/$1');
     $routes->get('employeeType', 'Admin::employeeType');
     $routes->get('hazardActivity', 'Admin::hazardActivity');
+    $routes->get('notifications', 'Admin::notifications');
 
     $routes->post('cargar-modal-employee', 'Admin::cargarModalEmployee');
     $routes->post('save_employee', 'Admin::save_employee');
@@ -40,6 +41,8 @@ $routes->group('admin', ['namespace' => 'App\Modules\Admin\Controllers'], functi
     $routes->post('save_employee_type', 'Admin::save_employee_type');
     $routes->post('cargar-modal-hazard-activity', 'Admin::cargarModalHazardActivity');
     $routes->post('save_hazard_activity', 'Admin::save_hazard_activity');
+    $routes->post('cargar-modal-notification', 'Admin::cargarModalNotification');
+    $routes->post('save_notifications', 'Admin::save_notifications');
 
     $routes->match(['GET', 'POST'], 'certificate', 'Admin::certificate');
 });

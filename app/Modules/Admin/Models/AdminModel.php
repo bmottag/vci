@@ -692,30 +692,26 @@ class AdminModel extends Model
 	 * @since 23/01/2022
 	 * @REVIEW 22/12/2022
 	 */
-	public function saveNotification()
+	public function saveNotification($post)
 	{
-		$smsTo = ($this->request->getPost('smsTo')) ? json_encode($this->request->getPost('smsTo')) : null;
-		$emailTo = ($this->request->getPost('emailTo')) ? json_encode($this->request->getPost('emailTo')) : null;
+		$id = $post['hddId'] ?? null;
 
-		$idNotificationAccess = $this->request->getPost('hddId');
+		$smsTo = ($post['smsTo']) ? json_encode($post['smsTo']) : null;
+		$emailTo = ($post['emailTo']) ? json_encode($post['emailTo']) : null;
 
-		$data = array(
+		$data = [
 			'fk_id_user_email' => $emailTo,
 			'fk_id_user_sms' => $smsTo
-		);
+		];
 
-		//revisar si es para adicionar o editar
-		if ($idNotificationAccess == '') {
-			$data['fk_id_notification'] = $this->request->getPost('notification');
-			$query = $this->db->insert('notifications_access', $data);
+		$builder = $this->db->table('notifications_access');
+
+		if (empty($id)) {
+			$data['fk_id_notification'] = $post['notification'] ;
+			return $builder->insert($data);
 		} else {
-			$this->db->where('id_notification_access', $idNotificationAccess);
-			$query = $this->db->update('notifications_access', $data);
-		}
-		if ($query) {
-			return true;
-		} else {
-			return false;
+			return $builder->where('id_notification_access', $id)
+						->update($data);
 		}
 	}
 
@@ -925,5 +921,22 @@ class AdminModel extends Model
 		} else {
 			return false;
 		}
+	}
+
+	public function getAvailableNotifications()
+	{
+		$builder = $this->db->table('notifications n');
+
+		$builder->select('n.*');
+		$builder->join(
+			'notifications_access na',
+			'n.id_notification = na.fk_id_notification',
+			'left'
+		);
+
+		$builder->where('na.fk_id_notification IS NULL');
+		$builder->where('n.setup', 1);
+
+		return $builder->get()->getResultArray();
 	}
 }

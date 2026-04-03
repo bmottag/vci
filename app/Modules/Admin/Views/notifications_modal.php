@@ -1,4 +1,4 @@
-<script type="text/javascript" src="<?php echo base_url("assets/js/validate/admin/notifications.js"); ?>"></script>
+<script type="text/javascript" src="<?php echo base_url("assets/js/validate/admin/notifications.js?v=2.0"); ?>"></script>
 
 <div class="modal-header">
 	<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
@@ -37,7 +37,7 @@
 		</div>
 
 		<div class="row">
-			<div class="col-md-12">
+			<div class="col-sm-12">
 				<div class="form-group text-left">
 					<label class="control-label" for="emailTo">Send Email to:</label><br>
 					<select multiple="multiple" name="emailTo[]" id="emailTo" class="form-control js-example-basic-multiple">

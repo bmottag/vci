@@ -933,5 +933,70 @@ class GeneralModel extends Model
 		return !empty($result) ? true : false;
 	}
 
+	public function get_notifications_access_view(array $arrData = []): array
+	{
+		$builder = $this->db->table('notifications_access A');
+
+		$builder->select("
+			A.*, 
+			N.notification, 
+			N.description, 
+			GROUP_CONCAT(DISTINCT CONCAT(U.first_name, ' ', U.last_name) ORDER BY U.id_user ASC SEPARATOR ', ') AS name_email, 
+			GROUP_CONCAT(DISTINCT U.email ORDER BY U.id_user ASC SEPARATOR ', ') AS email, 
+			GROUP_CONCAT(DISTINCT CONCAT(X.first_name, ' ', X.last_name) ORDER BY X.id_user ASC SEPARATOR ', ') AS name_sms, 
+			GROUP_CONCAT(DISTINCT X.movil ORDER BY X.id_user ASC SEPARATOR ', ') AS movil
+		");
+
+		$builder->join('notifications N', 'N.id_notification = A.fk_id_notification', 'inner');
+
+		// JOIN con JSON (se deja como string porque Query Builder no lo parsea)
+		$builder->join(
+			'user U',
+			"JSON_CONTAINS(A.fk_id_user_email, JSON_QUOTE(CAST(U.id_user AS CHAR)))",
+			'left'
+		);
+
+		$builder->join(
+			'user X',
+			"JSON_CONTAINS(A.fk_id_user_sms, JSON_QUOTE(CAST(X.id_user AS CHAR)))",
+			'left'
+		);
+
+		// Filtros
+		if (!empty($arrData["idNotificationAccess"])) {
+			$builder->where('A.id_notification_access', $arrData["idNotificationAccess"]);
+		}
+
+		if (!empty($arrData["idNotification"])) {
+			$builder->where('A.fk_id_notification', $arrData["idNotification"]);
+		}
+
+		$builder->groupBy('A.id_notification_access');
+		$builder->orderBy('N.notification', 'ASC');
+
+		$query = $builder->get();
+
+		return $query->getNumRows() > 0
+			? $query->getResultArray()
+			: [];
+	}
+
+	public function getAvailableNotifications()
+	{
+		$builder = $this->db->table('notifications n');
+
+		$builder->select('n.*');
+		$builder->join(
+			'notifications_access na',
+			'n.id_notification = na.fk_id_notification',
+			'left'
+		);
+
+		$builder->where('na.fk_id_notification IS NULL');
+		$builder->where('n.setup', 1);
+
+		return $builder->get()->getResultArray();
+	}
+
 
 }

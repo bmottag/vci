@@ -1203,31 +1203,6 @@ class Admin extends BaseController
 	}
 
 	/**
-	 * Cambio de estado de los proyectos
-	 * @since 12/1/2019
-	 * @author BMOTTAG
-	 */
-	public function jobs_state($state)
-	{
-		if (empty($this->request->getPost('job'))) {
-			$data["result"] = "error";
-			$this->session->set_flashdata('retornoError', '<strong>Error!!!</strong> If you want to change the state of a single JOB CODE, you must do it through the form. This functionality is intended for all JOB CODES.');
-			redirect(base_url('admin/job/1'), 'refresh');
-			return; 
-		}
-
-		if ($this->adminModel->updateJobsState($state)) {
-			$data["result"] = true;
-			$this->session->set_flashdata('retornoExito', "You have updated the state!!");
-		} else {
-			$data["result"] = "error";
-			$this->session->set_flashdata('retornoError', '<strong>Error!!!</strong> Ask for help');
-		}
-
-		redirect(base_url('admin/job/1'), 'refresh');
-	}
-
-	/**
 	 * Cargo modal- formulario OIL CHANGE
 	 * @since 13/1/2019
 	 */
@@ -1252,81 +1227,6 @@ class Admin extends BaseController
 
 		$view = "App\Modules\Admin/Views/" . $vista;
 		return view($view, $data);
-	}
-
-	/**
-	 * Stock List
-	 * @since 17/3/2020
-	 * @author BMOTTAG
-	 */
-	public function stock()
-	{
-		//se filtra por company_type para que solo se pueda editar los subcontratistas
-		$arrParam = array(
-			"table" => "stock",
-			"order" => "stock_description",
-			"id" => "x"
-		);
-		$data['info'] = $this->generalModel->get_basic_search($arrParam);
-
-		$data["view"] = 'stock';
-		$this->load->view("layout", $data);
-	}
-
-	/**
-	 * Cargo modal - formulario stock
-	 * @since 17/3/2020
-	 */
-	public function cargarModalStock()
-	{
-		header("Content-Type: text/plain; charset=utf-8"); //Para evitar problemas de acentos
-
-		$data['information'] = FALSE;
-		$data["idStock"] = $this->request->getPost("idStock");
-
-		if ($data["idStock"] != 'x') {
-			$arrParam = array(
-				"table" => "stock",
-				"order" => "id_stock",
-				"column" => "id_stock",
-				"id" => $data["idStock"]
-			);
-			$data['information'] = $this->generalModel->get_basic_search($arrParam);
-		}
-
-		return view('App\Modules\Admin\Views\stock_modal', $data);
-	}
-
-	/**
-	 * Update stock
-	 * @since 17/3/2020
-	 * @author BMOTTAG
-	 */
-	public function save_stock()
-	{
-		header('Content-Type: application/json');
-		$data = array();
-
-		$idStock = $this->request->getPost('hddId');
-
-		$msj = "You have added a new stock!!";
-		if ($idStock != '') {
-			$msj = "You have updated a stock!!";
-		}
-
-		if ($idStock = $this->adminModel->saveStock()) {
-			$data["result"] = true;
-			$data["idRecord"] = $idStock;
-
-			$this->session->set_flashdata('retornoExito', $msj);
-		} else {
-			$data["result"] = "error";
-			$data["idRecord"] = "";
-
-			$this->session->set_flashdata('retornoError', '<strong>Error!!!</strong> Ask for help');
-		}
-
-		echo json_encode($data);
 	}
 
 	/**
@@ -1633,52 +1533,43 @@ class Admin extends BaseController
 	 * @since 23/01/2022
 	 * @review 22/12/2022
 	 * @author BMOTTAG
+	 * @review 03/04/2026 - new CI4 version
 	 */
 	public function notifications()
 	{
-		$arrParam = array();
+		$arrParam = [];
 		$data['info'] = $this->generalModel->get_notifications_access_view($arrParam);
-
-		$data["view"] = 'notifications';
-		$this->load->view("layout", $data);
+		return $this->render('App\Modules\Admin\Views\notifications', $data);
 	}
 
 	/**
 	 * Cargo modal - formulario configuracion de alertas
 	 * @since 23/01/2022
+	 * @review 03/04/2026 - new CI4 version
 	 */
 	public function cargarModalNotification()
 	{
-		header("Content-Type: text/plain; charset=utf-8"); //Para evitar problemas de acentos
+		$idNotificationAccess = $this->request->getPost('idNotificationAccess') ?? null;
 
-		$data['information'] = FALSE;
-		$data["idNotificationAccess"] = $this->request->getPost("idNotificationAccess");
+		$data = [
+			'information' => null,
+			'idNotificationAccess' => $idNotificationAccess,
+			'workersList' => $this->generalModel->get_user([
+				"state" => 1
+			]),
+			'notificationsList' => $this->generalModel->getAvailableNotifications()
+		];
 
-		$arrParam = array("state" => 1);
-		$data['workersList'] = $this->generalModel->get_user($arrParam);
-
-		$sql = "SELECT n.*
-			FROM notifications n
-			LEFT JOIN notifications_access na ON n.id_notification = na.fk_id_notification
-			WHERE na.fk_id_notification IS NULL AND n.setup = 1;
-			";
-
-		$query = $this->db->query($sql);
-
-		if ($query->num_rows() >= 1) {
-			$data['notificationsList'] =  $query->result_array();
-		} else {
-			$data['notificationsList'] = [];
+		if (!empty($idNotificationAccess) && $idNotificationAccess !== 'x') {
+			$data['information'] = $this->generalModel
+				->get_notifications_access_view([
+					"idNotificationAccess" => $idNotificationAccess
+				]);
 		}
 
-		if ($data["idNotificationAccess"] != 'x') {
-			$arrParam = array(
-				"idNotificationAccess" => $data["idNotificationAccess"]
-			);
-			$data['information'] = $this->generalModel->get_notifications_access_view($arrParam);
-		}
-
-		return view('App\Modules\Admin\Views\notifications_modal', $data);
+		return $this->response
+			->setContentType('text/html')
+			->setBody(view('App\Modules\Admin\Views\notifications_modal', $data));
 	}
 
 	/**
@@ -1686,28 +1577,28 @@ class Admin extends BaseController
 	 * @since 23/01/2022
 	 * @review 22/12/2022
 	 * @author BMOTTAG
+	 * @review 03/04/2026 - new CI4 version
 	 */
 	public function save_notifications()
 	{
-		header('Content-Type: application/json');
-		$data = array();
+		$post = $this->request->getPost();
 
-		$idNotificationAccess = $this->request->getPost('hddId');
+		$id = $post['hddId'] ?? null;
+		$msj = $id 
+			? "You have updated a Notification Access!!" 
+			: "You have added a new Notification Access!!";
 
-		$msj = "You have added a new Notification Access!!";
-		if ($idNotificationAccess != '') {
-			$msj = "You have updated the Notification Access!!";
-		}
+		$data = [];
 
-		if ($this->adminModel->saveNotification()) {
-			$data["result"] = true;
-			$this->session->set_flashdata('retornoExito', $msj);
+		if ($this->adminModel->saveNotification($post)) {
+			$data["status"] = "success";
+			session()->setFlashdata('retornoExito', $msj);
 		} else {
-			$data["result"] = "error";
-			$this->session->set_flashdata('retornoError', '<strong>Error!!!</strong> Ask for help');
+			$data["status"] = "error";
+			session()->setFlashdata('retornoError', '<strong>Error!!!</strong> Ask for help');
 		}
 
-		echo json_encode($data);
+		return $this->response->setJSON($data);
 	}
 
 	/**
