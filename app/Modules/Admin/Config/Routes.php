@@ -11,6 +11,7 @@ $routes->group('admin', ['namespace' => 'App\Modules\Admin\Controllers'], functi
     $routes->get('company', 'Admin::company');
     $routes->get('hazard', 'Admin::hazard');
     $routes->get('job/(:any)', 'Admin::job/$1');
+    $routes->get('vehicle/(:any)', 'Admin::vehicle/$1');
 
     $routes->post('cargar-modal-employee', 'Admin::cargarModalEmployee');
     $routes->post('save_employee', 'Admin::save_employee');
@@ -29,6 +30,8 @@ $routes->group('admin', ['namespace' => 'App\Modules\Admin\Controllers'], functi
     $routes->post('save_hazard', 'Admin::save_hazard');
     $routes->post('cargar-modal-job', 'Admin::cargarModalJob');
     $routes->post('save_job', 'Admin::save_job');
+    $routes->post('cargar-modal-vehicle', 'Admin::cargarModalVehicle');
+    $routes->post('save_vehicle', 'Admin::save_vehicle');
 
     $routes->match(['GET', 'POST'], 'certificate', 'Admin::certificate');
 });

@@ -7,7 +7,7 @@ $(function(){
 			var oID = $(this).attr("id");
             $.ajax ({
                 type: 'POST',
-				url: base_url + 'admin/cargarModalVehicle',
+				url: base_url + 'admin/cargar-modal-vehicle',
                 data: {'idVehicle': oID},
                 cache: false,
                 success: function (data) {
@@ -29,8 +29,9 @@ $(function(){
 				
 <?php
 	//DESHABILITAR EDICION
+	$session = session();
 	$deshabilitar = 'disabled';
-	$userRol = $this->session->rol;
+	$userRol = $session->rol;
 	
 	if($userRol == ID_ROL_SUPER_ADMIN || $userRol == ID_ROL_SAFETY){
 		$deshabilitar = '';
@@ -79,35 +80,30 @@ $(function(){
 							<span class="glyphicon glyphicon-plus" aria-hidden="true"></span> Add a Vehicle
 					</button><br>
 				<?php } ?>
-<?php
-$retornoExito = $this->session->flashdata('retornoExito');
-if ($retornoExito) {
-    ?>
-    <div class="row">
-		<div class="col-lg-12">	
-			<div class="alert alert-success ">
-				<span class="glyphicon glyphicon-ok" aria-hidden="true"></span>
-				<?php echo $retornoExito ?>		
-			</div>
-		</div>
-	</div>
     <?php
-}
+    // Mensaje de éxito
+    if ($session->getFlashdata('retornoExito')): ?>
+        <div class="row">
+            <div class="col-lg-12">
+                <div class="alert alert-success">
+                    <span class="glyphicon glyphicon-ok" aria-hidden="true"></span>
+                    <?= $session->getFlashdata('retornoExito') ?>
+                </div>
+            </div>
+        </div>
+    <?php endif; ?>
 
-$retornoError = $this->session->flashdata('retornoError');
-if ($retornoError) {
-    ?>
-    <div class="row">
-		<div class="col-lg-12">	
-			<div class="alert alert-danger ">
-				<span class="glyphicon glyphicon-exclamation-sign" aria-hidden="true"></span>
-				<?php echo $retornoError ?>
-			</div>
-		</div>
-	</div>
-    <?php
-}
-?>
+    <!-- Mensaje de error -->
+    <?php if ($session->getFlashdata('retornoError')): ?>
+        <div class="row">
+            <div class="col-lg-12">
+                <div class="alert alert-danger">
+                    <span class="glyphicon glyphicon-exclamation-sign" aria-hidden="true"></span>
+                    <?= $session->getFlashdata('retornoError') ?>
+                </div>
+            </div>
+        </div>
+    <?php endif; ?>
 				<?php
 					if($info){
 						

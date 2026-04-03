@@ -719,38 +719,41 @@ class Admin extends BaseController
 	 * @since 15/12/2016
 	 * @review 5/5/2017
 	 * @author BMOTTAG
+	 * @review 03/04/2026 - new CI4 version
 	 */
 	public function vehicle($companyType, $vehicleType = 1, $vehicleState = 1)
 	{
+		$data = [];
+
 		$data['companyType'] = $companyType;
 		$data['vehicleType'] = $vehicleType;
 		$data['vehicleState'] = $vehicleState;
 		$data['title'] = $companyType == 1 ? "VCI" : "RENTALS";
 
-		$arrParam = array(
+		$arrParam = [
 			"companyType" => $companyType,
 			"vehicleState" => $vehicleState
-		);
-		//si es estado en 1 entonces envio el tipo de vehiculo
+		];
+
 		if ($vehicleState == 1) {
 			$arrParam['vehicleType'] = $vehicleType;
 		}
 
-		$data['info'] = $this->adminModel->get_vehicle_info_by($arrParam); //vehicle list
-		$data["view"] = 'vehicle';
-		$this->load->view("layout", $data);
+		$data['info'] = $this->adminModel->get_vehicle_info_by($arrParam);
+		return $this->render('App\Modules\Admin\Views\vehicle', $data);
 	}
 
 	/**
 	 * Cargo modal - formulario vehicle
 	 * @since 15/12/2016
-	 * @review 27/12/2016
+	 * @review 03/04/2026 - new CI4 version
+	 * 
 	 */
 	public function cargarModalVehicle()
 	{
-		header("Content-Type: text/plain; charset=utf-8"); //Para evitar problemas de acentos
+		$data = [];
+		$data['information'] = null;
 
-		$data['information'] = FALSE;
 		$idVehicle = $this->request->getPost("idVehicle");
 		//como se coloca un ID diferente para que no entre en conflicto con los otros modales, toca sacar el ID
 		$porciones = explode("-", $idVehicle);
@@ -758,34 +761,33 @@ class Admin extends BaseController
 		$data["companyType"] = $porciones[0];
 		$data["idVehicle"] = $porciones[1];
 
-		$arrParam = array(
+		$arrParam = [
 			"table" => "param_company",
 			"order" => "company_name",
 			"column" => "company_type",
 			"id" => 2
-		);
+		];
 		$data['company'] = $this->generalModel->get_basic_search($arrParam); //company list
 
 		//buscar la lista de tipo de vehiculo
-		$arrParam = array(
+		$arrParam = [
 			"table" => "param_vehicle_type_2",
 			"order" => "type_2",
 			"column" => "show_vehicle",
 			"id" => 1
-		);
+		];
 		$data['vehicleType'] = $this->generalModel->get_basic_search($arrParam); //vehicleType list
 
 		if ($data["idVehicle"] != 'x') {
-			$arrParam = array(
-				"table" => "param_vehicle",
-				"order" => "id_vehicle",
-				"column" => "id_vehicle",
-				"id" => $data["idVehicle"]
-			);
-			$data['information'] = $this->generalModel->get_basic_search($arrParam);
+			$arrParam = [
+				"idVehicle" => $data["idVehicle"]
+			];
+			$data['information'] = $this->adminModel->get_vehicle_info_by($arrParam);
 		}
 
-		return view('App\Modules\Admin\Views\vehicle_modal', $data);
+		return $this->response
+					->setContentType('text/html')
+					->setBody(view('App\Modules\Admin\Views\vehicle_modal', $data));
 	}
 
 	/**
@@ -793,77 +795,34 @@ class Admin extends BaseController
 	 * @since 15/12/2016
 	 * @review 27/12/2016
 	 * @author BMOTTAG
+	 * @review 03/04/2026 - new CI4 version
 	 */
 	public function save_vehicle()
 	{
-		header('Content-Type: application/json');
-		$data = array();
+		$post = $this->request->getPost();
 
-		$idVehicle = $this->request->getPost('hddId');
-		$idCompany = $this->request->getPost('company');
+		$id = $post['hddId'] ?? null;
+		$idCompany = $post['company'] ?? null;
+		$data = [];
 		$data["compannyType"] = $idCompany == 1 ? 1 : 2; //1:VCI; 2:Subcontractor
 
-		$pass = $this->generaPass(); //clave para colocarle al codigo QR
+		$msj = $id 
+			? "You have updated a Vehicle!!" 
+			: "You have added a new Vehicle!!";
 
-		$msj = "You have added a new vehicle!!";
-		$flag = true;
-		if ($idVehicle != '') {
-			$msj = "You have updated a vehicle!!";
-			$flag = false;
-		}
-
-		if ($idVehicle = $this->adminModel->saveVehicle($pass)) {
-
-			if ($flag) { //si es un registro nuevo entonces guardo el historial de cambio de aceite
-				$state = 0; //primer registro
-				$this->adminModel->saveVehicleNextOilChange($idVehicle, $state);
-
-				//si es un registro nuevo genero el codigo QR y subo la imagen
-				//INCIO - genero imagen con la libreria y la subo 
-				$this->load->library('ciqrcode');
-
-				$valorQRcode = base_url("login/index/" . $idVehicle . $pass);
-				$rutaImagen = "images/vehicle/" . $idVehicle . "_qr_code.png";
-
-				$params['data'] = $valorQRcode;
-				$params['level'] = 'H';
-				$params['size'] = 10;
-				$params['savename'] = FCPATH . $rutaImagen;
-
-				$this->ciqrcode->generate($params);
-				//FIN - genero imagen con la libreria y la subo
+		if ($idVehicleSaved = $this->adminModel->saveVehicle($post)) {
+			if (!$id) { //si es un registro nuevo entonces guardo el historial de cambio de aceite
+				$status = 0; //primer registro
+				$this->adminModel->saveVehicleNextOilChange($idVehicleSaved, $status, $post);
 			}
-
-			$data["result"] = true;
-			$this->session->set_flashdata('retornoExito', $msj);
+			$data["status"] = "success";
+			session()->setFlashdata('retornoExito', $msj);
 		} else {
-			$data["result"] = "error";
-			$this->session->set_flashdata('retornoError', '<strong>Error!!!</strong> Ask for help');
+			$data["status"] = "error";
+			session()->setFlashdata('retornoError', '<strong>Error!!!</strong> Ask for help');
 		}
-		echo json_encode($data);
-	}
 
-	public function generaPass()
-	{
-		//Se define una cadena de caractares. Te recomiendo que uses esta.
-		$cadena = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890";
-		//Obtenemos la longitud de la cadena de caracteres
-		$longitudCadena = strlen($cadena);
-
-		//Se define la variable que va a contener la contraseña
-		$pass = "";
-		//Se define la longitud de la contraseña, en mi caso 10, pero puedes poner la longitud que quieras
-		$longitudPass = 50;
-
-		//Creamos la contraseña
-		for ($i = 1; $i <= $longitudPass; $i++) {
-			//Definimos numero aleatorio entre 0 y la longitud de la cadena de caracteres-1
-			$pos = rand(0, $longitudCadena - 1);
-
-			//Vamos formando la contraseña en cada iteraccion del bucle, añadiendo a la cadena $pass la letra correspondiente a la posicion $pos en la cadena de caracteres definida.
-			$pass .= substr($cadena, $pos, 1);
-		}
-		return $pass;
+		return $this->response->setJSON($data);
 	}
 
 	/**

@@ -286,44 +286,41 @@ class AdminModel extends Model
 	 * @since 15/12/2016
 	 * @review 27/12/2016
 	 */
-	public function saveVehicle($pass)
+	public function saveVehicle($post)
 	{
-		$idVehicle = $this->request->getPost('hddId');
+		$id = $post['hddId'] ?? null;
 
-		$data = array(
-			'fk_id_company' => $this->request->getPost('company'),
-			'type_level_1' => $this->request->getPost('type1'),
-			'type_level_2' => $this->request->getPost('type2'),
-			'make' => $this->request->getPost('make'),
-			'model' => $this->request->getPost('model'),
-			'manufacturer_date' => $this->request->getPost('manufacturer'),
-			'description' => $this->request->getPost('description'),
-			'unit_number' => $this->request->getPost('unitNumber'),
-			'vin_number' => $this->request->getPost('vinNumber'),
-			'state' => $this->request->getPost('state'),
-			'hours' => $this->request->getPost('hours')
-		);
+		$data = [
+			'fk_id_company' => $post['company'] ?? null,
+			'type_level_1' => $post['type1'] ?? null,
+			'type_level_2' => $post['type2'] ?? null,
+			'make' => $post['make'] ?? null,
+			'model' => $post['model'] ?? null,
+			'manufacturer_date' => $post['manufacturer'] ?? null,
+			'description' => $post['description'] ?? null,
+			'unit_number' => $post['unitNumber'] ?? null,
+			'vin_number' => $post['vinNumber'] ?? null,
+			'state' => $post['state'] ?? null,
+			'hours' => $post['hours'] ?? null
+		];
 
-		//revisar si es para adicionar o editar
-		if ($idVehicle == '') {
-			$query = $this->db->insert('param_vehicle', $data);
-			$idVehicle = $this->db->insert_id();
+		$builder = $this->db->table('param_vehicle');
 
-			//actualizo la url del codigo QR
-			$path = $idVehicle . $pass;
-			$rutaQRcode = "images/vehicle/" . $idVehicle . "_qr_code.png";
+		if (empty($id)) {
+			$builder->insert($data);
+			$idVehicle = $this->db->insertID();
+			// generar token seguro
+			$token = bin2hex(random_bytes(25));
 
-			//actualizo campo con el path encriptado
-			$sql = "UPDATE param_vehicle SET encryption = '$path',qr_code = '$rutaQRcode'  WHERE id_vehicle = $idVehicle";
-			$query = $this->db->query($sql);
-		} else {
-			$this->db->where('id_vehicle', $idVehicle);
-			$query = $this->db->update('param_vehicle', $data);
-		}
-		if ($query) {
+			$builder->where('id_vehicle', $idVehicle)
+					->update([
+						'encryption' => $idVehicle . $token
+					]);
 			return $idVehicle;
 		} else {
-			return false;
+			$builder->where('id_vehicle', $id)
+						->update($data);
+			return $id;
 		}
 	}
 
@@ -340,7 +337,7 @@ class AdminModel extends Model
 		$this->db->join('param_vehicle_type_2 T', 'T.id_type_2 = A.type_level_2', 'INNER');
 		$this->db->where('C.company_type', $companyType);
 
-		$this->db->order_by('C.id_company, A.unit_number', 'asc');
+		$this->db->orderBy('C.id_company, A.unit_number', 'asc');
 		$query = $this->db->get('param_vehicle A');
 
 		if ($query->num_rows() > 0) {
@@ -358,36 +355,34 @@ class AdminModel extends Model
 	 */
 	public function get_vehicle_info_by($arrData)
 	{
-		$this->db->select();
-		$this->db->join('param_company C', 'C.id_company = A.fk_id_company', 'INNER');
-		$this->db->join('param_vehicle_type_2 T', 'T.id_type_2 = A.type_level_2', 'INNER');
+		$builder = $this->db->table('param_vehicle A');
+		$builder->select();
+		$builder->join('param_company C', 'C.id_company = A.fk_id_company', 'INNER');
+		$builder->join('param_vehicle_type_2 T', 'T.id_type_2 = A.type_level_2', 'INNER');
 
-		if (array_key_exists("companyType", $arrData)) {
-			$this->db->where('C.company_type', $arrData["companyType"]);
+		if (isset($arrData["companyType"])) {
+			$builder->where('C.company_type', $arrData["companyType"]);
 
 			//si es de VCI entonces filtrar por tipo de inspeccion de lo contrario no se hace el filtro
 			if ($arrData["companyType"] == 1) {
-				if (array_key_exists("vehicleType", $arrData)) {
-					$this->db->where('T.inspection_type', $arrData["vehicleType"]);
+				if (isset($arrData["vehicleType"])) {
+					$builder->where('T.inspection_type', $arrData["vehicleType"]);
 				}
 			}
 		}
 
-		if (array_key_exists("idVehicle", $arrData)) {
-			$this->db->where('A.id_vehicle', $arrData["idVehicle"]);
+		if (isset($arrData["idVehicle"])) {
+			$builder->where('A.id_vehicle', $arrData["idVehicle"]);
 		}
-		if (array_key_exists("vehicleState", $arrData)) {
-			$this->db->where('A.state', $arrData["vehicleState"]);
+		if (isset($arrData["vehicleState"])) {
+			$builder->where('A.state', $arrData["vehicleState"]);
 		}
 
-		$this->db->order_by('T.inspection_type, C.id_company, A.unit_number', 'asc');
-		$query = $this->db->get('param_vehicle A');
+		$builder->orderBy('T.inspection_type, C.id_company, A.unit_number', 'asc');
+		$query = $builder->get();
 
-		if ($query->num_rows() > 0) {
-			return $query->result_array();
-		} else {
-			return false;
-		}
+        $result = $query->getResultArray();
+        return !empty($result) ? $result : false;
 	}
 
 	/**
@@ -419,51 +414,37 @@ class AdminModel extends Model
 	 * Add vehicle next oil change
 	 * @since 17/1/2017
 	 */
-	public function saveVehicleNextOilChange($idVehicle, $state)
+	public function saveVehicleNextOilChange($idVehicle, $status, $post)
 	{
-		$idUser = $this->session->userdata("id");
-
-		$data = array(
+		$idUser = session()->get("id");
+		$data = [
 			'fk_id_vehicle' => $idVehicle,
 			'fk_id_user' => $idUser,
-			'current_hours' => $this->request->getPost('hours'),
-			'next_oil_change' => $this->request->getPost('oilChange'),
-			'state' => $state,
-			'current_hours_2' => $this->request->getPost('hours2'),
-			'next_oil_change_2' => $this->request->getPost('oilChange2'),
-			'current_hours_3' => $this->request->getPost('hours3'),
-			'next_oil_change_3' => $this->request->getPost('oilChange3')
-		);
+			'current_hours' => $post['hours'] ?? null,
+			'next_oil_change' => $post['oilChange'] ?? null,
+			'state' => $status,
+			'current_hours_2' => $post['hours2'] ?? null,
+			'next_oil_change_2' => $post['oilChange2'] ?? null,
+			'current_hours_3' => $post['hours3'] ?? null,
+			'next_oil_change_3' => $post['oilChange3'] ?? null,
+			'date_issue' => date("Y-m-d G:i:s"),
+		];
 
-		$query = $this->db->insert('vehicle_oil_change', $data);
-		$idVehicleNextOilChange = $this->db->insert_id();
+		$builder = $this->db->table('vehicle_oil_change');
 
-		$fecha = date("Y-m-d G:i:s");
+		if ($builder->insert($data)) {
+			$builderVehicle = $this->db->table('param_vehicle');
+			$dataUpdate = [
+				'hours' => $post['hours'] ?? null,
+				'oil_change' => $post['oilChange'] ?? null,
+				'hours_2' => $post['hours2'] ?? null,
+				'oil_change_2' => $post['oilChange2'] ?? null,
+				'hours_3' => $post['hours3'] ?? null,
+				'oil_change_3' => $post['oilChange3'] ?? null,
+			];
 
-		//actualizo fecha del registo
-		$sql = "UPDATE vehicle_oil_change SET date_issue = '$fecha' WHERE id_oil_change=$idVehicleNextOilChange";
-		$query = $this->db->query($sql);
-
-		if ($query) {
-
-			$data = array(
-				'hours' => $this->request->getPost('hours'),
-				'oil_change' => $this->request->getPost('oilChange'),
-				'hours_2' => $this->request->getPost('hours2'),
-				'oil_change_2' => $this->request->getPost('oilChange2'),
-				'hours_3' => $this->request->getPost('hours3'),
-				'oil_change_3' => $this->request->getPost('oilChange3')
-			);
-
-			$this->db->where('id_vehicle', $idVehicle);
-			$query = $this->db->update('param_vehicle', $data);
-
-			if ($query) {
-				return true;
-			} else {
-				//se debe borrar el registro en la tabla vehicle_oil_change
-				return false;
-			}
+			return $builderVehicle->where('id_vehicle', $idVehicle)
+								->update($dataUpdate);
 		} else {
 			return false;
 		}
@@ -829,7 +810,7 @@ class AdminModel extends Model
 		if (array_key_exists("status", $arrDatos)) {
 			$this->db->where('attachment_status', $arrDatos["status"]);
 		}
-		$this->db->order_by('attachment_number', 'asc');
+		$this->db->orderBy('attachment_number', 'asc');
 		$query = $this->db->get('param_attachments P');
 
 		if ($query->num_rows() > 0) {
@@ -946,7 +927,7 @@ class AdminModel extends Model
 		if (array_key_exists("to", $arrData) && $arrData["to"] != '' && $arrData["from"] != '') {
 			$this->db->where('L.created_on <=', $arrData["to"]);
 		}
-		$this->db->order_by('L.id', 'asc');
+		$this->db->orderBy('L.id', 'asc');
 		$query = $this->db->get('logger L');
 
 		if ($query->num_rows() > 0) {
