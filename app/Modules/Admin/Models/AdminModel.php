@@ -454,27 +454,22 @@ class AdminModel extends Model
 	 * Add/Edit EMPLOYEE TYPE
 	 * @since 4/2/2017
 	 */
-	public function saveEmployeeType()
+	public function saveEmployeeType($post)
 	{
-		$idEmployeeType = $this->request->getPost('hddId');
+		$id = $post['hddId'] ?? null;
 
-		$data = array(
-			'employee_type' => $this->request->getPost('employeeType'),
-			'employee_type_unit_price' => $this->request->getPost('unit_price')
-		);
+		$data = [
+			'employee_type' => $post['employeeType'] ?? null,
+			'employee_type_unit_price' => $post['unit_price'] ?? null
+		];
 
-		//revisar si es para adicionar o editar
-		if ($idEmployeeType == '') {
-			$query = $this->db->insert('param_employee_type', $data);
-			$idEmployeeType = $this->db->insert_id();
+		$builder = $this->db->table('param_employee_type');
+
+		if (empty($id)) {
+			return $builder->insert($data);
 		} else {
-			$this->db->where('id_employee_type', $idEmployeeType);
-			$query = $this->db->update('param_employee_type', $data);
-		}
-		if ($query) {
-			return $idEmployeeType;
-		} else {
-			return false;
+			return $builder->where('id_employee_type', $id)
+						->update($data);
 		}
 	}
 

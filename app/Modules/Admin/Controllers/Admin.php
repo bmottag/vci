@@ -65,25 +65,28 @@ class Admin extends BaseController
 	 */
 	public function cargarModalEmployee()
 	{
-		header("Content-Type: text/plain; charset=utf-8"); //Para evitar problemas de acentos
+		$data = [];
+		$data['information'] = null;
 
-		$data['information'] = FALSE;
-		$data["idEmployee"] = $this->request->getPost("idEmployee");
+		$idEmployee = $this->request->getPost("idEmployee");
+		$data["idEmployee"] = $idEmployee;
 
 		$arrParam = array("filtro" => TRUE);
 		$data['roles'] = $this->generalModel->get_roles($arrParam);
 
-		if ($data["idEmployee"] != 'x') {
+		if (!empty($idEmployee) && $idEmployee !== 'x') {
 			$arrParam = array(
 				"table" => "user",
 				"order" => "id_user",
 				"column" => "id_user",
-				"id" => $data["idEmployee"]
+				"id" => $idEmployee
 			);
 			$data['information'] = $this->generalModel->get_basic_search($arrParam);
 		}
 
-		return view('App\Modules\Admin\Views\employee_modal', $data);
+		return $this->response
+					->setContentType('text/html')
+					->setBody(view('App\Modules\Admin\Views\employee_modal', $data));
 	}
 
 	/**
@@ -827,6 +830,7 @@ class Admin extends BaseController
 
 	/**
 	 * photo
+	 * @review 03/04/2026 - new CI4 version
 	 */
 	public function photo(int $idVehicle)
 	{
@@ -855,6 +859,7 @@ class Admin extends BaseController
 	/**
 	 * FUNCIÓN PARA SUBIR LA IMAGEN 
 	 * @param int vistaRegreso -> para saber si es de VCI o RENTADA
+	 * @review 03/04/2026 - new CI4 version
 	 */
 	public function do_upload($type, $vistaRegreso = null)
 	{
@@ -992,74 +997,73 @@ class Admin extends BaseController
 	 * Employee Type List
 	 * @since 4/2/2017
 	 * @author BMOTTAG
+	 * @review 03/04/2026 - new CI4 version
 	 */
 	public function employeeType()
 	{
-		$arrParam = array(
+		$arrParam = [
 			"table" => "param_employee_type",
 			"order" => "employee_type",
 			"id" => "x"
-		);
+		];
 		$data['info'] = $this->generalModel->get_basic_search($arrParam);
-
-		$data["view"] = 'employee_type';
-		$this->load->view("layout", $data);
+		return $this->render('App\Modules\Admin\Views\employee_type', $data);
 	}
 
 	/**
 	 * Cargo modal - formulario employee type
 	 * @since 4/2/2017
+	 * @review 03/04/2026 - new CI4 version
 	 */
 	public function cargarModalEmployeeType()
 	{
-		header("Content-Type: text/plain; charset=utf-8"); //Para evitar problemas de acentos
+		$data = [];
+		$data['information'] = null;
 
-		$data['information'] = FALSE;
-		$data["idEmployeeType"] = $this->request->getPost("idEmployeeType");
+		$idEmployeeType = $this->request->getPost("idEmployeeType");
+		$data["idEmployeeType"] = $idEmployeeType;
 
-		if ($data["idEmployeeType"] != 'x') {
+		if (!empty($idEmployeeType) && $idEmployeeType !== 'x') {
 			$arrParam = array(
 				"table" => "param_employee_type",
 				"order" => "id_employee_type",
 				"column" => "id_employee_type",
-				"id" => $data["idEmployeeType"]
+				"id" => $idEmployeeType
 			);
 			$data['information'] = $this->generalModel->get_basic_search($arrParam);
 		}
 
-		return view('App\Modules\Admin\Views\employee_type_modal', $data);
+		return $this->response
+					->setContentType('text/html')
+					->setBody(view('App\Modules\Admin\Views\employee_type_modal', $data));
 	}
 
 	/**
 	 * Update employee type
 	 * @since 4/2/2017
 	 * @author BMOTTAG
+	 * @review 03/04/2026 - new CI4 version
 	 */
 	public function save_employee_type()
 	{
-		header('Content-Type: application/json');
-		$data = array();
+		$post = $this->request->getPost();
 
-		$idEmployeeType = $this->request->getPost('hddId');
+		$id = $post['hddId'] ?? null;
+		$msj = $id 
+			? "You have updated an Employee Type!!" 
+			: "You have added a new Employee Type!!";
 
-		$msj = "You have added a new Employee Type!!";
-		if ($idEmployeeType != '') {
-			$msj = "You have updated an Employee Type!!";
-		}
+		$data = [];
 
-		if ($idEmployeeType = $this->adminModel->saveEmployeeType()) {
-			$data["result"] = true;
-			$data["idRecord"] = $idEmployeeType;
-
-			$this->session->set_flashdata('retornoExito', $msj);
+		if ($this->adminModel->saveEmployeeType($post)) {
+			$data["status"] = "success";
+			session()->setFlashdata('retornoExito', $msj);
 		} else {
-			$data["result"] = "error";
-			$data["idRecord"] = "";
-
-			$this->session->set_flashdata('retornoError', '<strong>Error!!!</strong> Ask for help');
+			$data["status"] = "error";
+			session()->setFlashdata('retornoError', '<strong>Error!!!</strong> Ask for help');
 		}
 
-		echo json_encode($data);
+		return $this->response->setJSON($data);
 	}
 
 	/**
