@@ -1014,4 +1014,48 @@ class GeneralModel extends Model
 	}
 
 
+	/**
+	 * Get dayoff info
+	 * @since 7/12/2016
+	 * @review 6/2/2017
+	 */
+	public function get_day_off($arrData)
+	{
+		$idUser = session()->get("id");
+
+		$firstDay = (new \DateTime())->modify('-6 months')->format('Y-m-d');
+		$beforeYesterday = (new \DateTime())->modify('-2 days')->format('Y-m-d');
+
+		$builder = $this->db->table('dayoff D');
+		$builder->select("D.*, CONCAT(first_name, ' ', last_name) name");
+		$builder->join('user U', 'U.id_user = D.fk_id_user', 'INNER');
+
+		// empleado
+		if (isset($arrData["idEmployee"])) {
+			$builder->where('U.id_user', $idUser);
+		}
+
+		// estado
+		if (isset($arrData["state"])) {
+			$builder->where('D.state', $arrData["state"]);
+
+			if ($arrData["state"] > 1) {
+				$builder->where('D.date_dayoff >=', $beforeYesterday);
+			}
+		}
+
+		// id específico
+		if (isset($arrData["idDayoff"])) {
+			$builder->where('D.id_dayoff', $arrData["idDayoff"]);
+		}
+
+		// últimos 6 meses
+		$builder->where('D.date_issue >=', $firstDay);
+
+		$builder->orderBy('D.id_dayoff', 'DESC');
+
+		return $builder->get()->getResultArray();
+	}
+
+
 }
