@@ -130,3 +130,4 @@ docker-compose.override.yml
 
 /public/assets/bootstrap/
 /public/images/
+/public/files/

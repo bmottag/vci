@@ -1057,5 +1057,59 @@ class GeneralModel extends Model
 		return $builder->get()->getResultArray();
 	}
 
+	/**
+	 * Lista de menu
+	 * Modules: MENU
+	 * @since 30/3/2020
+	 */
+	public function get_menu($arrData)
+	{
+		$builder = $this->db->table('param_menu');
+		if (isset($arrData["idMenu"])) {
+			$builder->where('id_menu', $arrData["idMenu"]);
+		}
+		if (isset($arrData["menuType"])) {
+			$builder->where('menu_type', $arrData["menuType"]);
+		}
+		if (isset($arrData["menuState"])) {
+			$builder->where('menu_state', $arrData["menuState"]);
+		}
+		if (isset($arrData["columnOrder"])) {
+			$builder->orderBy($arrData["columnOrder"], 'asc');
+		} else {
+			$builder->orderBy('menu_order', 'asc');
+		}
+
+		return $builder->get()->getResultArray();
+	}
+
+	/**
+	 * Lista de enlaces
+	 * Modules: MENU
+	 * @since 31/3/2020
+	 */
+	public function get_links($arrData)
+	{
+		$builder = $this->db->table('param_menu_links L');
+
+		$builder->join('param_menu M', 'M.id_menu = L.fk_id_menu', 'INNER');
+
+		if (isset($arrData["idMenu"])) {
+			$builder->where('fk_id_menu', $arrData["idMenu"]);
+		}
+		if (isset($arrData["idLink"])) {
+			$builder->where('id_link', $arrData["idLink"]);
+		}
+		if (isset($arrData["linkType"])) {
+			$builder->where('link_type', $arrData["linkType"]);
+		}
+		if (isset($arrData["linkState"])) {
+			$builder->where('link_state', $arrData["linkState"]);
+		}
+
+		$builder->orderBy('M.menu_order, L.order', 'asc');
+		return $builder->get()->getResultArray();
+	}
+
 
 }

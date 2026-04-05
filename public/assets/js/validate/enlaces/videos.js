@@ -2,12 +2,10 @@ $( document ).ready( function () {
 	
 	$( "#form" ).validate( {
 		rules: {
-			menu_name:					{ required: true, minlength: 3, maxlength:50 },
-			menu_url:					{ minlength: 4, maxlength:100 },
-			order:						{ required: true },
-			menu_type:					{ required: true },
-			menu_state:					{ required: true },
-			menu_icon:					{ required: true, minlength: 3, maxlength:50 }
+			link_name:				{ required: true, minlength: 3, maxlength:50 },
+			link_url:				{ required: true, minlength: 4, maxlength:100 },
+			order:					{ required: true },
+			link_state:				{ required: true }
 		},
 		errorElement: "em",
 		errorPlacement: function ( error, element ) {
@@ -38,7 +36,7 @@ $( document ).ready( function () {
 			
 				$.ajax({
 					type: "POST",	
-					url: base_url + "enlaces/save_menu",	
+					url: base_url + "enlaces/save_video",	
 					data: $("#form").serialize(),
 					dataType: "json",
 					cache: false,
@@ -55,7 +53,7 @@ $( document ).ready( function () {
 						}
 
 						if (data.status === "success") {
-							window.location.href = base_url + "/enlaces/menu";
+							window.location.href = base_url + "/enlaces/videos";
 						} else {
 							alert('Error. Reload the web page.');
 							$("#div_error").show();
