@@ -5,7 +5,7 @@ use CodeIgniter\Router\RouteCollection;
 /**
  * @var RouteCollection $routes
  */
-$routes->setAutoRoute(true);
+$routes->setAutoRoute(false);
 $routes->get('/', function() {
     return redirect()->to('/login');
 });
