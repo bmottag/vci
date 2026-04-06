@@ -1,15 +1,24 @@
 FROM php:8.2-apache
 
+# Instalar dependencias del sistema
 RUN apt-get update && apt-get install -y \
     libicu-dev \
     libzip-dev \
     unzip \
-    git
+    git \
+    libpng-dev \
+    libjpeg-dev \
+    libfreetype6-dev \
+    && docker-php-ext-configure gd --with-jpeg --with-freetype \
+    && docker-php-ext-install gd
 
+# Extensiones PHP
 RUN docker-php-ext-install mysqli intl pdo pdo_mysql zip
 
+# Activar mod_rewrite de Apache
 RUN a2enmod rewrite
 
+# Configurar directorio de trabajo
 WORKDIR /var/www/html
 COPY . /var/www/html
 RUN chown -R www-data:www-data /var/www/html
@@ -33,4 +42,5 @@ EOF
 
 RUN a2dissite 000-default.conf && a2ensite ci4.conf
 
+# Ejecutar Apache en primer plano
 CMD ["apache2-foreground"]

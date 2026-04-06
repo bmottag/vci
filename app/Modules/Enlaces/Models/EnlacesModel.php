@@ -2,7 +2,7 @@
 namespace App\Modules\Enlaces\Models;
 
 use CodeIgniter\Model;
-use App\Models\GeneralModel;
+
 
 class EnlacesModel extends Model
 {

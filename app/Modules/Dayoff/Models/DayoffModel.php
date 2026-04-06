@@ -2,7 +2,6 @@
 namespace App\Modules\Dayoff\Models;
 
 use CodeIgniter\Model;
-use App\Models\GeneralModel;
 
 class DayoffModel extends Model
 {

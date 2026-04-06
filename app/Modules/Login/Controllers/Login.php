@@ -19,7 +19,10 @@ class Login extends Controller
 
     public function index($id = 'x', $module = 'x', $idModule = 'x')
     {
-        session()->destroy();
+        if (session()->get('auth') == 'OK') {
+            $dashboardURL = session()->get('dashboardURL');
+            return redirect()->to($dashboardURL);
+        }
 
         $generalModel = new GeneralModel();
 
@@ -221,5 +224,11 @@ class Login extends Controller
                 $session->destroy();
                 return redirect()->to("/login", 301);
         }
+    }
+
+    public function logout()
+    {
+        session()->destroy();
+        return redirect()->to('/login');
     }
 }

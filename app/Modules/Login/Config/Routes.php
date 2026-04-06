@@ -5,6 +5,7 @@
  */
 
 $routes->group('login', ['namespace' => 'App\Modules\Login\Controllers'], function($routes){
-    $routes->get('', 'Login::index');             // <-- quitar slash
+    $routes->get('', 'Login::index');
     $routes->post('validateUser', 'Login::validateUser');
+    $routes->get('logout', 'Login::logout');
 });
