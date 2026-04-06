@@ -1111,5 +1111,19 @@ class GeneralModel extends Model
 		return $builder->get()->getResultArray();
 	}
 
+	/**
+	 * Get job employee_type_unit_price
+	 * @since 27/11/2017
+	 */
+	public function get_job_employee_type_unit_price($idJob)
+	{
+		$builder = $this->db->table('job_employee_type_price JE');
+		$builder->select();
+		$builder->join('param_employee_type PE', 'PE.id_employee_type = JE.fk_id_employee_type ', 'INNER');
+		$builder->where('JE.fk_id_job', $idJob);
+		$builder->orderBy('PE.employee_type', 'asc');
+		return $builder->get()->getResultArray();
+	}
+
 
 }
