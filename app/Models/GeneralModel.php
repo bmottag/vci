@@ -1125,5 +1125,64 @@ class GeneralModel extends Model
 		return $builder->get()->getResultArray();
 	}
 
+	/**
+	 * Get equipment list
+	 * Param int $companyType -> 1: VCI; 2: Subcontractor
+	 * @since 6/11/2020
+	 */
+	public function get_equipment_info_by($arrData)
+	{
+		$builder = $this->db->table('param_vehicle A');
+
+		$builder->select('
+			A.id_vehicle,
+			A.make,
+			A.unit_number,
+			A.model,
+			T.type_2,
+			A.equipment_unit_price,
+			A.equipment_unit_cost,
+			A.equipment_unit_price_without_driver
+		');
+
+		$builder->join('param_vehicle_type_2 T', 'T.id_type_2 = A.type_level_2', 'INNER');
+
+		if (isset($arrData["idVehicle"])) {
+			$builder->where('A.id_vehicle', $arrData["idVehicle"]);
+		}
+		if (isset($arrData["vehicleState"])) {
+			$builder->where('A.state', $arrData["vehicleState"]);
+		}
+		if (isset($arrData["companyType"])) {
+			$builder->where('A.type_level_1', $arrData["companyType"]);
+		}
+
+		$builder->orderBy('T.inspection_type, A.unit_number', 'ASC');
+		return $builder->get()->getResultArray();
+	}
+
+	/**
+	 * Get equipment list
+	 * Param int $companyType -> 1: VCI; 2: Subcontractor
+	 * @since 6/11/2020
+	 */
+	public function get_equipment_price(array $arrData)
+	{
+		$builder = $this->db->table('job_equipment_price JE');
+		$builder->select('JE.*, id_vehicle, make, unit_number,model, type_2');
+		$builder->join('param_vehicle A', 'A.id_vehicle = JE.fk_id_equipment', 'INNER');
+		$builder->join('param_vehicle_type_2 T', 'T.id_type_2 = A.type_level_2', 'INNER');
+		$builder->where('JE.fk_id_job', $arrData["idJob"]);
+		if (isset($arrData["vehicleState"])) {
+			$builder->where('A.state', $arrData["vehicleState"]);
+		}
+		if (isset($arrData["companyType"])) {
+			$builder->where('A.type_level_1', $arrData["companyType"]);
+		}
+
+		$builder->orderBy('T.inspection_type, A.unit_number', 'ASC');
+		return $builder->get()->getResultArray();
+	}
+
 
 }

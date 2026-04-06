@@ -21,12 +21,10 @@ $( document ).ready( function () {
 								return false;
 							} 
 											
-							if( data.result )//true
+							if (data.status === "success")
 							{	                                                        
 								$(".btn-danger").removeAttr('disabled');
-
-								var url = base_url + "prices/equipmentUnitPrice/" + data.idJob + "/1";
-								$(location).attr("href", url);
+								window.location.href = base_url + "prices/equipmentUnitPrice/" + data.idJob + "/1";
 							}
 							else
 							{
