@@ -868,7 +868,7 @@ class Admin extends BaseController
 		$file = $this->request->getFile('userfile');
 
 		if (!$file->isValid()) {
-			session()->setFlashdata('error', $file->getErrorString());
+			session()->setFlashdata('retornoError', $file->getErrorString());
 			return redirect()->to(base_url('admin/' . ($vistaRegreso ?? 'vehicle')));
 		}
 
@@ -883,7 +883,7 @@ class Admin extends BaseController
 
 		// Crear thumbnail si es photo
 		if ($type === 'photo') {
-			//$this->_create_thumbnail($newName);
+			$this->_create_thumbnail($newName);
 			$pathDb = 'images/vehicle/thumbs/' . $newName;
 		} else {
 			$pathDb = 'images/vehicle/' . $newName;
@@ -899,9 +899,9 @@ class Admin extends BaseController
 		];
 
 		if ($this->generalModel->updateRecord($arrParam)) {
-			session()->setFlashdata('success', 'Good job, you have uploaded the photo.');
+			session()->setFlashdata('retornoExito', 'Good job, you have uploaded the photo.');
 		} else {
-			session()->setFlashdata('error', 'Ask for help.');
+			session()->setFlashdata('retornoError', 'Ask for help.');
 		}
 
 		// Redirigir a la vista de regreso

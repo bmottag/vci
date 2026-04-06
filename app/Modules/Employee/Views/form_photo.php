@@ -78,7 +78,7 @@
 						<div class="form-group">
 							<label class="col-sm-12 control-label" for="hddTask">Photo:</label>
 							<div class="col-sm-12">
-								<input type="file" name="userfile" class="form-control" required>
+								<input type="file" name="userfile" class="form-control" accept="image/png, image/jpeg, image/gif" required>
 							</div>
 						</div>
 						<div class="form-group" style="margin-top: 15px;">

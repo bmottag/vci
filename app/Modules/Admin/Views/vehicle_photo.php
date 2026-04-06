@@ -77,13 +77,24 @@
 
 							<div class="panel-body">
 
+								<?php if (session()->getFlashdata('retornoExito')): ?>
+									<div class="alert alert-success">
+										<span class="glyphicon glyphicon-ok" aria-hidden="true"></span>
+										<?= session()->getFlashdata('retornoExito') ?>
+									</div>
+								<?php endif; ?>
+
+								<?php if (session()->getFlashdata('retornoError')): ?>
+									<div class="alert alert-danger">
+										<span class="glyphicon glyphicon-exclamation-sign" aria-hidden="true"></span>
+										<?= session()->getFlashdata('retornoError') ?>
+									</div>
+								<?php endif; ?>
+
 								<div class="form-group">
 									<label class="col-sm-4 control-label">Photo</label>
 									<div class="col-sm-5">
-										<input type="file" 
-											name="userfile" 
-											accept="image/png, image/jpeg, image/gif"
-											required />
+										<input type="file" name="userfile" class="form-control" accept="image/png, image/jpeg, image/gif" required>
 									</div>
 								</div>
 
