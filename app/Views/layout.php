@@ -70,6 +70,7 @@
 	<script src="<?php echo base_url("assets/bootstrap/datatables/js/jquery.dataTables.min.js"); ?>"></script>
 	<script src="<?php echo base_url("assets/bootstrap/datatables-plugins/dataTables.bootstrap.min.js"); ?>"></script>
 	<script src="<?php echo base_url("assets/bootstrap/datatables-responsive/dataTables.responsive.js"); ?>"></script>
+	<script src="<?= base_url('assets/signature_pad/js/signature_pad.js') ?>"></script>
 
 </body>
 

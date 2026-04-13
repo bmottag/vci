@@ -366,7 +366,7 @@ class GeneralModel extends Model
 
         $builder->orderBy('id_safety', 'desc');
 
-		if (array_key_exists("limit", $arrData)) {
+		if (isset($arrData["limit"])) {
 			$builder->limit($arrData["limit"]);
 		}
 		$query = $builder->get();
