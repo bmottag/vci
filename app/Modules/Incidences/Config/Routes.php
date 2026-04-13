@@ -10,6 +10,7 @@ $routes->group('incidences', ['namespace' => 'App\Modules\Incidences\Controllers
     $routes->get('incident/(:num)', 'Incidences::incident/$1');
     $routes->get('add_incident/(:num)/(:any)', 'Incidences::add_incident/$1/$2');
     $routes->get('add_incident/(:num)', 'Incidences::add_incident/$1');
+    $routes->get('generaPDF/(:num)/(:num)', 'Incidences::generaPDF/$1/$2');
 
     $routes->get(
         'delete-incident-person/(:num)/(:num)/(:num)/(:num)', 

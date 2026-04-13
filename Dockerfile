@@ -15,6 +15,9 @@ RUN apt-get update && apt-get install -y \
 # Extensiones PHP
 RUN docker-php-ext-install mysqli intl pdo pdo_mysql zip
 
+# Instalar Composer
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+
 # Activar mod_rewrite de Apache
 RUN a2enmod rewrite
 

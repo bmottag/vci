@@ -4,6 +4,7 @@ namespace App\Modules\Incidences\Controllers;
 use App\Controllers\BaseController;
 use App\Modules\Incidences\Models\IncidencesModel;
 use App\Models\GeneralModel;
+use TCPDF;
 
 class Incidences extends BaseController
 {
@@ -340,7 +341,82 @@ class Incidences extends BaseController
 		return $this->response->setJSON($data);
 	}
 
+	/**
+	 * Generate Report in PDF
+	 * @param int $idIncident
+	 * @param int $type
+     * @since 3/7/2017
+     * @author BMOTTAG
+	 * @review 13/04/2026 - new CI4 version
+	 */
+	public function generaPDF($idIncident, $type)
+	{
+		$pdf = new TCPDF();
 
+		$pdf->SetCreator('VCI');
+		$pdf->SetAuthor('VCI');
+		$pdf->SetTitle('Incidences Report');
+
+		$pdf->setPrintHeader(false);
+		$pdf->setPrintFooter(false);
+
+		// 👇 espacio para logo
+		$pdf->SetMargins(10, 25, 10);
+		$pdf->SetAutoPageBreak(TRUE, 10);
+
+		$pdf->SetFont('dejavusans', '', 8);
+
+		$vista = null;
+
+		switch ($type) {
+			case 1:
+				$data['info'] = $this->incidencesModel->get_near_miss_by_idUser([
+					"idNearMiss" => $idIncident
+				]);
+				$data['title'] = "NEAR MISS REPORT";
+				$vista = "incidences/reporte_near_miss_pdf";
+				break;
+
+			case 2:
+				$data['info'] = $this->incidencesModel->get_incident_by([
+					"idIncident" => $idIncident
+				]);
+				$data['title'] = "INCIDENT/ACCIDENT REPORT";
+				$vista = "incidences/reporte_incident_pdf";
+				break;
+		}
+
+		if (!$vista) {
+			throw new \Exception("Invalid report type");
+		}
+
+		$data['personsInvolved'] = $this->incidencesModel->get_persons_involved([
+			'idIncident' => $idIncident,
+			'form' => $type
+		]);
+
+		$pdf->AddPage();
+
+		// LOGO
+		$logo = FCPATH . 'images/logo.png';
+
+		if (is_file($logo)) {
+			$pdf->Image($logo, 10, 8, 30);
+		}
+
+		$html = view($vista, $data);
+
+		$pdf->writeHTML($html, true, false, true, false, '');
+
+		$pdf->lastPage();
+
+		$project = $data['info'][0]["job_description"] ?? 'report';
+		$filename = 'incident_report_' . preg_replace('/\s+/', '_', $project) . '.pdf';
+
+		return $this->response
+			->setHeader('Content-Type', 'application/pdf')
+			->setBody($pdf->Output($filename, 'S'));
+	}
 
 
 }
