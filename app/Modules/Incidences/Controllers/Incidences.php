@@ -415,7 +415,7 @@ class Incidences extends BaseController
 
 		return $this->response
 			->setHeader('Content-Type', 'application/pdf')
-			->setBody($pdf->Output($filename, 'S'));
+			->setBody($pdf->Output($filename, 'I'));
 	}
 
 

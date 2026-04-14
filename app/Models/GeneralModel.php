@@ -1184,5 +1184,22 @@ class GeneralModel extends Model
 		return $builder->get()->getResultArray();
 	}
 
+	/**
+	 * Get job hazard info
+	 * @since 27/11/2017
+	 */
+	public function get_job_hazards($idJob)
+	{
+		$builder = $this->db->table('job_hazards H');
+		$builder->select();
+		$builder->join('param_hazard PH', 'PH.id_hazard = H.fk_id_hazard', 'INNER');
+		$builder->join('param_hazard_activity PA', 'PA.id_hazard_activity = PH.fk_id_hazard_activity', 'INNER');
+		$builder->join('param_hazard_priority PP', 'PP.id_priority = PH.fk_id_priority', 'INNER');
+		$builder->where('H.fk_id_job', $idJob);
+		$builder->orderBy('PA.hazard_activity, PH.hazard_description', 'asc');
+
+		return $builder->get()->getResultArray();
+	}
+
 
 }
