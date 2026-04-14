@@ -61,8 +61,6 @@ class Jobs extends BaseController
 	public function hazards($idJob)
 	{
 		$data = [];
-		$data['information'] = FALSE;
-
 		$data['jobInfo'] = $this->generalModel->get_job(['idJob' => $idJob]);
 		$data['hazards'] = $this->generalModel->get_job_hazards($idJob);
 

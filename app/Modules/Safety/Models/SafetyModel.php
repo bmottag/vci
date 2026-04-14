@@ -175,6 +175,87 @@ class SafetyModel extends Model
 		return true;
 	}
 
+	/**
+	 * Get safety workers info
+	 * @since 6/12/2016
+	 */
+	public function get_safety_workers($idSafety) 
+	{		
+		$builder = $this->db->table('safety_workers W');
+		$builder->select("W.id_safety_worker, W.fk_id_safety, W.signature, W.fk_id_user, W.understanding, CONCAT(first_name, ' ', last_name) name");
+		$builder->join('user U', 'U.id_user = W.fk_id_user', 'INNER');
+		$builder->where('W.fk_id_safety', $idSafety); 
+		$builder->orderBy('U.first_name, U.last_name', 'asc');
+		return $builder->get()->getResultArray();
+	}
+
+	public function get_selected_workers($idSafety)
+	{
+		return $this->db->table('safety_workers')
+			->select('fk_id_user')
+			->where('fk_id_safety', $idSafety)
+			->get()
+			->getResultArray();
+	}
+
+	/**
+	 * Add SAFETY WORKER
+	 * @since 6/12/2016
+	 * @review 10/12/2016
+	 */
+	public function add_safety_worker(array $post = []): bool
+	{
+		$idSafety =  $post['hddId'];
+		$workers =  $post['workers'];
+
+		// 🔥 INSERT hazards
+		if (!empty($workers)) {
+			$dataBatch = [];
+			foreach ($workers as $idWorker) {
+				$dataBatch[] = [
+					'fk_id_safety' => (int)$idSafety,
+					'fk_id_user' => (int)$idWorker
+				];
+			}
+
+			return (bool) $this->db->table('safety_workers')
+								->insertBatch($dataBatch);
+		}
+
+		return true;
+	}
+
+	/**
+	 * Save one worker
+	 * @since 18/1/2017
+	 */
+	public function saveOneWorker(array $post = []): bool
+	{							
+		$data = [
+			'fk_id_safety' => $post['hddId'] ?? null,
+			'fk_id_user' => $post['worker'] ?? null,
+		];
+
+		$builder = $this->db->table('safety_workers');
+		return $builder->insert($data);
+	}
+
+	/**
+	 * Save subcontractor worker
+	 * @since 26/2/2017
+	 */
+	public function saveSubcontractorWorker(array $post = []): bool
+	{							
+		$data = [
+			'fk_id_safety' => $post['hddId'] ?? null,
+			'fk_id_company' => $post['company'] ?? null,
+			'worker_name' => $post['workerName'] ?? null,
+			'worker_movil_number' => $post['phone_number'] ?? null,
+		];
+
+		$builder = $this->db->table('safety_workers_subcontractor');
+		return $builder->insert($data);
+	}
 
 		
 	

@@ -21,7 +21,7 @@ class Safety extends BaseController
 	 * Form Add Safety
      * @since 13/4/2021
      * @author BMOTTAG
-	 * @review 03/04/2026 - new CI4 version
+	 * @review 14/04/2026 - new CI4 version
 	 */
 	public function add_safety($idJob, $idSafety = 'x')
 	{
@@ -40,7 +40,7 @@ class Safety extends BaseController
 	 * Save safety
      * @since 14/4/2021
      * @author BMOTTAG
-	 * @review 03/04/2026 - new CI4 version
+	 * @review 14/04/2026 - new CI4 version
 	 */
 	public function save_safety()
 	{
@@ -62,7 +62,7 @@ class Safety extends BaseController
 	 * Form Upload safety info
      * @since 15/4/2021
      * @author BMOTTAG
-	 * @review 03/04/2026 - new CI4 version
+	 * @review 14/04/2026 - new CI4 version
 	 */
 	public function upload_info_safety($id = 'x')
 	{
@@ -87,7 +87,7 @@ class Safety extends BaseController
 	 * Muestre lista de Hazards por trabajo y los que estan asignados al FLHA estan con check
      * @since 16/5/2019
      * @author BMOTTAG
-	 * @review 03/04/2026 - new CI4 version
+	 * @review 14/04/2026 - new CI4 version
 	 */
 	public function add_hazards_flha($idJob, $idSafety)
 	{
@@ -135,7 +135,7 @@ class Safety extends BaseController
      * @since 06/12/2016
 	 * @review 10/12/2016
      * @author BMOTTAG
-	 * @review 03/04/2026 - new CI4 version
+	 * @review 14/04/2026 - new CI4 version
 	 */
 	public function save_safety_hazards()
 	{			
@@ -152,7 +152,169 @@ class Safety extends BaseController
 		}
 
 		return $this->response->setJSON($data);
-    }	
+    }
+
+	/**
+	 * Form Upload workers to safety
+     * @since 15/4/2021
+     * @author BMOTTAG
+	 * @review 14/04/2026 - new CI4 version
+	 */
+	public function upload_workers($idSafety = 'x')
+	{
+		$data = [];
+		$data['safetyClose'] = FALSE;
+		$data['information'] = $this->safetyModel->get_safety_by_id($idSafety);//info safety
+		$arrParam = [
+			"table" => "param_company",
+			"order" => "company_name",
+			"column" => "company_type",
+			"id" => 2
+		];
+		$data['companyList'] = $this->generalModel->get_basic_search($arrParam);//company list
+		$data['workersList'] = $this->generalModel->get_user(["state" => 1]);//workers list
+		$data['safetyWorkers'] = $this->safetyModel->get_safety_workers($idSafety);//safety_worker list
+		$data['safetySubcontractorsWorkers'] = $this->generalModel->get_safety_subcontractors_workers(['idSafety' => $idSafety]);//safety subcontractors workers list
+
+		return $this->render('App\Modules\Safety\Views\form_upload_safety_workers', $data);
+	}
+
+	/**
+	 * Form Add Workers
+     * @since 10/12/2016
+     * @author BMOTTAG
+	 * @review 14/04/2026 - new CI4 version
+	 */
+	public function add_workers($id)
+	{
+		$workersList = $this->generalModel->get_user(["state" => 1]);
+
+		// 🔥 traemos todos los workers asignados de una sola vez
+		$selectedWorkers = array_column(
+			$this->safetyModel->get_selected_workers($id),
+			'fk_id_user'
+		);
+
+		// 🔁 marcamos checked en memoria
+		foreach ($workersList as &$worker) {
+			$worker['found'] = in_array($worker['id_user'], $selectedWorkers);
+		}
+
+		$data = [
+			'workersList' => $workersList,
+			'idSafety' => $id
+		];
+
+		return $this->render('App\Modules\Safety\Views\form_add_workers', $data);
+	}
+
+	/**
+	 * Save worker
+     * @since 06/12/2016
+     * @author BMOTTAG
+	 * @review 14/04/2026 - new CI4 version
+	 */
+	public function save_safety_workers()
+	{			
+		$post = $this->request->getPost();
+		$idSafety = $post['hddId'];
+		$data = [];
+		if ($this->safetyModel->add_safety_worker($post)) {
+			$data["idSafety"] = $idSafety;
+			$data["status"] = "success";
+			session()->setFlashdata('retornoExito', 'You have added the Workers, remember to get the signature of each one.');
+		} else {
+			$data["status"] = "error";
+			session()->setFlashdata('retornoError', '<strong>Error!!!</strong> Ask for help');
+		}
+
+		return $this->response->setJSON($data);
+    }
+
+    /**
+     * Delete safety worker
+	 * @review 14/04/2026 - new CI4 version
+     */
+    public function deleteSafetyWorker($idSafetyWorker, $idSafety) 
+	{
+		$arrParam = [
+			"table" => "safety_workers",
+			"primaryKey" => "id_safety_worker",
+			"id" => $idSafetyWorker
+		];
+		if ($this->generalModel->deleteRecord($arrParam)) {
+			$data["status"] = "success";
+			session()->setFlashdata('retornoExito', 'You have deleted one worker.');
+		} else {
+			$data["status"] = "error";
+			session()->setFlashdata('retornoError', '<strong>Error!!!</strong> Ask for help');
+		}
+
+		return redirect()->to(base_url('safety/upload_workers/' . $idSafety));
+    }
+
+    /**
+     * Safe one worker
+	 * @review 14/04/2026 - new CI4 version
+     */
+    public function safet_One_Worker() 
+	{
+		$post = $this->request->getPost();
+		$idSafety = $post['hddId'];
+		$data = [];
+
+		if ($this->safetyModel->saveOneWorker($post)) {
+			$data["status"] = "success";
+			session()->setFlashdata('retornoExito', 'You have added one Worker.');
+		} else {
+			$data["status"] = "error";
+			session()->setFlashdata('retornoError', '<strong>Error!!!</strong> Ask for help');
+		}
+
+		return redirect()->to(base_url('safety/upload_workers/' . $idSafety));
+    }
+
+    /**
+     * Safe subcontractor worker
+	 * @review 14/04/2026 - new CI4 version
+     */
+    public function safet_subcontractor_Worker() 
+	{
+		$post = $this->request->getPost();
+		$idSafety = $post['hddId'];
+		$data = [];
+
+		if ($this->safetyModel->saveSubcontractorWorker($post)) {
+			$data["status"] = "success";
+			session()->setFlashdata('retornoExito', 'You have added one Worker.');
+		} else {
+			$data["status"] = "error";
+			session()->setFlashdata('retornoError', '<strong>Error!!!</strong> Ask for help');
+		}
+
+		return redirect()->to(base_url('safety/upload_workers/' . $idSafety));
+    }
+
+    /**
+     * Delete safety subcontractor
+     */
+    public function deleteSafetySubcontractor($idSafetySubcontractor, $idSafety) 
+	{
+		$arrParam = [
+			"table" => "safety_workers_subcontractor",
+			"primaryKey" => "id_safety_subcontractor",
+			"id" => $idSafetySubcontractor
+		];
+		if ($this->generalModel->deleteRecord($arrParam)) {
+			$data["status"] = "success";
+			session()->setFlashdata('retornoExito', 'You have deleted one worker.');
+		} else {
+			$data["status"] = "error";
+			session()->setFlashdata('retornoError', '<strong>Error!!!</strong> Ask for help');
+		}
+
+		return redirect()->to(base_url('safety/upload_workers/' . $idSafety));
+    }
 
 
 

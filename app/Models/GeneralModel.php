@@ -1201,5 +1201,29 @@ class GeneralModel extends Model
 		return $builder->get()->getResultArray();
 	}
 
+	/**
+	 * Get safety subcontractor workers info
+	 * @since 26/2/2016
+	 */
+	public function get_safety_subcontractors_workers($arrData)
+	{
+		$builder = $this->db->table('safety_workers_subcontractor W');
+		$builder->select();
+		$builder->join('param_company C', 'C.id_company = W.fk_id_company', 'INNER');
+		if (isset($arrData["idSafetySubcontractor"]) && $arrData["idSafetySubcontractor"] != 'x') {
+			$builder->where('W.id_safety_subcontractor', $arrData["idSafetySubcontractor"]);
+		}
+		if (isset($arrData["idSafety"])) {
+			$builder->where('W.fk_id_safety', $arrData["idSafety"]);
+		}
+		if (isset($arrData["movilNumber"])) {
+			$where = "W.worker_movil_number != ''";
+			$builder->where($where);
+		}
+		$builder->orderBy('C.company_name, W.worker_name', 'asc');
+
+		return $builder->get()->getResultArray();
+	}
+
 
 }
