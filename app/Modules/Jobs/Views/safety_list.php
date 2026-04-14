@@ -21,7 +21,7 @@
 <?php 
 //verificar si el JOB CODE tiene asignados hazards
 $boton = "";
-$url = base_url('safety/add_safety_v2/' . $jobInfo[0]['id_job']);
+$url = base_url('safety/add_safety/' . $jobInfo[0]['id_job']);
 if(!$hazards){
 	$boton = "disabled";
 	$url = "#";
@@ -74,7 +74,7 @@ if(!$hazards){
 										Edit <span class="glyphicon glyphicon-edit" aria-hidden="true">
 								</a>
 <br>
-<a href='<?php echo base_url('report/generaSafetyPDF/x/x/x/' . $lista['id_safety'] ); ?>' target="_blank"> <img src='<?php echo base_url_images('pdf.png'); ?>' ></a>
+<a href='<?php echo base_url('report/generaSafetyPDF/x/x/x/' . $lista['id_safety'] ); ?>' target="_blank"> <img src='<?php echo base_url('images/pdf.png'); ?>' ></a>
 								
 						<?php
 								echo "</td>";
