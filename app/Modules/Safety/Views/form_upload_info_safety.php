@@ -12,8 +12,10 @@
 				</div>
 				<div class="panel-body">
 					<div class="alert alert-info">
-						<span class="fa fa-briefcase" aria-hidden="true"></span>
-						<strong>Job Code/Name: </strong><?php echo $information?$information[0]["job_description"]:""; ?><br>
+						<h2>
+							<span class="fa fa-briefcase" aria-hidden="true"></span>
+							<strong>Job Code/Name: </strong><?php echo $information?$information[0]["job_description"]:""; ?><br>
+						</h2>
 						<strong>Task(s) to be done: </strong><br><?php echo $information?$information[0]["work"]:""; ?>
 					</div>
 				<?php 
@@ -22,7 +24,7 @@
 					<ul class="nav nav-tabs">
 						<li><a href="<?php echo base_url('safety/add_safety/' . $information[0]['fk_id_job'] . '/' . $information[0]['id_safety']); ?>">Main Form</a>
 						</li>
-						<li class='active'><a href="<?php echo base_url('safety/upload_info_safety_v2/' . $information[0]['id_safety']); ?>">Hazards</a>
+						<li class='active'><a href="<?php echo base_url('safety/upload_info_safety/' . $information[0]['id_safety']); ?>">Hazards</a>
 						</li>
 						<!--
 						<li><a href="<?php echo base_url('safety/upload_covid/' . $information[0]['id_safety']); ?>">COVID Form</a>

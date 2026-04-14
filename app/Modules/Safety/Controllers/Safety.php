@@ -9,6 +9,7 @@ class Safety extends BaseController
 {
     protected $safetyModel;
     protected $generalModel;
+	protected $helpers = ['form'];
     
     public function __construct()
     {
@@ -81,6 +82,77 @@ class Safety extends BaseController
 		return $this->render('App\Modules\Safety\Views\form_upload_info_safety', $data);
 	}
 
+	/**
+	 * Form Add Hazards to FLHA
+	 * Muestre lista de Hazards por trabajo y los que estan asignados al FLHA estan con check
+     * @since 16/5/2019
+     * @author BMOTTAG
+	 * @review 03/04/2026 - new CI4 version
+	 */
+	public function add_hazards_flha($idJob, $idSafety)
+	{
+		if (empty($idJob) || empty($idSafety)) {
+			throw new \CodeIgniter\Exceptions\PageNotFoundException('Invalid IDs');
+		}
+
+		$activityList = $this->safetyModel->get_activity_list_by_job($idJob);
+
+		// 🔥 SOLO UNA QUERY
+		$selected = array_column(
+			$this->safetyModel->get_selected_hazards($idSafety),
+			'fk_id_hazard'
+		);
+
+		if (!empty($activityList)) {
+			foreach ($activityList as &$activity) {
+
+				$hazards = $this->safetyModel
+					->get_hazard_list_by_job($activity['id_hazard_activity'], $idJob);
+
+				if (!empty($hazards)) {
+					foreach ($hazards as &$hazard) {
+
+						// ✅ ahora es solo memoria (rápido)
+						$hazard['found'] = in_array($hazard['id_hazard'], $selected);
+					}
+				}
+
+				$activity['hazards'] = $hazards;
+			}
+		}
+
+		$data = [
+			'activityList' => $activityList,
+			'idJob' => $idJob,
+			'idSafety' => $idSafety
+		];
+
+		return $this->render('App\Modules\Safety\Views\form_add_hazards_flha', $data);
+	}
+
+	/**
+	 * Save hazards
+     * @since 06/12/2016
+	 * @review 10/12/2016
+     * @author BMOTTAG
+	 * @review 03/04/2026 - new CI4 version
+	 */
+	public function save_safety_hazards()
+	{			
+		$post = $this->request->getPost();
+		$idSafety = $post['hddId'];
+		$data = [];
+		if ($this->safetyModel->add_safety_hazard($post)) {
+			$data["idSafety"] = $idSafety;
+			$data["status"] = "success";
+			session()->setFlashdata('retornoExito', 'You have added Hazards.');
+		} else {
+			$data["status"] = "error";
+			session()->setFlashdata('retornoError', '<strong>Error!!!</strong> Ask for help');
+		}
+
+		return $this->response->setJSON($data);
+    }	
 
 
 

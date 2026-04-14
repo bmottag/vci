@@ -92,6 +92,93 @@ class SafetyModel extends Model
 		return $builder->get()->getResultArray();
 	}
 
+	/**
+	 * Get activity list
+	 * @since 23/2/2017
+	 */
+	public function get_activity_list_by_job($idJob)
+	{
+		$builder = $this->db->table('job_hazards J');
+
+		$builder->select('A.id_hazard_activity, A.hazard_activity');
+		$builder->join('param_hazard H', 'H.id_hazard = J.fk_id_hazard', 'INNER');
+		$builder->join('param_hazard_activity A', 'A.id_hazard_activity = H.fk_id_hazard_activity', 'INNER');
+		$builder->where('J.fk_id_job', $idJob);
+
+		$builder->groupBy(['A.id_hazard_activity', 'A.hazard_activity']);
+
+		$builder->orderBy('A.hazard_activity', 'ASC');
+
+		$query = $builder->get();
+
+		return $query->getNumRows() > 0 ? $query->getResultArray() : false;
+	}
+
+	/**
+	 * Get hazard list
+	 * @since 17/05/2019
+	 */
+	public function get_hazard_list_by_job($idActivity, $idJob) 
+	{		
+		$builder = $this->db->table('job_hazards J');
+		$builder->select();
+		$builder->join('param_hazard H', 'H.id_hazard = J.fk_id_hazard', 'INNER');
+		$builder->join('param_hazard_activity A', 'A.id_hazard_activity = H.fk_id_hazard_activity', 'INNER');
+		$builder->where('A.id_hazard_activity', $idActivity);
+		$builder->where('J.fk_id_job', $idJob);
+		$builder->orderBy('A.hazard_activity, H.hazard_description', 'asc');
+		return $builder->get()->getResultArray();
+	}
+
+	/**
+	 * @author BMOTTAG
+	 * @since 10/12/2016
+	 * Consulta de hazards para un safety especifico
+	 */
+	public function get_selected_hazards($idSafety)
+	{
+		return $this->db->table('safety_hazards')
+			->select('fk_id_hazard')
+			->where('fk_id_safety', $idSafety)
+			->get()
+			->getResultArray();
+	}
+
+	/**
+	 * Add SAFETY HAZARD
+	 * @since 4/12/2016
+	 * @review 10/12/2016
+	 */
+	public function add_safety_hazard(array $post = []): bool
+	{
+		$idSafety =  $post['hddId'];
+		$hazards =  $post['hazards'];
+		// 🔥 DELETE hazards
+		$this->db->table('safety_hazards')
+				->where('fk_id_safety', $idSafety)
+				->delete();
+
+		// 🔥 INSERT hazards
+		if (!empty($hazards)) {
+			$dataBatch = [];
+			foreach ($hazards as $idHazard) {
+				$dataBatch[] = [
+					'fk_id_safety' => $idSafety,
+					'fk_id_hazard' => (int)$idHazard
+				];
+			}
+
+			return (bool) $this->db->table('safety_hazards')
+								->insertBatch($dataBatch);
+		}
+
+		return true;
+	}
+
+
+		
+	
+
 
 
 }
