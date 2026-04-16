@@ -297,6 +297,7 @@ class Safety extends BaseController
 
     /**
      * Delete safety subcontractor
+	 * @review 14/04/2026 - new CI4 version
      */
     public function deleteSafetySubcontractor($idSafetySubcontractor, $idSafety) 
 	{
@@ -315,6 +316,199 @@ class Safety extends BaseController
 
 		return redirect()->to(base_url('safety/upload_workers/' . $idSafety));
     }
+
+	/**
+	 * Subcontractors view to sign
+     * @since 15/4/2021
+     * @author BMOTTAG
+	 * @review 15/04/2026 - new CI4 version
+	 */
+	public function review_flha($idSafety)
+	{
+		$data = [];
+		$data['information'] = $this->safetyModel->get_safety_by_id($idSafety);
+		$data['safetyHazard'] = $this->safetyModel->get_safety_hazard($idSafety);
+		$data['safetyWorkers'] = $this->safetyModel->get_safety_workers($idSafety);
+		$data['safetySubcontractorsWorkers'] = $this->generalModel->get_safety_subcontractors_workers(['idSafety' => $idSafety]);
+	
+		return $this->render('App\Modules\Safety\Views\review_flha', $data);
+	}
+
+    /**
+     * Cargo modal - formulario Employee Verification
+     * @since 26/1/2023
+	 * @review 15/04/2026 - new CI4 version
+     */
+	public function cargarModalEmployeeVerification()
+	{
+		$data = [];
+
+		$data["idRecord"] = $this->request->getPost("idRecord");
+		$data["table"] = $this->request->getPost("table");
+		$data["backURL"] = $this->request->getPost("backURL");
+		
+		$information = $this->request->getPost('information');
+		$porciones = explode("-", $information);
+		$data["userType"] = $porciones[0];
+		$data["idUser"]  = $porciones[1];
+		$data["idSafetyWorker"] = $porciones[2];
+
+		$arrParam = array(
+			"table" => "user",
+			"order" => "id_user",
+			"column" => "id_user",
+			"id" => $data["idUser"]
+		);
+		$data['information'] = $this->generalModel->get_basic_search($arrParam);
+
+		return $this->response
+					->setContentType('text/html')
+					->setBody(view('App\Modules\Safety\Views\modal_verification', $data));
+	}
+
+	/**
+	 * Varify credentials and save signature for employee
+     * @since 26/1/2023
+     * @author BMOTTAG
+	 * @review 15/04/2026 - new CI4 version
+	 */
+	public function save_signature_credentials()
+	{
+		$idUser = $this->request->getPost('hddIdUser');
+		$idSafetyWorker = $this->request->getPost('hddIdSafetyWorker');
+		$idRecord = $this->request->getPost('hddIdRecord');
+		$table = $this->request->getPost("hddTable");
+		$backURL = $this->request->getPost('backURL');
+		$userType = $this->request->getPost('hddUserType');
+
+		$login = $this->request->getPost("login");
+		$passwd = $this->request->getPost("password");
+
+		$data = [
+			"path" => $backURL . $idRecord
+		];
+
+		$user = $this->generalModel->validateCredentials([
+			"idUser" => $idUser,
+			"login" => $login,
+			"passwd" => $passwd
+		]);
+
+		if (!$user) {
+			return $this->response->setJSON([
+				"status" => "error",
+				"message" => " Error. Invalid credentials"
+			]);
+		}
+
+		if (!$user["user_signature"]) {
+			return $this->response->setJSON([
+				"status" => "error",
+				"message" => " Error. You have not saved your signature. Go to User Profile to set your signature."
+			]);
+		}
+
+		switch ($userType) {
+			case "advisor":
+				$arrParam = [
+					"table" => "safety",
+					"primaryKey" => "id_safety",
+					"id" => $idRecord,
+					"column" => "signature",
+					"value" => $user["user_signature"]
+				];
+				break;
+
+			case "worker":
+				$arrParam = [
+					"table" => "safety_workers",
+					"primaryKey" => "id_safety_worker",
+					"id" => $idSafetyWorker,
+					"column" => "signature",
+					"value" => $user["user_signature"]
+				];
+				break;
+
+			default:
+				return $this->response->setJSON([
+					"status" => "error",
+					"message" => "Invalid user type"
+				]);
+		}
+
+		if ($this->generalModel->updateRecord($arrParam)) {
+			session()->setFlashdata('retornoExito', 'You have saved your signature.');
+
+			return $this->response->setJSON([
+				"status" => "success",
+				"path" => $data["path"]
+			]);
+		}
+
+		session()->setFlashdata('retornoError', 'Error!!! Ask for help');
+
+		return $this->response->setJSON([
+			"status" => "error"
+		]);
+	}
+	
+	public function save_signature()
+	{
+		$imageData = $this->request->getPost('image'); 
+		$idWorker = $this->request->getPost('id'); 
+		$fileName = "subcontractor_" . $idWorker . ".png";
+		$filePath = WRITEPATH . '../public/images/signature/safety/' . $fileName;
+
+		if(!$imageData){
+			return redirect()->back()->with('error', 'No signature provided.');
+		}
+
+		$imageData = str_replace('data:image/png;base64,', '', $imageData);
+		$imageData = str_replace(' ', '+', $imageData);
+
+		if(!is_dir(dirname($filePath))) mkdir(dirname($filePath), 0755, true);
+
+		if(file_put_contents($filePath, base64_decode($imageData))){
+			$this->generalModel->updateRecord([
+				"table" => "safety_workers_subcontractor",
+				"primaryKey" => "id_safety_subcontractor",
+				"id" => $idWorker,
+				"column" => "signature",
+				"value" =>  'images/signature/safety/' . $fileName
+			]);
+			return redirect()->back()->with('retornoExito', 'Signature saved successfully.');
+		} else {
+			return redirect()->back()->with('retornoError', 'Error saving signature.');
+		}
+	}
+	
+	/**
+	 * Save safetty undestanding
+	 * @since 8/02/2026
+	 * @author BMOTTAG
+	 * @review 15/04/2026 - new CI4 version
+	 */
+	public function save_worker_undestanding()
+	{
+		$idSafety = $this->request->getPost('hddId');
+
+		$arrParam = [
+			"table" => "safety_workers",
+			"primaryKey" => "id_safety_worker",
+			"id" => $this->request->getPost('hddIdSafetyWorker'),
+			"column" => "understanding",
+			"value" => $this->request->getPost('description')
+		];
+		if ($this->generalModel->updateRecord($arrParam)) {
+			$data["status"] = "success";
+			session()->setFlashdata('retornoExito', "You have saved the understanding information!!");
+		} else {
+			$data["status"] = "error";
+			session()->setFlashdata('retornoError', '<strong>Error!!!</strong> Ask for help');
+		}
+
+		return redirect()->to(base_url('safety/review_flha/' . $idSafety));
+	}
 
 
 

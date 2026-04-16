@@ -1225,5 +1225,33 @@ class GeneralModel extends Model
 		return $builder->get()->getResultArray();
 	}
 
+	/**
+	 * Get validate user credentials
+	 * @since 26/1/2023
+	 */
+	public function validateCredentials($arrData)
+	{
+		$login = $arrData["login"];
+		$passwd = $arrData["passwd"];
+
+		$builder = $this->db->table('user');
+		$builder->where('id_user', $arrData["idUser"]);
+		$builder->where('log_user', $login);
+
+		$query = $builder->get();
+		$row = $query->getRowArray();
+
+		if (!$row) {
+			return false;
+		}
+
+		// ✅ Verificación segura del password
+		if (password_verify($passwd, $row['password'])) {
+			return $row;
+		}
+
+		return false;
+	}
+
 
 }
