@@ -83,7 +83,7 @@
 											echo "<td class='text-center'>" . $lista['time_out'] . "</td>";
 											echo "<td class='text-center'>";
 											?>
-								<a href='<?php echo base_url('report/generaHaulingPDF/x/x/x/x/' . $lista['id_hauling']); ?>' target="_blank" title="Download"> <img src='<?php echo base_url_images('pdf.png'); ?>'></a>
+								<a href='<?php echo base_url('report/generaHaulingPDF/x/x/x/x/' . $lista['id_hauling']); ?>' target="_blank" title="Download"> <img src='<?php echo base_url('images/pdf.png'); ?>'></a>
 
 								<?php
 									if ($lista['state'] == 2) { ?>

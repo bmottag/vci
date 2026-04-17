@@ -1253,5 +1253,29 @@ class GeneralModel extends Model
 		return false;
 	}
 
+	/**
+	 * Get Companys List
+	 * @since 13/02/2025
+	 */
+	public function get_company($arrData)
+	{
+		$builder = $this->db->table('param_company C');
+		if (isset($arrData["company_type"])) {
+			$builder->where('C.id_company', $arrData["idCompany"]);
+		}
+		if (isset($arrData["company_type"])) {
+			$builder->where('C.company_type', $arrData["company_type"]);
+		}
+		if (isset($arrData["allSubcontractors"])) {
+			$types = array(2, 3);
+			$builder->where_in('C.company_type', $types);
+		}
+		if (isset($arrData["isHauling"])) {
+			$builder->where('C.does_hauling', 1);
+		}
+		$builder->orderBy("C.company_name", "ASC");
+		return $builder->get()->getResultArray();
+	}
+
 
 }
