@@ -129,8 +129,8 @@
 						'imageUrl'   => $UserInfo[0]['user_signature'] ?? null,
 						'formAction' => base_url('employee/save_signature'),
 						'hiddenName' => 'image',
-						'width'      => '100%',
-						'height'     => 200
+						'height'     => 200,
+						'showAlert' 	 => true
 					]) ?>
 
 				</div>

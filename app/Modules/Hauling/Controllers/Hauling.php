@@ -77,29 +77,6 @@ class Hauling extends BaseController
 	}
 
 	/**
-	 * Save hauling
-	 * @since 16/12/2016
-	 * @author BMOTTAG
-	 * @review 16/04/2026 - new CI4 version
-	 */
-	public function save_menu()
-	{
-		$post = $this->request->getPost();
-
-		$data = [];
-		if ($this->haulingModel->saveHauling($post)) {
-			$data["idHauling"] = $idHauling;
-			$data["status"] = "success";
-			session()->setFlashdata('retornoExito', 'You have saved your hauling record, remember to sign and get the contractor signature!!');
-		} else {
-			$data["status"] = "error";
-			session()->setFlashdata('retornoError', '<strong>Error!!!</strong> Ask for help');
-		}
-
-		return $this->response->setJSON($data);
-	}
-
-	/**
 	 * Company list
 	 * @since 4/2/2017
 	 * @author BMOTTAG
@@ -196,6 +173,75 @@ class Hauling extends BaseController
 			foreach ($list as $fila) {
 				echo "<option value='" . $fila["id_workorder"] . "' >" . $fila["id_workorder"] . " - " . $fila["observation"] . "</option>";
 			}
+		}
+	}
+
+	/**
+	 * Update hauling state
+	 * @since 6/2/2017
+	 * @author BMOTTAG
+	 */
+	public function update_hauling_state()
+	{
+		$post = $this->request->getPost();
+		$idHauling = $post['hddId'] ?? null;
+		$state = $post['delete'] ? 3 : 2;
+
+		$data = [];
+		$arrParam = [
+			"table" => "hauling",
+			"primaryKey" => "id_hauling",
+			"id" => $idHauling,
+			"column" => "state",
+			"value" => $state
+		];
+		if ($this->generalModel->updateRecord($arrParam)) {
+			if ($state == 3) {
+				$this->haulingModel->deleteOccasionalByHauling($idHauling);
+			}
+			$data["status"] = "success";
+			session()->setFlashdata('retornoExito', 'You have closed the Hauling Report');
+		} else {
+			$data["status"] = "error";
+			session()->setFlashdata('retornoError', '<strong>Error!!!</strong> Ask for help');
+		}
+
+		return $this->response->setJSON($data);
+	}
+
+	/**
+	 * Signature
+	 * @since 9/1/201/
+	 * @author BMOTTAG
+	 */
+	public function save_signature()
+	{
+		$imageData = $this->request->getPost('image'); 
+		$idHauling = $this->request->getPost('extraValue'); 
+		$type = $this->request->getPost('id'); 
+		$fileName = $type . "_" . $idHauling . ".png";
+		$filePath = WRITEPATH . '../public/images/signature/hauling/' . $fileName;
+
+		if(!$imageData){
+			return redirect()->back()->with('error', 'No signature provided.');
+		}
+
+		$imageData = str_replace('data:image/png;base64,', '', $imageData);
+		$imageData = str_replace(' ', '+', $imageData);
+
+		if(!is_dir(dirname($filePath))) mkdir(dirname($filePath), 0755, true);
+
+		if(file_put_contents($filePath, base64_decode($imageData))){
+			$this->generalModel->updateRecord([
+				"table" => "hauling",
+				"primaryKey" => "id_hauling",
+				"id" => $idHauling,
+				"column" => $type . "_signature",
+				"value" => "images/signature/hauling/" . $fileName
+			]);
+			return redirect()->back()->with('retornoExito', 'Signature saved successfully.');
+		} else {
+			return redirect()->back()->with('retornoError', 'Error saving signature.');
 		}
 	}
 

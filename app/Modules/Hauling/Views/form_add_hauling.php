@@ -74,117 +74,57 @@ if ($userRol == 99) {
 						}
 						?>
 
+						<?php if ($information) { ?>
+
+							<div class="col-lg-6">
+								<div class="panel panel-primary">
+									<div class="panel-heading">
+										<i class="fa fa-edit fa-fw"></i> V-Contracting
+									</div>
+
+									<div class="panel-body">
+
+										<?= view('App\Views\template\signature_component', [
+											'imageUrl'        => $information["vci_signature"] ?? null,
+											'formAction'      => base_url('hauling/save_signature'),
+											'height'          => 200,
+											'signButtonText'  => ' VCI Signature ',
+											'id' 			  => 'vci',
+											'extraValue' 	  => $information["id_hauling"]
+										]) ?>
+
+									</div>
+
+								</div>
+							</div>
+
+							<div class="col-lg-6">
+								<div class="panel panel-info">
+									<div class="panel-heading">
+										<i class="fa fa-edit fa-fw"></i> Subcontractor
+										<a href="<?php echo base_url("hauling/email/" . $information["id_hauling"]); ?>" class="btn btn-danger btn-xs class_disabled"> <span class="glyphicon glyphicon-send" aria-hidden="true"></span> Send Email</a>
+									</div>
+
+									<div class="panel-body">
+
+										<?= view('App\Views\template\signature_component', [
+											'imageUrl'        => $information["contractor_signature"] ?? null,
+											'formAction'      => base_url('hauling/save_signature'),
+											'height'          => 200,
+											'signButtonText'  => ' Contractor Signature ',
+											'id' 			  => 'contractor',
+											'extraValue' 	  => $information["id_hauling"]
+										]) ?>
+
+									</div>
+								</div>
+							</div>
+						<?php } ?>
+
+
 						<form name="form" id="form" class="form-horizontal" method="post">
 							<input type="hidden" id="hddId" name="hddId" value="<?php echo $information ? $information["id_hauling"] : ""; ?>" />
 							<input type="hidden" id="state" value="<?php echo $information ? $information["state"] : ""; ?>" />
-
-
-							<?php if ($information) { ?>
-
-								<div class="col-lg-6">
-									<div class="panel panel-primary">
-										<div class="panel-heading">
-											<i class="fa fa-edit fa-fw"></i> V-Contracting
-										</div>
-										<!-- /.panel-heading -->
-										<div class="panel-body">
-
-											<div class="form-group">
-												<div class="row" align="center">
-													<div style="width:70%;" align="center">
-
-														<?php
-
-														$class = "btn-primary";
-														if ($information["vci_signature"]) {
-															$class = "btn-default";
-														?>
-															<button type="button" class="btn btn-default" data-toggle="modal" data-target="#myModal">
-																<span class="glyphicon glyphicon-eye-open" aria-hidden="true"></span> View Signature
-															</button>
-
-															<div id="myModal" class="modal fade" role="dialog">
-																<div class="modal-dialog">
-																	<div class="modal-content">
-																		<div class="modal-header">
-																			<button type="button" class="close" data-dismiss="modal">×</button>
-																			<h4 class="modal-title">Hauling Supervisor Signature</h4>
-																		</div>
-																		<div class="modal-body text-center"><img src="<?php echo base_url($information["vci_signature"]); ?>" class="img-rounded" alt="Hauling Supervisor Signature" width="304" height="236" /> </div>
-																		<div class="modal-footer">
-																			<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
-																		</div>
-																	</div>
-																</div>
-															</div>
-
-														<?php
-														}
-														?>
-
-														<a class="btn <?php echo $class; ?> class_disabled" href="<?php echo base_url("hauling/add_signature/vci/" . $information["id_hauling"]); ?>"><span class="glyphicon glyphicon-edit" aria-hidden="true"></span> VCI Signature </a>
-
-													</div>
-												</div>
-											</div>
-
-										</div>
-										<!-- /.panel-body -->
-									</div>
-								</div>
-
-								<div class="col-lg-6">
-									<div class="panel panel-info">
-										<div class="panel-heading">
-											<i class="fa fa-edit fa-fw"></i> Subcontractor
-											<a href="<?php echo base_url("hauling/email/" . $information["id_hauling"]); ?>" class="btn btn-danger btn-xs class_disabled"> <span class="glyphicon glyphicon-send" aria-hidden="true"></span> Send Email</a>
-										</div>
-										<!-- /.panel-heading -->
-										<div class="panel-body">
-
-											<div class="form-group">
-												<div class="row" align="center">
-													<div style="width:70%;" align="center">
-														<?php
-
-														$class = "btn-info";
-														if ($information["contractor_signature"]) {
-															$class = "btn-default";
-														?>
-															<button type="button" class="btn btn-default" data-toggle="modal" data-target="#myContractorModal">
-																<span class="glyphicon glyphicon-eye-open" aria-hidden="true"></span> View Signature
-															</button>
-
-															<div id="myContractorModal" class="modal fade" role="dialog">
-																<div class="modal-dialog">
-																	<div class="modal-content">
-																		<div class="modal-header">
-																			<button type="button" class="close" data-dismiss="modal">×</button>
-																			<h4 class="modal-title">Hauling Contractor Signature</h4>
-																		</div>
-																		<div class="modal-body text-center"><img src="<?php echo base_url($information["contractor_signature"]); ?>" class="img-rounded" alt="Hauling Contractor Signature" width="304" height="236" /> </div>
-																		<div class="modal-footer">
-																			<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
-																		</div>
-																	</div>
-																</div>
-															</div>
-
-														<?php
-														}
-														?>
-
-														<a class="btn <?php echo $class; ?> class_disabled" href="<?php echo base_url("hauling/add_signature/contractor/" . $information["id_hauling"]); ?>"><span class="glyphicon glyphicon-edit" aria-hidden="true"></span> Contractor Signature </a>
-
-
-													</div>
-												</div>
-											</div>
-										</div>
-									</div>
-								</div>
-							<?php } ?>
-
 
 							<?php
 							/**

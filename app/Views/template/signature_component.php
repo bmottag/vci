@@ -7,7 +7,7 @@ $hiddenName = $hiddenName ?? 'image';
 $width  = $width ?? '100%';
 $height = $height ?? '30vh';
 
-$showAlert = $showAlert ?? true;
+$showAlert = $showAlert ?? false;
 $alertText = $alertText ?? 'The signature is personal and must be authorized with user credentials.';
 $signButtonText = $signButtonText ?? 'Sign';
 $id = $id ?? null;

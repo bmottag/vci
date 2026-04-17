@@ -13,4 +13,6 @@ $routes->group('hauling', ['namespace' => 'App\Modules\Hauling\Controllers'], fu
     $routes->post('save_hauling', 'Hauling::save_hauling');
     $routes->post('list_by_job_code', 'Hauling::list_by_job_code');
     $routes->post('woList', 'Hauling::woList');
+    $routes->post('update_hauling_state', 'Hauling::update_hauling_state');
+    $routes->post('save_signature', 'Hauling::save_signature');
 });

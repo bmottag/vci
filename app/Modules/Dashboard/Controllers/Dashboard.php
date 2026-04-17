@@ -122,11 +122,12 @@ class Dashboard extends BaseController
 
 	public function hauling_delete()
 	{
-		$userRol = $this->session->get("rol");
-		$data['dashboardURL'] = $this->session->get("dashboardURL");
+		$userRol = session()->get('rol');
+		$data = [];
+		$data['dashboardURL'] = session()->get('dashboardURL');
 
 		if ($userRol == ID_ROL_BASIC) { //If it is a BASIC USER, just show the records of the user session
-			$arrParam["idEmployee"] = $this->session->get("id");
+			$arrParam["idEmployee"] = session()->get('id');
 		}
 		$arrParam["limit"] = 30; //Limite de registros para la consulta
 		$arrParam["state_delete"] = true;

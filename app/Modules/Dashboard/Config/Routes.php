@@ -9,6 +9,7 @@ $routes->group('dashboard', ['namespace' => 'App\Modules\Dashboard\Controllers']
     $routes->get('safety', 'Dashboard::safety');
     $routes->get('accounting', 'Dashboard::accounting');
     $routes->get('management', 'Dashboard::management');
+    $routes->get('hauling_delete', 'Dashboard::hauling_delete');
 
     $routes->get('calendar', 'Dashboard::calendar');
     $routes->get('hauling', 'Dashboard::hauling');

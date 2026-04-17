@@ -54,9 +54,7 @@
 									<?= view('App\Views\template\signature_component', [
 										'imageUrl'        => $information[0]["supervisor_signature"] ?? null,
 										'formAction'      => base_url('incidences/save_signature'),
-										'width'           => '100%',
 										'height'          => 200,
-										'showAlert'       => false,
 										'signButtonText'  => ' Supervisor Signature ',
 										'id' 			  => 'supervisor',
 										'extraValue' 	  => 'near_miss',
@@ -75,9 +73,7 @@
 									<?= view('App\Views\template\signature_component', [
 										'imageUrl'        => $information[0]["coordinator_signature"] ?? null,
 										'formAction'      => base_url('incidences/save_signature'),
-										'width'           => '100%',
 										'height'          => 200,
-										'showAlert'       => false,
 										'signButtonText'  => ' Safety Coordinator Signature ',
 										'id' 			  => 'coordinator',
 										'extraValue' 	  => 'near_miss',
@@ -125,9 +121,7 @@
 												<?= view('App\Views\template\signature_component', [
 													'imageUrl'        => $data["person_signature"] ?? null,
 													'formAction'      => base_url('incidences/save_signature_person_involved'),
-													'width'           => '100%',
 													'height'          => 200,
-													'showAlert'       => false,
 													'signButtonText'  => ' Signature ',
 													'id' 			  => $data['id_incident_person']
 												]) ?>

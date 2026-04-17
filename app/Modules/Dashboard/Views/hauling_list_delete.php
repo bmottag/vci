@@ -3,11 +3,9 @@
 <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@latest/dist/sweetalert2.all.min.js"></script>
 
-<?php $session = session(); ?>
 <div id="page-wrapper">
 	<br>
 
-	<!-- /.row -->
 	<div class="row">
 		<div class="col-lg-12">
 			<div class="panel panel-warning">
@@ -19,20 +17,20 @@
 				<ul class="nav nav-pills">
 					<li <?php if ($active == 1) {
 							echo "class='active'";
-						} ?>><a href="<?php echo base_url("dashboard/hauling"); ?>">List of active Haulings</a>
+						} ?>><a class="class" href="<?php echo base_url("dashboard/hauling"); ?>">List of active hauling</a>
 					</li>
 					<?php
-					$userRol = $session->get('rol');
-					if ($userRol == ID_ROL_SUPER_ADMIN) {
+					$userRol = session()->get('rol');
+					if ($userRol == ID_ROL_SUPER_ADMIN || $userRol == ID_ROL_ENGINEER) {
 					?>
 						<li <?php if ($active == 2) {
 								echo "class='active'";
-							} ?>><a class="class" href="<?php echo base_url("dashboard/hauling_delete"); ?>">List of deleted Haulings</a>
+							} ?>><a class="class" href="<?php echo base_url("dashboard/hauling_delete"); ?>">List of deleted hauling</a>
 						</li><?php } ?>
 				</ul>
 				<div class="panel-body">
 
-					<a class='btn btn-warning btn-block' href='<?php echo base_url('hauling/add_hauling'); ?>'>
+					<a class='btn btn-outline btn-warning btn-block' href='<?php echo base_url('hauling/add_hauling'); ?>'>
 						<span class="glyphicon glyphicon-edit" aria-hidden="true"> </span> Add Hauling
 					</a>
 
@@ -40,10 +38,10 @@
 					<?php
 					if ($infoHauling) {
 					?>
-						<table width="100%" class="table table-striped table-bordered table-hover small" id="dataTables">
+						<table width="100%" class="table table-striped table-bordered table-hover" id="dataTables">
 							<thead>
 								<tr>
-									<th class='text-center' width="6%">#</th>
+									<th class='text-center' width="10%">#</th>
 									<th class='text-center'>Report done by</th>
 									<th class='text-center'>Date</th>
 									<th class='text-center'>Hauling done by</th>
@@ -55,7 +53,7 @@
 									<th class='text-center'>Payment</th>
 									<th class='text-center'>Time In</th>
 									<th class='text-center'>Time Out</th>
-									<th class='text-center' width="8%">Actions</th>
+									<th class='text-center'>Actions</th>
 								</tr>
 							</thead>
 							<tbody>
@@ -65,13 +63,13 @@
 									echo "<td class='text-center'>" . $lista['id_hauling'] . "
 									<br>"
 								?><?php
-									if ($lista['fk_id_workorder']) {
+									if ($lista['fk_id_workorder'] != null) {
 									?>
 								<a href='<?php echo base_url('workorders/add_workorder/' . $lista['fk_id_workorder']); ?>' target="_blank"> W.O. # <?php echo $lista['fk_id_workorder']; ?></a>
 								<?php } ?><?php
 											"</td>";
 											echo "<td>" . $lista['name'] . "</td>";
-											echo "<td>" . date('M j, Y', strtotime($lista['date_issue'])) . "</td>";
+											echo "<td class='text-center'>" . $lista['date_issue'] . "</td>";
 											echo "<td>" . $lista['company_name'] . "</td>";
 											echo "<td>" . $lista['unit_number'] . "</td>";
 											echo "<td>" . $lista['truck_type'] . "</td>";
@@ -84,16 +82,7 @@
 											echo "<td class='text-center'>";
 											?>
 								<a href='<?php echo base_url('report/generaHaulingPDF/x/x/x/x/' . $lista['id_hauling']); ?>' target="_blank" title="Download"> <img src='<?php echo base_url('images/pdf.png'); ?>'></a>
-
-								<?php
-									if ($lista['state'] == 2) { ?>
-									<p class="text-danger"><strong>Closed</strong></p>
-								<?php } else if ($lista['state'] != 3) { ?>
-									<a href='<?php echo base_url('hauling/add_hauling/' . $lista['id_hauling']); ?>' class='btn btn-success btn-xs' title="View"><i class='fa fa-eye'></i></a>
-
-									<button type="button" id="<?php echo $lista['id_hauling']; ?>" class='btn btn-danger btn-xs btn-delete-hauling' title="Delete">
-										<i class="fa fa-trash-o"></i>
-									</button><?php } ?>
+								<a href='<?php echo base_url('hauling/add_hauling/' . $lista['id_hauling']); ?>' class='btn btn-success btn-xs' title="View"><i class='fa fa-eye'></i></a>
 							<?php
 									echo "</td>";
 									echo "</tr>";
@@ -104,10 +93,17 @@
 					<?php } ?>
 
 				</div>
+
+
+				<!-- /.panel-body -->
 			</div>
+			<!-- /.panel -->
 		</div>
+		<!-- /.col-lg-12 -->
 	</div>
+	<!-- /.row -->
 </div>
+<!-- /#page-wrapper -->
 
 <!-- Tables -->
 <style>
@@ -153,25 +149,34 @@
 					type: 'POST',
 					url: base_url + 'hauling/update_hauling_state',
 					data: {
-						'hddId': id,
-						'delete': 3
+						'hddId': id
 					},
 					cache: false,
-					success: function(data) {
+					success: function(response) {
 
-						if (data.status === "error") {
+						if (response.result == "error") {
 							Swal.fire({
 								title: "Error!",
-								text: data.mensaje,
+								text: response.mensaje,
 								icon: "error",
 							})
 							$(".btn-delete-hauling").removeAttr('disabled');
 							return false;
 						}
 
-						if (data.status === "success")
+						if (response.result) //true
 						{
-							window.location.href = base_url + "dashboard/hauling";
+							Swal.fire({
+								title: "Deleted!",
+								text: "Your file has been deleted.",
+								icon: "success",
+								timer: 2000,
+							}).then(() => {
+								var url = base_url + "dashboard/hauling";
+								$(location).attr("href", url);
+							});;
+
+
 						} else {
 							Swal.fire({
 								title: "Error!",
@@ -180,6 +185,8 @@
 							})
 							$(".btn-delete-hauling").removeAttr('disabled');
 						}
+						console.log(response);
+
 					}
 				});
 			}

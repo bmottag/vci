@@ -351,5 +351,28 @@ class HaulingModel extends Model
 		}, $rows);
 	}
 
+	public function deleteOccasionalByHauling($idHauling)
+	{
+		if (!is_numeric($idHauling)) {
+			return false;
+		}
+
+		$row = $this->db->table('hauling')
+			->select('fk_id_submodule')
+			->where('id_hauling', $idHauling)
+			->get()
+			->getRowArray();
+
+		$fk_id_submodule = $row['fk_id_submodule'] ?? null;
+
+		if ($fk_id_submodule) {
+			return $this->db->table('workorder_ocasional')
+				->where('id_workorder_ocasional', $fk_id_submodule)
+				->delete();
+		}
+
+		return false;
+	}
+
 
 }

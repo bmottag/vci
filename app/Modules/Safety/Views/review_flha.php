@@ -358,9 +358,7 @@ $(function(){
 						<?= view('App\Views\template\signature_component', [
 							'imageUrl'        => $data["signature"] ?? null,
 							'formAction'      => base_url('safety/save_signature'),
-							'width'           => '100%',
 							'height'          => 200,
-							'showAlert'       => false,
 							'signButtonText'  => ' Signature ',
 							'id' 			  => $data['id_safety_subcontractor']
 						]) ?>
