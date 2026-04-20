@@ -1277,5 +1277,30 @@ class GeneralModel extends Model
 		return $builder->get()->getResultArray();
 	}
 
+	/**
+	 * tool_box list
+	 * para año vigente
+	 * @since 24/10/2017
+	 */
+	public function get_tool_box($arrDatos)
+	{
+		$builder = $this->db->table('tool_box T');
+		$builder->select('T.*, CONCAT(U.first_name, " " , U.last_name) name, J.id_job, J.job_description');
+		$builder->join('param_jobs J', 'J.id_job = T.fk_id_job', 'INNER');
+		$builder->join('user U', 'U.id_user = T.fk_id_user', 'INNER');
+		if (isset($arrDatos["idJob"])) {
+			$builder->where('fk_id_job', $arrDatos["idJob"]);
+		}
+		if (isset($arrDatos["fecha"])) {
+			$builder->where('date_tool_box', $arrDatos["fecha"]);
+		}
+		if (isset($arrDatos["idToolBox"])) {
+			$builder->where('id_tool_box', $arrDatos["idToolBox"]);
+		}
+		$builder->orderBy('id_tool_box', 'ASC');
+
+		return $builder->get()->getResultArray();
+	}
+
 
 }
