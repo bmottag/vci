@@ -18,6 +18,12 @@ $routes->group('jobs', ['namespace' => 'App\Modules\Jobs\Controllers'], function
     $routes->get('deleteToolBoxWorker/(:num)/(:num)/(:num)', 'Jobs::deleteToolBoxWorker/$1/$2/$3');
     $routes->get('deleteToolBoxSubcontractorWorker/(:num)/(:num)/(:num)', 'Jobs::deleteToolBoxSubcontractorWorker/$1/$2/$3');
     $routes->get('generaTemplatePDF/(:num)', 'Jobs::generaTemplatePDF/$1');
+    $routes->get('erp/(:num)', 'Jobs::erp/$1');
+    $routes->get('erp_personnel/(:num)', 'Jobs::erp_personnel/$1');
+    $routes->get('add_workers_training/(:num)', 'Jobs::add_workers_training/$1');
+    $routes->get('deleteERPTRAINGINWorker/(:num)/(:num)', 'Jobs::deleteERPTRAINGINWorker/$1/$2');
+    $routes->get('erp_map/(:num)', 'Jobs::erp_map/$1');
+    $routes->get('generaERPPDF/(:num)', 'Jobs::generaERPPDF/$1');
 
     $routes->post('save_safety_hazards', 'Jobs::save_safety_hazards');
     $routes->post('save_tool_box', 'Jobs::save_tool_box');
@@ -29,4 +35,9 @@ $routes->group('jobs', ['namespace' => 'App\Modules\Jobs\Controllers'], function
     $routes->post('save_tool_box_workers', 'Jobs::save_tool_box_workers');
     $routes->post('tool_box_One_Worker', 'Jobs::tool_box_One_Worker');
     $routes->post('tool_box_subcontractor_Worker', 'Jobs::tool_box_subcontractor_Worker');
+    $routes->post('save_erp', 'Jobs::save_erp');
+    $routes->post('save_training_workers', 'Jobs::save_training_workers');
+    $routes->post('save_one_erp_training_worker', 'Jobs::save_one_erp_training_worker');
+    $routes->post('update_erp_personnel', 'Jobs::update_erp_personnel');
+    $routes->post('do_upload', 'Jobs::do_upload');
 });

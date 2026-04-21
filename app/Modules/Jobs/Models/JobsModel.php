@@ -342,6 +342,169 @@ class JobsModel extends Model
 		return $builder->insert($data);
 	}
 
+	/**
+	 * ERP
+	 * @since 20/11/2017
+	 */
+	public function get_erp($arrDatos)
+	{
+		$builder = $this->db->table('erp E');
+		$builder->select('E.*, U.movil phone_res, X.movil phone_co, CONCAT(U.first_name, " " , U.last_name) responsible, CONCAT(X.first_name, " " , X.last_name) coordinator, J.id_job, J.job_description,
+Y.movil phone_emer_1, CONCAT(Y.first_name, " " , Y.last_name) emer_1, Z.movil phone_emer_2, CONCAT(Z.first_name, " " , Z.last_name) emer_2');
+		$builder->join('param_jobs J', 'J.id_job = E.fk_id_job', 'INNER');
+		$builder->join('user U', 'U.id_user = E.responsible_user', 'INNER');
+		$builder->join('user X', 'X.id_user = E.coordinator_user', 'INNER');
+		$builder->join('user Y', 'Y.id_user = E.emergency_user_1', 'INNER');
+		$builder->join('user Z', 'Z.id_user = E.emergency_user_2', 'INNER');
+		if (isset($arrDatos["idJob"])) {
+			$builder->where('fk_id_job', $arrDatos["idJob"]);
+		}
+		if (isset($arrDatos["idERP"])) {
+			$builder->where('id_erp', $arrDatos["idERP"]);
+		}
+
+		return $builder->get()->getResultArray();
+	}
+
+	/**
+	 * Get ERP training workers info
+	 * @since 23/11/2017
+	 */
+	public function get_erp_training_workers($idJob)
+	{
+		$builder = $this->db->table('erp_training_workers W');
+		$builder->select("W.*, CONCAT(first_name, ' ', last_name) name, U.*");
+		$builder->join('user U', 'U.id_user = W.fk_id_user', 'INNER');
+		$builder->where('W.fk_id_job', $idJob);
+		$builder->orderBy('U.first_name, U.last_name', 'asc');
+
+		return $builder->get()->getResultArray();
+	}
+
+	/**
+	 * Add ERP
+	 * @since 20/11/2017
+	 */
+	public function add_erp(array $post = []): bool
+	{
+		$id = $post['hddIdentificador'] ?? null;
+
+		$data = [
+			'address' => $post['address'] ?? null,
+			'responsible_user' => $post['responsible'] ?? null,
+			'coordinator_user' => $post['coordinator'] ?? null,
+			'fire_department' => $post['fire_department'] ?? null,
+			'paramedics' => $post['paramedics'] ?? null,
+			'ambulance' => $post['ambulance'] ?? null,
+			'police' => $post['police'] ?? null,
+			'federal_protective' => $post['federal_protective'] ?? null,
+			'security' => $post['security'] ?? null,
+			'manager' => $post['manager'] ?? null,
+			'electric' => $post['electric'] ?? null,
+			'water' => $post['water'] ?? null,
+			'gas' => $post['gas'] ?? null,
+			'emergency_user_1' => $post['contact1'] ?? null,
+			'emergency_user_2' => $post['contact2'] ?? null,
+			'voice' => $post['voice'] ?? null,
+			'radio' => $post['radio'] ?? null,
+			'phone' => $post['phone'] ?? null,
+			'other' => $post['other'] ?? null,
+			'specify' => $post['specify'] ?? null,
+			'location' => $post['location'] ?? null,
+			'location2' => $post['location2'] ?? null,
+			'location3' => $post['location3'] ?? null,
+			'directions' => $post['directions'] ?? null
+		];
+
+		$builder = $this->db->table('erp');
+
+		if (empty($id)) {
+			$data['fk_id_user'] = session()->get('id');
+			$data['fk_id_job'] = $post['hddIdJob'];
+			$data['date_erp'] = date("Y-m-d G:i:s");
+			return $builder->insert($data);
+		} else {
+			return $builder->where('id_erp', $id)
+						->update($data);
+		}
+	}
+
+	/**
+	 * @author BMOTTAG
+	 * @since 23/11/2017
+	 * Consulta de empleados para un job especifico
+	 */
+	public function get_selected_workers_erp($idJob)
+	{
+		return $this->db->table('erp_training_workers')
+			->select('fk_id_user')
+			->where('fk_id_job', $idJob)
+			->get()
+			->getResultArray();
+	}
+
+	/**
+	 * Add ERP TRAINING WORKER
+	 * @since 23/11/2017
+	 */
+	public function add_training_worker(array $post = []): bool
+	{
+		$idJob =  $post['hddIdJob'];
+		$workers =  $post['workers'];
+
+		// 🔥 INSERT hazards
+		if (!empty($workers)) {
+			$dataBatch = [];
+			foreach ($workers as $idWorker) {
+				$dataBatch[] = [
+					'fk_id_job' => (int)$idJob,
+					'fk_id_user' => (int)$idWorker
+				];
+			}
+
+			return (bool) $this->db->table('erp_training_workers')
+								->insertBatch($dataBatch);
+		}
+
+		return true;
+	}
+
+	/**
+	 * Save one worker
+	 * @since 23/11/2017
+	 */
+	public function saveOneWorker(array $post = []): bool
+	{
+		$data = [
+			'fk_id_job' => $post['hddId'] ?? null,
+			'fk_id_user' => $post['worker'] ?? null
+		];
+
+		$builder = $this->db->table('erp_training_workers');
+		return $builder->insert($data);
+	}
+
+	/**
+	 * Update Rate
+	 * @since 11/4/2021
+	 */
+	public function updateERPWorker($post)
+	{
+		$id = $post['hddId'] ?? null;
+
+		$data = [
+			'title' => $post['title'] ?? null,
+			'responsability' => $post['responsability'] ?? null
+		];
+
+		$builder = $this->db->table('erp_training_workers');
+
+		return $builder->where('id_erp_training_worker', $id)
+						->update($data);
+	}
+
+
+
 
 
 }

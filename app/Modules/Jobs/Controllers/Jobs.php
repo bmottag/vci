@@ -616,6 +616,376 @@ class Jobs extends BaseController
 			->setBody($pdf->Output($filename, 'I'));
 	}
 
+	/**
+	 * Form ERP
+	 * @since 20/11/2017
+	 * @author BMOTTAG
+	 * @review 20/04/2026 - new CI4 version
+	 */
+	public function erp($idJob)
+	{
+		$data = [];
+		$data['information'] = FALSE;
+		$data['trainingWorkers'] = FALSE;
+		$data['deshabilitar'] = '';
+
+		$data['jobInfo'] = $this->generalModel->get_job(['idJob' => $idJob]);
+		$data['workersList'] = $this->generalModel->get_user(["state" => 1]); //worker list
+
+		//ERP info
+		$data['information'] = $this->jobsModel->get_erp(["idJob" => $idJob]);
+
+		//erp training list
+		$data['trainingWorkers'] = $this->jobsModel->get_erp_training_workers($idJob);
+
+		return $this->render('App\Modules\Jobs\Views\form_erp', $data);
+	}
+
+	/**
+	 * Save ERP
+	 * @since 20/11/2017
+	 * @author BMOTTAG
+	 * @review 20/04/2026 - new CI4 version
+	 */
+	public function save_erp()
+	{
+		$data = [];
+		$post = $this->request->getPost();
+		$data["idRecord"] =  $post['hddIdJob'];
+		if ($this->jobsModel->add_erp($post)) {
+			$data["status"] = "success";
+			session()->setFlashdata('retornoExito', 'You have saved the ERP!!');
+		} else {
+			$data["status"] = "error";
+			session()->setFlashdata('retornoError', '<strong>Error!!!</strong> Ask for help');
+		}
+
+		return $this->response->setJSON($data);
+	}
+
+	/**
+	 * Form ERP - PERSONNEL
+	 * @since 4/5/2018
+	 * @author BMOTTAG
+	 * @review 20/04/2026 - new CI4 version
+	 */
+	public function erp_personnel($idJob)
+	{
+		$data = [];
+		$data['information'] = FALSE;
+		$data['trainingWorkers'] = FALSE;
+		$data['deshabilitar'] = '';
+
+		$data['jobInfo'] = $this->generalModel->get_job(['idJob' => $idJob]);
+		$data['workersList'] = $this->generalModel->get_user(["state" => 1]); //worker list
+
+		//ERP info
+		$data['information'] = $this->jobsModel->get_erp(["idJob" => $idJob]);
+
+		//erp training list
+		$data['trainingWorkers'] = $this->jobsModel->get_erp_training_workers($idJob);
+
+		return $this->render('App\Modules\Jobs\Views\form_erp_personnel', $data);
+	}
+
+	/**
+	 * Form Add Workers for ERP Trainning
+	 * @since 23/11/2017
+	 * @author BMOTTAG
+	 * @review 20/04/2026 - new CI4 version
+	 */
+	public function add_workers_training($id)
+	{
+		$workersList = $this->generalModel->get_user(["state" => 1]); //workers list
+
+		// 🔥 traemos todos los workers asignados de una sola vez
+		$selectedWorkers = array_column(
+			$this->jobsModel->get_selected_workers_erp($id),
+			'fk_id_user'
+		);
+
+		// 🔁 marcamos checked en memoria
+		foreach ($workersList as &$worker) {
+			$worker['found'] = in_array($worker['id_user'], $selectedWorkers);
+		}
+
+		$data = [
+			'workersList' => $workersList,
+			'idJob' => $id
+		];
+
+		return $this->render('App\Modules\Jobs\Views\form_add_workers_training', $data);
+	}
+
+	/**
+	 * Save worker trainigno
+	 * @since 23/11/2017
+	 * @author BMOTTAG
+	 * @review 20/04/2026 - new CI4 version
+	 */
+	public function save_training_workers()
+	{
+		$data = [];
+		$post = $this->request->getPost();
+		$data["idRecord"] =  $post['hddIdJob'];
+		if ($this->jobsModel->add_training_worker($post)) {
+			$data["status"] = "success";
+			session()->setFlashdata('retornoExito', 'You have added the Workers, remember to get the signature of each one.');
+		} else {
+			$data["status"] = "error";
+			session()->setFlashdata('retornoError', '<strong>Error!!!</strong> Ask for help');
+		}
+
+		return $this->response->setJSON($data);
+	}
+
+	/**
+	 * Save one worker to the ERP TRAINING
+	 * @review 20/04/2026 - new CI4 version
+	 */
+	public function save_one_erp_training_worker()
+	{
+		$post = $this->request->getPost();
+		$idJob = $post['hddId'];
+		
+		if ($this->jobsModel->saveOneWorker($post)) {
+			session()->setFlashdata('retornoExito', 'You have added one Worker.');
+		} else {
+			session()->setFlashdata('retornoError', '<strong>Error!!!</strong> Ask for help');
+		}
+
+		return redirect()->to(base_url('jobs/erp_personnel/' . $idJob ));
+	}
+
+	/**
+	 * Update infor personal
+	 * @since 11/4/2021
+	 * @author BMOTTAG
+	 * @review 20/04/2026 - new CI4 version
+	 */
+	public function update_erp_personnel()
+	{
+		$post = $this->request->getPost();
+		$idJob = $post['hddIdERP'];
+
+		if ($this->jobsModel->updateERPWorker($post)) {
+			session()->setFlashdata('retornoExito', "You have saved the Worker Information!!");
+		} else {
+			session()->setFlashdata('retornoError', '<strong>Error!!!</strong> Ask for help');
+		}
+
+		return redirect()->to(base_url('jobs/erp_personnel/' . $idJob ));
+	}
+
+	/**
+	 * Delete ERP TRAINING worker
+	 * @review 20/04/2026 - new CI4 version
+	 */
+	public function deleteERPTRAINGINWorker($idJob, $idErpTrainingWorker)
+	{
+		$arrParam = [
+			"table" => "erp_training_workers",
+			"primaryKey" => "id_erp_training_worker",
+			"id" => $idErpTrainingWorker
+		];
+		if ($this->generalModel->deleteRecord($arrParam)) {
+			$data["status"] = "success";
+			session()->setFlashdata('retornoExito', 'You have deleted one worker.');
+		} else {
+			$data["status"] = "error";
+			session()->setFlashdata('retornoError', '<strong>Error!!!</strong> Ask for help');
+		}
+
+		return redirect()->to(base_url('jobs/erp_personnel/' . $idJob));
+	}
+
+	/**
+	 * Form ERP - MAP
+	 * @since 4/5/2018
+	 * @author BMOTTAG
+	 * @review 20/04/2026 - new CI4 version
+	 */
+	public function erp_map($idJob)
+	{
+		$data['information'] = FALSE;
+		$data['deshabilitar'] = '';
+		$data['jobInfo'] = $this->generalModel->get_job(['idJob' => $idJob]);
+		$data['information'] = $this->jobsModel->get_erp(["idJob" => $idJob]);
+		return $this->render('App\Modules\Jobs\Views\form_erp_map', $data);
+	}
+
+	/**
+	 * FUNCIÓN PARA SUBIR LA IMAGEN 
+	 * @review 20/04/2026 - new CI4 version
+	 */
+	public function do_upload()
+	{
+		$idJob = $this->request->getPost('hddIdJobMap');
+		$file = $this->request->getFile('userfile');
+
+		if (!$file->isValid()) {
+			session()->setFlashdata('retornoError', $file->getErrorString());
+			return redirect()->to(base_url('jobs/erp_map' . $idJob));
+		}
+
+		// Generar nombre seguro
+		$newName = $idJob . '.' . $file->getExtension();
+
+		// Ruta absoluta
+		$path = FCPATH . 'images/erp/';
+
+		// Mover archivo
+		$file->move($path, $newName, true); // true = overwrite
+
+		// Crear thumbnail si es photo
+		$pathDb = 'images/erp/' . $newName;
+
+		// Actualizar DB
+		$arrParam = [
+			"table" => "erp",
+			"primaryKey" => "fk_id_job",
+			"id" => $idJob,
+			"column" => "evacuation_map",
+			"value" => $pathDb
+		];
+		if ($this->generalModel->updateRecord($arrParam)) {
+			session()->setFlashdata('retornoExito', 'Good job, you have uploaded the photo.');
+		} else {
+			session()->setFlashdata('retornoError', 'Ask for help.');
+		}
+
+		// Redirigir a la vista de regreso
+		return redirect()->to(base_url('jobs/erp_map/' . $idJob));
+	}
+
+	/**
+	 * Generate ERP Report in PDF
+	 * @param int $idERP
+	 * @since 20/11/2017
+	 * @author BMOTTAG
+	 * @review 21/04/2026 - new CI4 version
+	 */
+	public function generaERPPDF($idERP)
+	{
+		$pdf = new TCPDF();
+
+		$pdf->SetCreator('VCI');
+		$pdf->SetAuthor('VCI');
+		$pdf->SetTitle('ERP report');
+
+		$pdf->setPrintHeader(false);
+		$pdf->setPrintFooter(false);
+
+		// 👇 espacio para logo
+		$pdf->SetMargins(10, 25, 10);
+		$pdf->SetAutoPageBreak(TRUE, 10);
+
+		$pdf->SetFont('dejavusans', '', 8);
+
+		$data['info'] = $this->jobsModel->get_erp(["idERP" => $idERP]);
+
+		$data['trainingWorkers'] = $this->jobsModel->get_erp_training_workers($data['info'][0]['fk_id_job']);
+
+		$pdf->AddPage();
+
+		// LOGO
+		$logo = FCPATH . 'images/logo.png';
+
+		if (is_file($logo)) {
+			$pdf->Image($logo, 10, 8, 30);
+		}
+
+		// create some HTML content
+		$html = '<p></p><p></p><p></p><p></p>
+				<p><h1 align="center" style="color:#337ab7;">EMERGENCY RESPONSE PLAN</h1></p>
+				<p></p><p></p><p></p><p></p><p></p>
+				<p><h2 align="center" style="color:#337ab7;">Project code:<br>' . $data['info'][0]["job_description"] . '</h2></p>
+				<p></p><p></p><p></p><p></p><p></p>
+				<p><h2 align="center" style="color:#337ab7;">Facility Address:<br>' . $data['info'][0]["address"] . '</h2></p>
+				<p></p><p></p><p></p><p></p><p></p>
+				<p><h2 align="center" style="color:#337ab7;">DATE PREPARED:<br>' . $data['info'][0]["date_erp"] . '</h2></p>';
+
+		// output the HTML content
+		$pdf->writeHTML($html, true, false, true, false, '');
+
+		// add a page
+		$pdf->AddPage();
+
+		// create some HTML content
+		$html = '<p><h1 align="center" style="color:#337ab7;">EMERGENCY PERSONNEL NAMES AND PHONE NUMBERS</h1></p>
+				<style>
+				table {
+					font-family: arial, sans-serif;
+					border-collapse: collapse;
+					width: 100%;
+				}
+
+				td, th {
+					border: 1px solid #dddddd;
+					text-align: left;
+					padding: 8px;
+				}
+				</style>
+			<table border="0" cellspacing="0" cellpadding="5">
+	
+				<tr>
+					<th bgcolor="#337ab7" style="color:white;" width="30%"><strong>Site supervisor: </strong></th>
+					<th width="30%">' . $data['info'][0]['responsible'] . '</th>
+					<th bgcolor="#337ab7" style="color:white;" width="20%"><strong>Phone: </strong></th>
+					<th width="20%">' . $data['info'][0]['phone_res'] . '</th>
+				</tr>
+				
+				<tr>
+					<th bgcolor="#337ab7" style="color:white;"><strong>Emergency coordinator: </strong></th>
+					<th>' . $data['info'][0]['coordinator'] . '</th>
+					<th bgcolor="#337ab7" style="color:white;"><strong>Phone: </strong></th>
+					<th>' . $data['info'][0]['phone_co'] . '</th>
+				</tr>
+			
+			</table>';
+
+		// output the HTML content
+		$pdf->writeHTML($html, true, false, true, false, '');
+
+		$html = view("jobs/reporte_evacuation_pdf", $data);
+		$pdf->writeHTML($html, true, false, true, false, '');
+
+		// add a page
+		$pdf->AddPage();
+		$html = view("jobs/reporte_evacuation_procedures_pdf", $data);
+		$pdf->writeHTML($html, true, false, true, false, '');
+
+		// add a page
+		$pdf->AddPage();
+		$html = view("jobs/reporte_evacuation_procedures_fire_pdf", $data);
+		$pdf->writeHTML($html, true, false, true, false, '');
+
+		// add a page
+		$pdf->AddPage();
+		$html = view("jobs/reporte_evacuation_procedures_chemical_pdf", $data);
+		$pdf->writeHTML($html, true, false, true, false, '');
+
+		// add a page
+		$pdf->AddPage();
+		$html = view("jobs/reporte_evacuation_procedures_weather_pdf", $data);
+		$pdf->writeHTML($html, true, false, true, false, '');
+
+		// add a page
+		$pdf->AddPage();
+		$html = view("jobs/reporte_training_pdf", $data);
+		$pdf->writeHTML($html, true, false, true, false, '');
+
+		// reset pointer to the last page
+		$pdf->lastPage();
+
+		$filename = 'erp_' . $idERP . '.pdf';
+
+		return $this->response
+			->setHeader('Content-Type', 'application/pdf')
+			->setBody($pdf->Output($filename, 'I'));
+	}
+
+
 
 
 
