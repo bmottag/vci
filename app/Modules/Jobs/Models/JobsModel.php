@@ -678,6 +678,41 @@ Y.movil phone_emer_1, CONCAT(Y.first_name, " " , Y.last_name) emer_1, Z.movil ph
 		}
 	}
 
+	/**
+	 * Get bitacora
+	 * @since 03/01/2024
+	 */
+	public function get_bitacora_job($id_job)
+	{
+		$builder = $this->db->table('bitacora');
+		$builder->select("*");
+		$builder->join('user', 'bitacora.fk_id_user = user.id_user', 'left');
+		$builder->where('fk_id_job =', $id_job);
+
+		$builder->orderBy('id_bitacora', 'DESC');
+		return $builder->get()->getResultArray();
+	}
+
+	/**
+	 * Add new bitacora
+	 * @since 03/01/2024
+	 */
+	public function saveBitacora(array $post): bool
+	{
+		$id = $post['hddId'] ?? null;
+
+		$data = [
+			'fk_id_job' => $post['hddId'] ?? null,
+			'fk_id_user' => session()->get('id'),
+			'date_bitacora' => date("Y-m-d H:i:s"),
+			'notification' => $post['notification'] ?? null
+		];
+
+		$builder = $this->db->table('bitacora');
+
+		return $builder->insert($data);
+	}
+
 
 
 

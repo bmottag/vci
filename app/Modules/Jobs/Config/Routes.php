@@ -28,6 +28,7 @@ $routes->group('jobs', ['namespace' => 'App\Modules\Jobs\Controllers'], function
     $routes->get('add_jso/(:num)/(:num)', 'Jobs::add_jso/$1/$2');
     $routes->get('add_jso/(:num)', 'Jobs::add_jso/$1');
     $routes->get('generaJSOPDF/(:num)', 'Jobs::generaJSOPDF/$1');
+    $routes->get('bitacora/(:num)', 'Jobs::bitacora/$1');
 
     $routes->post('save_safety_hazards', 'Jobs::save_safety_hazards');
     $routes->post('save_tool_box', 'Jobs::save_tool_box');
@@ -48,4 +49,6 @@ $routes->group('jobs', ['namespace' => 'App\Modules\Jobs\Controllers'], function
     $routes->post('save_signature_jso', 'Jobs::save_signature_jso');
     $routes->post('cargarModalWorker', 'Jobs::cargarModalWorker');
     $routes->post('saveJSOWorker', 'Jobs::saveJSOWorker');
+    $routes->post('loadModalBitacora', 'Jobs::loadModalBitacora');
+    $routes->post('save_bitacora', 'Jobs::save_bitacora');
 });

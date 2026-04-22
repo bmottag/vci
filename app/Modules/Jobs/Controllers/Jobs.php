@@ -1290,6 +1290,48 @@ class Jobs extends BaseController
 			->setBody($pdf->Output($filename, 'I'));
 	}
 
+	/**
+	 * Informacion detallada del proyecto
+	 * @since 23/12/2020
+	 * @author BMOTTAG
+	 */
+	public function bitacora($idJob)
+	{
+		$data['jobInfo'] = $this->generalModel->get_job(['idJob' => $idJob]);
+		//informacion Work Order
+		$data['workOrderInfo'] = $this->generalModel->get_workorder_info(["jobId" => $idJob]);
+		//bitacora
+		$data['bitacora'] = $this->jobsModel->get_bitacora_job($idJob);
+		return $this->render('App\Modules\Jobs\Views\job_bitacora', $data);
+	}
+
+	public function loadModalBitacora()
+	{
+		$data = [];
+		$data["idBitacora"] = $this->request->getPost("idBitacora");
+		return $this->response
+					->setContentType('text/html')
+					->setBody(view('App\Modules\Jobs\Views\bitacora_modal', $data));
+	}
+
+	public function save_bitacora()
+	{
+		$post = $this->request->getPost();
+
+		$data = [];
+		$data["idJob"] = $post['hddId'] ?? null;
+
+		if ($this->jobsModel->saveBitacora($post)) {
+			$data["status"] = "success";
+			session()->setFlashdata('retornoExito', "You have added a new note!!");
+		} else {
+			$data["status"] = "error";
+			session()->setFlashdata('retornoError', '<strong>Error!!!</strong> Ask for help');
+		}
+
+		return $this->response->setJSON($data);
+	}
+
 
 
 
