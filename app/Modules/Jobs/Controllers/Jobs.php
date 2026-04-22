@@ -136,7 +136,7 @@ class Jobs extends BaseController
 
 		$pdf->SetCreator('VCI');
 		$pdf->SetAuthor('VCI');
-		$pdf->SetTitle('JOB HAZARDS ANALYSIS report');
+		$pdf->SetTitle('JOB HAZARDS ANALYSIS Report');
 
 		$pdf->setPrintHeader(false);
 		$pdf->setPrintFooter(false);
@@ -871,7 +871,7 @@ class Jobs extends BaseController
 
 		$pdf->SetCreator('VCI');
 		$pdf->SetAuthor('VCI');
-		$pdf->SetTitle('ERP report');
+		$pdf->SetTitle('ERP Report');
 
 		$pdf->setPrintHeader(false);
 		$pdf->setPrintFooter(false);
@@ -1065,7 +1065,7 @@ class Jobs extends BaseController
 	 * param $idFormulario: llave principal del formulario
      * @since 15/5/2017
      * @author BMOTTAG
-	 * @review 13/04/2026 - new CI4 version
+	 * @review 21/04/2026 - new CI4 version
 	 */
 	public function save_signature()
 	{
@@ -1107,7 +1107,7 @@ class Jobs extends BaseController
 	 * param $idWorker: llave principal del trabajador
 	 * @since 5/1/2018
 	 * @author BMOTTAG
-	 * @review 13/04/2026 - new CI4 version
+	 * @review 21/04/2026 - new CI4 version
 	 */
 	public function save_signature_jso()
 	{
@@ -1177,7 +1177,7 @@ class Jobs extends BaseController
 	/**
 	 * Cargo modal- formulario de captura workers para jso
 	 * @since 5/1/2018
-	 * @review 13/04/2026 - new CI4 version
+	 * @review 21/04/2026 - new CI4 version
 	 */
 	public function cargarModalWorker()
 	{
@@ -1206,7 +1206,7 @@ class Jobs extends BaseController
 	 * Save formularios
 	 * @since 5/1/2018
 	 * @author BMOTTAG
-	 * @review 13/04/2026 - new CI4 version
+	 * @review 22/04/2026 - new CI4 version
 	 */
 	public function saveJSOWorker()
 	{
@@ -1236,6 +1236,58 @@ class Jobs extends BaseController
 		}
 
 		return $this->response->setJSON($data);
+	}
+
+	/**
+	 * Generate JSO Report in PDF
+	 * @param int $idJSO
+	 * @since 7/1/2018
+	 * @author BMOTTAG
+	 * @review 22/04/2026 - new CI4 version
+	 */
+	public function generaJSOPDF($idJSO)
+	{
+		$pdf = new TCPDF();
+
+		$pdf->SetCreator('VCI');
+		$pdf->SetAuthor('VCI');
+		$pdf->SetTitle('JSO Report');
+
+		$pdf->setPrintHeader(false);
+		$pdf->setPrintFooter(false);
+
+		// 👇 espacio para logo
+		$pdf->SetMargins(10, 25, 10);
+		$pdf->SetAutoPageBreak(TRUE, 10);
+
+		$pdf->SetFont('dejavusans', '', 8);
+
+		$data['info'] = $this->jobsModel->get_jso(["idJobJso" => $idJSO]);
+		$data['workers'] = $this->jobsModel->get_jso_workers(["idJobJso" => $idJSO]);
+
+		$pdf->AddPage();
+
+		// LOGO
+		$logo = FCPATH . 'images/logo.png';
+
+		if (is_file($logo)) {
+			$pdf->Image($logo, 10, 8, 30);
+		}
+
+		$html = view('jobs/reporte_jso', $data);
+		if ($data['workers']) {
+			$html .= view('jobs/reporte_jso_workers', $data);
+		}
+
+		$pdf->writeHTML($html, true, false, true, false, '');
+
+		$pdf->lastPage();
+
+		$filename = 'JSO_' . $data['info'][0]['job_description']  . $idJSO . '.pdf';
+
+		return $this->response
+			->setHeader('Content-Type', 'application/pdf')
+			->setBody($pdf->Output($filename, 'I'));
 	}
 
 
