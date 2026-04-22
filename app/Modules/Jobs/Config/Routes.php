@@ -29,6 +29,8 @@ $routes->group('jobs', ['namespace' => 'App\Modules\Jobs\Controllers'], function
     $routes->get('add_jso/(:num)', 'Jobs::add_jso/$1');
     $routes->get('generaJSOPDF/(:num)', 'Jobs::generaJSOPDF/$1');
     $routes->get('bitacora/(:num)', 'Jobs::bitacora/$1');
+    $routes->get('locates/(:num)', 'Jobs::locates/$1');
+    $routes->get('deleteJobLocate/(:num)/(:num)', 'Jobs::deleteJobLocate/$1/$2');
 
     $routes->post('save_safety_hazards', 'Jobs::save_safety_hazards');
     $routes->post('save_tool_box', 'Jobs::save_tool_box');
@@ -51,4 +53,5 @@ $routes->group('jobs', ['namespace' => 'App\Modules\Jobs\Controllers'], function
     $routes->post('saveJSOWorker', 'Jobs::saveJSOWorker');
     $routes->post('loadModalBitacora', 'Jobs::loadModalBitacora');
     $routes->post('save_bitacora', 'Jobs::save_bitacora');
+    $routes->post('do_upload_locates', 'Jobs::do_upload_locates');
 });

@@ -1294,6 +1294,7 @@ class Jobs extends BaseController
 	 * Informacion detallada del proyecto
 	 * @since 23/12/2020
 	 * @author BMOTTAG
+	 * @review 22/04/2026 - new CI4 version
 	 */
 	public function bitacora($idJob)
 	{
@@ -1330,6 +1331,84 @@ class Jobs extends BaseController
 		}
 
 		return $this->response->setJSON($data);
+	}
+
+	/**
+	 * Form Upload Locates 
+	 * @since 29/11/2017
+	 * @author BMOTTAG
+	 * @review 22/04/2026 - new CI4 version
+	 */
+	public function locates($idJob)
+	{
+		$data['jobInfo'] = $this->generalModel->get_job(['idJob' => $idJob]);
+		//locates list
+		$data['locates'] = $this->jobsModel->get_job_locates($idJob);
+		
+		return $this->render('App\Modules\Jobs\Views\locates_list', $data);
+	}
+
+	/**
+	 * FUNCIÓN PARA SUBIR LA IMAGEN 
+	 * @review 22/04/2026 - new CI4 version
+	 */
+	public function do_upload_locates()
+	{
+		$post = $this->request->getPost();
+		$idJob = $post['hddIdJob'] ?? null;
+
+		$file = $this->request->getFile('userfile');
+
+		if (!$file || !$file->isValid() || $file->hasMoved()) {
+			session()->setFlashdata('retornoError', $file ? $file->getErrorString() : 'No file uploaded');
+			return redirect()->to(base_url('jobs/locates/' . $idJob));
+		}
+
+		$newName = $file->getName();
+
+		// Ruta absoluta
+		$path = FCPATH . 'images/locates/';
+
+		// Mover archivo
+		$file->move($path, $newName, true); // true = overwrite
+
+		// Ruta para DB
+		$pathDb = 'images/locates/' . $newName;
+
+		if ($this->jobsModel->add_locates($post, $pathDb)) {
+			session()->setFlashdata('retornoExito', 'Good job, you have uploaded the photo.');
+		} else {
+			session()->setFlashdata('retornoError', 'Ask for help.');
+		}
+
+		// Redirigir a la vista de regreso
+		return redirect()->to(base_url('jobs/locates/' . $idJob));
+	}
+
+	/**
+	 * Delete Job locate
+	 * @review 22/04/2026 - new CI4 version
+	 */
+	public function deleteJobLocate($idJobLocate, $idJob)
+	{
+		if (empty($idJobLocate) || empty($idJob)) {
+			throw new \CodeIgniter\Exceptions\PageNotFoundException('Invalid IDs');
+		}
+
+		$arrParam = [
+			"table" => "job_locates",
+			"primaryKey" => "id_job_locates",
+			"id" => $idJobLocate
+		];
+		if ($this->generalModel->deleteRecord($arrParam)) {
+			$data["status"] = "success";
+			session()->setFlashdata('retornoExito', 'You have deleted the image.');
+		} else {
+			$data["status"] = "error";
+			session()->setFlashdata('retornoError', '<strong>Error!!!</strong> Ask for help');
+		}
+
+		return redirect()->to(base_url('jobs/locates/' . $idJob));
 	}
 
 

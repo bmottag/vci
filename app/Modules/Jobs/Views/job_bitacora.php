@@ -11,8 +11,10 @@
 				<div class="panel-body">
 
 					<div class="alert alert-violeta">
-						<span class="fa fa-briefcase" aria-hidden="true"></span>
-						<strong>Job Code/Name: </strong><?php echo $jobInfo[0]['job_description']; ?>
+						<h2>
+							<span class="fa fa-briefcase" aria-hidden="true"></span>
+							<strong>Job Code/Name: </strong><?php echo $jobInfo[0]['job_description']; ?>
+						</h2>
 					</div>
 
 					<div>

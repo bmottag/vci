@@ -713,6 +713,38 @@ Y.movil phone_emer_1, CONCAT(Y.first_name, " " , Y.last_name) emer_1, Z.movil ph
 		return $builder->insert($data);
 	}
 
+	/**
+	 * Get job locates info
+	 * @since 29/11/2017
+	 */
+	public function get_job_locates($idJob)
+	{
+		$builder = $this->db->table('job_locates L');
+		$builder->select();
+		$builder->where('L.fk_id_job', $idJob);
+		$builder->orderBy('L.id_job_locates', 'asc');
+		return $builder->get()->getResultArray();
+	}
+
+	/**
+	 * Add locates
+	 * @since 29/11/2017
+	 */
+	public function add_locates($post, $path): bool
+	{
+		$data = [
+			'fk_id_job' => $post['hddIdJob'] ?? null,
+			'fk_id_user' => session()->get('id'),
+			'locates_description' => $post['description'] ?? null,
+			'locates_photo' => $path,
+			'locates_date' => date("Y-m-d H:i:s"),
+		];
+
+		$builder = $this->db->table('job_locates');
+
+		return $builder->insert($data);
+	}
+
 
 
 
