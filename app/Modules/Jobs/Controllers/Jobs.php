@@ -985,6 +985,261 @@ class Jobs extends BaseController
 			->setBody($pdf->Output($filename, 'I'));
 	}
 
+	/**
+	 * JSO
+	 * @since 24/10/2017
+	 * @author BMOTTAG
+	 * @review 21/04/2026 - new CI4 version
+	 */
+	public function jso($idJob)
+	{
+		$data['jobInfo'] = $this->generalModel->get_job(['idJob' => $idJob]);
+		//jso info
+		$data['information'] = $this->jobsModel->get_jso(['idJob' => $idJob]);
+		return $this->renderTopOnly('App\Modules\Jobs\Views\jso_list', $data);
+	}
+
+	/**
+	 * Form JSO
+	 * @since 3/1/2018
+	 * @author BMOTTAG
+	 * @review 21/04/2026 - new CI4 version
+	 */
+	public function add_jso($idJob, $idJobJso = 'x')
+	{
+		$data = [];
+		$data['information'] = FALSE;
+		$data['trainingWorkers'] = FALSE;
+		$data['deshabilitar'] = '';
+
+		$data['jobInfo'] = $this->generalModel->get_job(['idJob' => $idJob]);
+		$data['workersList'] = $this->generalModel->get_user(["state" => 1]); //workers list
+
+		//si envio el id, entonces busco la informacion 
+		if ($idJobJso != 'x') {
+			//JSO info
+			$data['information'] = $this->jobsModel->get_jso(["idJobJso" => $idJobJso]);
+
+			if (!$data['information']) {
+				throw new \Exception('ERROR!!! - You are in the wrong place.');
+			}
+
+			//workers list
+			$data['infoWorkers'] = "";
+			if ($data['information']) {
+				$data['infoWorkers'] = $this->jobsModel->get_jso_workers(["idJobJso" => $idJobJso]);
+			}
+		}
+
+		return $this->render('App\Modules\Jobs\Views\form_jso', $data);
+	}
+
+	/**
+	 * Save JSO
+	 * @since 3/1/2018
+	 * @author BMOTTAG
+	 * @review 21/04/2026 - new CI4 version
+	 */
+	public function save_jso()
+	{
+		$post = $this->request->getPost();
+
+		$data = [];
+		$data["idRecord"] = $post['hddIdJob'] ?? null;
+		if ($idJSO = $this->jobsModel->addJSO($post)) {
+			$data["idJSO"] = $idJSO;
+			$data["status"] = "success";
+			session()->setFlashdata('retornoExito', 'You have saved the JSO!!');
+		} else {
+			$data["status"] = "error";
+			session()->setFlashdata('retornoError', '<strong>Error!!!</strong> Ask for help');
+		}
+
+		return $this->response->setJSON($data);
+	}
+
+	/**
+	 * Signature
+	 * param $incidencesType: near_miss / incident / accident
+	 * param $userType: supervisor / coordinator
+	 * param $idFormulario: llave principal del formulario
+     * @since 15/5/2017
+     * @author BMOTTAG
+	 * @review 13/04/2026 - new CI4 version
+	 */
+	public function save_signature()
+	{
+		$imageData = $this->request->getPost('image'); 
+		$id = $this->request->getPost('otherValue'); 
+		$incidencesType = $this->request->getPost('extraValue'); 
+		$userType = $this->request->getPost('id'); 
+		$fileName = $incidencesType . "_" . $userType . "_" . $id . ".png";
+		$filePath = WRITEPATH . '../public/images/signature/incidences/' . $fileName;
+
+		if(!$imageData){
+			return redirect()->back()->with('error', 'No signature provided.');
+		}
+
+		$imageData = str_replace('data:image/png;base64,', '', $imageData);
+		$imageData = str_replace(' ', '+', $imageData);
+
+		if(!is_dir(dirname($filePath))) mkdir(dirname($filePath), 0755, true);
+
+		if(file_put_contents($filePath, base64_decode($imageData))){
+			$this->incidencesModel->updateInfoSignature([
+				"table" => "incidence_" . $incidencesType,
+				"signatureColumn" => $userType. "_signature",
+				"valSignature" => 'images/signature/incidences/' . $fileName,
+				"fechaColumn" => "date_" . $userType,
+				"idColumn" => "id_" . $incidencesType,
+				"idValue" => $id
+			]);
+			return redirect()->back()->with('retornoExito', 'Signature saved successfully.');
+		} else {
+			return redirect()->back()->with('retornoError', 'Error saving signature.');
+		}
+	}
+
+	/**
+	 * Signature
+	 * param $typo: supervisor / worker
+	 * param $idJSO: llave principal del formulario
+	 * param $idWorker: llave principal del trabajador
+	 * @since 5/1/2018
+	 * @author BMOTTAG
+	 * @review 13/04/2026 - new CI4 version
+	 */
+	public function save_signature_jso()
+	{
+		$imageData = $this->request->getPost('image'); 
+		$id = $this->request->getPost('extraValue'); 
+		$typo = $this->request->getPost('otherValue'); 
+		
+		switch ($typo) {
+			case "supervisor":
+				$fileName = "supervisor_" . $id . ".png";
+				$arrParam = [
+					"table" => "job_jso",
+					"primaryKey" => "id_job_jso",
+					"id" => $id,
+					"column" => "supervisor_signature",
+					"value" => 'images/signature/jso/' . $fileName
+				];
+				break;
+
+			case "manager":
+				$fileName = "manager_" . $id . ".png";
+				$arrParam = [
+					"table" => "job_jso",
+					"primaryKey" => "id_job_jso",
+					"id" => $id,
+					"column" => "manager_signature",
+					"value" => 'images/signature/jso/' . $fileName
+				];
+				break;
+
+			case "worker":
+				$fileName = "worker_" . $id . ".png";
+				$arrParam = [
+					"table" => "job_jso_workers",
+					"primaryKey" => "id_job_jso_worker",
+					"id" => $id,
+					"column" => "signature",
+					"value" => 'images/signature/jso/' . $fileName
+				];
+				break;
+
+			default:
+				return $this->response->setJSON([
+					"status" => "error",
+					"message" => "Invalid user type"
+				]);
+		}
+		$filePath = WRITEPATH . '../public/images/signature/jso/' . $fileName;
+
+		if(!$imageData){
+			return redirect()->back()->with('error', 'No signature provided.');
+		}
+
+		$imageData = str_replace('data:image/png;base64,', '', $imageData);
+		$imageData = str_replace(' ', '+', $imageData);
+
+		if(!is_dir(dirname($filePath))) mkdir(dirname($filePath), 0755, true);
+
+		if(file_put_contents($filePath, base64_decode($imageData))){
+			$this->generalModel->updateRecord($arrParam);
+			return redirect()->back()->with('retornoExito', 'Signature saved successfully.');
+		} else {
+			return redirect()->back()->with('retornoError', 'Error saving signature.');
+		}
+	}
+
+	/**
+	 * Cargo modal- formulario de captura workers para jso
+	 * @since 5/1/2018
+	 * @review 13/04/2026 - new CI4 version
+	 */
+	public function cargarModalWorker()
+	{
+		$data = [];
+		$data['information'] = null;
+
+		$idJobJso = $this->request->getPost("idJobJso");
+		$idJobJsoWorker = $this->request->getPost("idJobJsoWorker");
+		$data["idJobJso"] = $idJobJso;
+		$data["idJobJsoWorker"] = $idJobJsoWorker;
+
+		if (!empty($idJobJsoWorker) && $idJobJsoWorker !== 'x') {
+			$data['information'] = $this->jobsModel->get_jso_workers(["idJobJsoWorker" => $data["idJobJsoWorker"]]);
+		
+			if ($data['information'] && is_array($data['information']) && isset($data['information'][0])) {
+				$data["idJobJso"] = $data['information'][0]['fk_id_job_jso'];
+			}
+		}
+
+		return $this->response
+					->setContentType('text/html')
+					->setBody(view('App\Modules\Jobs\Views\modal_jso_worker', $data));
+	}
+
+	/**
+	 * Save formularios
+	 * @since 5/1/2018
+	 * @author BMOTTAG
+	 * @review 13/04/2026 - new CI4 version
+	 */
+	public function saveJSOWorker()
+	{
+		$post = $this->request->getPost();
+
+		$idJobJso = $post['hddidJobJso'] ?? null;
+		$idJobWorker = $post['hddidJobJsoWorker'] ?? null;
+
+		//JSO info
+		$infoJSO = $this->jobsModel->get_jso(["idJobJso" => $idJobJso]);
+
+		$data = [];
+		$data["idRecord"] = $infoJSO[0]['fk_id_job'];
+		$data["idJSO"] = $idJobJso;
+		$data["idRecordExternal"] = $idJobWorker;
+
+		$msj = $idJobWorker 
+			? "You have edited the information!!" 
+			: "You have added a new worker!!";
+
+		if ($this->jobsModel->saveJSOWorker($post)) {
+			$data["status"] = "success";
+			session()->setFlashdata('retornoExito', $msj);
+		} else {
+			$data["status"] = "error";
+			session()->setFlashdata('retornoError', '<strong>Error!!!</strong> Ask for help');
+		}
+
+		return $this->response->setJSON($data);
+	}
+
+
+
 
 
 

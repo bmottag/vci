@@ -27,7 +27,7 @@ $otherValue = $otherValue ?? null;
     <div class="text-center mb-2">
 
         <?php if(!empty($imageUrl)): ?>
-            <button type="button" class="btn btn-default" data-toggle="modal" data-target="#signatureViewModal_<?= $uid ?>">
+            <button type="button" class="btn btn-default btn-sm" data-toggle="modal" data-target="#signatureViewModal_<?= $uid ?>">
                 <span class="glyphicon glyphicon-eye-open"></span> View Signature
             </button>
 
@@ -46,7 +46,7 @@ $otherValue = $otherValue ?? null;
             </div>
         <?php endif; ?>
 
-        <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#signaturePadModal_<?= $uid ?>">
+        <button type="button" class="btn btn-primary btn-sm" data-toggle="modal" data-target="#signaturePadModal_<?= $uid ?>">
             <span class="glyphicon glyphicon-edit"></span> <?= esc($signButtonText) ?>
         </button>
     </div>

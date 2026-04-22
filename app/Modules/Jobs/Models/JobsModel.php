@@ -503,6 +503,183 @@ Y.movil phone_emer_1, CONCAT(Y.first_name, " " , Y.last_name) emer_1, Z.movil ph
 						->update($data);
 	}
 
+	/**
+	 * JSO
+	 * @since 4/1/2018
+	 */
+	public function get_jso($arrDatos)
+	{
+		$builder = $this->db->table('job_jso S');
+		$builder->select('S.*, CONCAT(U.first_name, " " , U.last_name) supervisor, CONCAT(X.first_name, " " , X.last_name) manager, J.id_job, J.job_description');
+		$builder->join('param_jobs J', 'J.id_job = S.fk_id_job', 'INNER');
+		$builder->join('user U', 'U.id_user = S.fk_id_user_supervisor', 'INNER');
+		$builder->join('user X', 'X.id_user = S.fk_id_user_manager', 'INNER');
+
+		if (isset($arrDatos["idJob"])) {
+			$builder->where('fk_id_job', $arrDatos["idJob"]);
+		}
+		if (isset($arrDatos["idJobJso"])) {
+			$builder->where('id_job_jso', $arrDatos["idJobJso"]);
+		}
+
+		return $builder->get()->getResultArray();
+	}
+
+	/**
+	 * JSO
+	 * @since 5/1/2018
+	 */
+	public function get_jso_workers($arrDatos)
+	{
+		$builder = $this->db->table('job_jso_workers');
+		$builder->select();
+
+		if (isset($arrDatos["idJobJso"])) {
+			$builder->where('fk_id_job_jso', $arrDatos["idJobJso"]);
+		}
+		if (isset($arrDatos["idJobJsoWorker"])) {
+			$builder->where('id_job_jso_worker', $arrDatos["idJobJsoWorker"]);
+		}
+
+		return $builder->get()->getResultArray();
+	}
+
+	/**
+	 * Add JSO
+	 * @since 4/1/2018
+	 */
+	public function addJSO(array $post)
+	{
+		$id = $post['hddIdentificador'] ?? null;
+
+		$data = [
+			'fk_id_user_manager' => $post['manager'] ?? null,
+			'fk_id_user_supervisor' => $post['supervisor'] ?? null,
+			'potential_hazards' => $post['potential_hazards'] ?? null,
+			'health_safety' => $post['health_safety'] ?? null,
+			'rights_responsibilities' => $post['rights_responsibilities'] ?? null,
+			'company_safety_rules' => $post['company_safety_rules'] ?? null,
+			'hazard_awareness' => $post['hazard_awareness'] ?? null,
+			'reporting_procedures' => $post['reporting_procedures'] ?? null,
+			'personal_equipment' => $post['personal_equipment'] ?? null,
+			'drug_alcohol' => $post['drug_alcohol'] ?? null,
+			'violence_workplace' => $post['violence_workplace'] ?? null,
+			'whmis' => $post['whmis'] ?? null,
+			'equipment_operation' => $post['equipment_operation'] ?? null,
+			'workplace_inspections' => $post['workplace_inspections'] ?? null,
+			'accident_forms' => $post['accident_forms'] ?? null,
+			'first_aid' => $post['first_aid'] ?? null,
+			'erp' => $post['erp'] ?? null,
+			'flha' => $post['flha'] ?? null,
+			'near_miss' => $post['near_miss'] ?? null,
+			'erp_subcontractor' => $post['erp_subcontractor'] ?? null,
+			'accident_incident' => $post['accident_incident'] ?? null,
+			'preventive_maintenance' => $post['preventive_maintenance'] ?? null,
+			'msds' => $post['msds'] ?? null,
+			'notification_hazards' => $post['notification_hazards'] ?? null,
+			'first_aid_subcontractor' => $post['first_aid_subcontractor'] ?? null,
+			'smoking_drug' => $post['smoking_drug'] ?? null,
+			'flha_subcontractor' => $post['flha_subcontractor'] ?? null,
+			'environmental_management' => $post['environmental_management'] ?? null,
+			'working_alone' => $post['working_alone'] ?? null,
+			'muster_point' => $post['muster_point'] ?? null,
+			'fire_extinguishers' => $post['fire_extinguishers'] ?? null,
+			'personal_equipment_subcontractor' => $post['personal_equipment_subcontractor'] ?? null,
+			'equipment_inspections' => $post['equipment_inspections'] ?? null,
+			'housekeeping' => $post['housekeeping'] ?? null,
+			'hazard_identification' => $post['hazard_identification'] ?? null,
+			'site_safe_work' => $post['site_safe_work'] ?? null,
+			'site_safe_job' => $post['site_safe_job'] ?? null,
+			'reporting' => $post['reporting'] ?? null,
+			'attendance' => $post['attendance'] ?? null,
+			'site_rules' => $post['site_rules'] ?? null,
+			'confined_space' => $post['confined_space'] ?? null,
+			'fall_protection' => $post['fall_protection'] ?? null,
+			'tdg' => $post['tdg'] ?? null,
+			'first_aid_site' => $post['first_aid_site'] ?? null,
+			'whmis_site' => $post['whmis_site'] ?? null,
+			'traffic_control' => $post['traffic_control'] ?? null,
+			'backhoe' => $post['backhoe'] ?? null,
+			'excavator' => $post['excavator'] ?? null,
+			'forklift' => $post['forklift'] ?? null,
+			'cranes' => $post['cranes'] ?? null,
+			'trailer_towing' => $post['trailer_towing'] ?? null,
+			'power_tools' => $post['power_tools'] ?? null,
+			'dump_truck' => $post['dump_truck'] ?? null,
+			'hoists' => $post['hoists'] ?? null,
+			'loader' => $post['loader'] ?? null,
+			'light_vehicles' => $post['light_vehicles'] ?? null,
+			'conveyors' => $post['conveyors'] ?? null,
+			'compressor' => $post['compressor'] ?? null,
+			'environmental_reporting' => $post['environmental_reporting'] ?? null,
+			'low_boys' => $post['low_boys'] ?? null,
+			'scaffolds' => $post['scaffolds'] ?? null,
+			'light_towers' => $post['light_towers'] ?? null,
+			'generators' => $post['generators'] ?? null,
+			'hydrovacs' => $post['hydrovacs'] ?? null,
+			'hydroseeds' => $post['hydroseeds'] ?? null,
+			'ground_disturbance' => $post['ground_disturbance'] ?? null,
+			'load_securement' => $post['load_securement'] ?? null,
+			'traffic_accommodation' => $post['traffic_accommodation'] ?? null,
+			'safety_advisor' => $post['safety_advisor'] ?? null,
+			'wib' => $post['wib'] ?? null,
+			'safe_trenching' => $post['safe_trenching'] ?? null,
+			'street_sweeper' => $post['street_sweeper'] ?? null,
+			'skid_steer' => $post['skid_steer'] ?? null,
+			'dozers' => $post['dozers'] ?? null,
+		];
+
+		$builder = $this->db->table('job_jso');
+
+		if (empty($id)) {
+			$data['fk_id_user'] = session()->get('id');
+			$data['fk_id_job'] = $post['hddIdJob'];
+			$data['date_issue_jso'] = date("Y-m-d G:i:s");
+			if ($builder->insert($data)) {
+				return $this->db->insertID();
+			}
+			return false;
+		} else {
+			$update = $builder->where('id_job_jso', $id)
+							->update($data);
+
+			return $update ? $id : false;
+		}
+	}
+
+	/**
+	 * Add jso worker
+	 * @since 5/1/2018
+	 */
+	public function saveJSOWorker(array $post): bool
+	{
+		$id = $post['hddidJobJsoWorker'] ?? null;
+
+		$data = [
+			'fk_id_job_jso' => $post['hddidJobJso'] ?? null,
+			'name' => $post['name'] ?? null,
+			'position' => $post['position'] ?? null,
+			'emergency_contact' => $post['emergency_contact'] ?? null,
+			'driver_license_required' => $post['license'] ?? null,
+			'license_number' => $post['license_number'] ?? null,
+			'city' => $post['city'] ?? null,
+			'works_for' => $post['worksfor'] ?? null,
+			'works_phone_number' => $post['phone_number'] ?? null
+		];
+
+		$builder = $this->db->table('job_jso_workers');
+
+		if (empty($id)) {
+			$data['date_oriented'] = date('Y-m-d');
+			return $builder->insert($data);
+		} else {
+			return $builder->where('id_job_jso_worker', $id)
+						->update($data);
+		}
+	}
+
+
+
 
 
 

@@ -24,6 +24,9 @@ $routes->group('jobs', ['namespace' => 'App\Modules\Jobs\Controllers'], function
     $routes->get('deleteERPTRAINGINWorker/(:num)/(:num)', 'Jobs::deleteERPTRAINGINWorker/$1/$2');
     $routes->get('erp_map/(:num)', 'Jobs::erp_map/$1');
     $routes->get('generaERPPDF/(:num)', 'Jobs::generaERPPDF/$1');
+    $routes->get('jso/(:num)', 'Jobs::jso/$1');
+    $routes->get('add_jso/(:num)/(:num)', 'Jobs::add_jso/$1/$2');
+    $routes->get('add_jso/(:num)', 'Jobs::add_jso/$1');
 
     $routes->post('save_safety_hazards', 'Jobs::save_safety_hazards');
     $routes->post('save_tool_box', 'Jobs::save_tool_box');
@@ -40,4 +43,8 @@ $routes->group('jobs', ['namespace' => 'App\Modules\Jobs\Controllers'], function
     $routes->post('save_one_erp_training_worker', 'Jobs::save_one_erp_training_worker');
     $routes->post('update_erp_personnel', 'Jobs::update_erp_personnel');
     $routes->post('do_upload', 'Jobs::do_upload');
+    $routes->post('save_jso', 'Jobs::save_jso');
+    $routes->post('save_signature_jso', 'Jobs::save_signature_jso');
+    $routes->post('cargarModalWorker', 'Jobs::cargarModalWorker');
+    $routes->post('saveJSOWorker', 'Jobs::saveJSOWorker');
 });
