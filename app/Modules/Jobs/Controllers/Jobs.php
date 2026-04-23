@@ -1411,6 +1411,283 @@ class Jobs extends BaseController
 		return redirect()->to(base_url('jobs/locates/' . $idJob));
 	}
 
+	/**
+	 * Excavation and Trenching Plan list
+	 * @since 1/08/2021
+	 * @author BMOTTAG
+	 * @review 22/04/2026 - new CI4 version
+	 */
+	public function excavation($idJob)
+	{
+		$data['jobInfo'] = $this->generalModel->get_job(['idJob' => $idJob]);
+
+		//Excavation and trenching info
+		$data['information'] = $this->generalModel->get_excavation(["idJob" => $idJob]);
+		
+		return $this->render('App\Modules\Jobs\Views\excavation_list', $data);
+	}
+
+	/**
+	 * Form Excavation and Trenching Plan
+	 * @since 1/08/2021
+	 * @author BMOTTAG
+	 * @review 22/04/2026 - new CI4 version
+	 */
+	public function add_excavation($idJob, $idExcavation = 'x')
+	{
+		$data['information'] = null;
+		$data['deshabilitar'] = '';
+
+		$data['jobInfo'] = $this->generalModel->get_job(['idJob' => $idJob]);
+
+		$data['confinedList'] = $this->generalModel->get_confined_space(['idJob' => $idJob]);
+
+		//si envio el id, entonces busco la informacion 
+		if ($idExcavation != 'x') {
+
+			$data['information'] = $this->generalModel->get_excavation(["idExcavation" => $idExcavation]);
+
+			if (!$data['information']) {
+				throw new \Exception('ERROR!!! - You are in the wrong place.');
+			}
+		}
+
+		return $this->render('App\Modules\Jobs\Views\form_excavation', $data);
+	}
+
+	/**
+	 * Save Excavation and Trenching Plan
+	 * @since 1/08/2021
+	 * @author BMOTTAG
+	 * @review 22/04/2026 - new CI4 version
+	 */
+	public function save_excavation()
+	{
+		$post = $this->request->getPost();
+
+		$data = [];
+
+		if ($idExcavation = $this->jobsModel->addExcavation($post)) {
+			$data["idExcavation"] = $idExcavation;
+			$data["status"] = "success";
+			session()->setFlashdata('retornoExito', 'You have saved your Excavation and Trenching Plan, do not forget to add Workers and signatures.');
+		} else {
+			$data["status"] = "error";
+			session()->setFlashdata('retornoError', '<strong>Error!!!</strong> Ask for help');
+		}
+
+		return $this->response->setJSON($data);
+	}
+
+	/**
+	 * Form Upload Personnel to Excavation Plan
+	 * @since 2/8/2021
+	 * @author BMOTTAG
+	 * @review 23/04/2026 - new CI4 version
+	 */
+	public function upload_excavation_personnel($idExcavation)
+	{
+		$data = [
+			'adminList' => $this->generalModel->get_user([
+				"state" => 1, "idUserMANAGERS" => true
+			]),
+			'workersList' => $this->generalModel->get_user(["state" => 1]),
+			'information' => $this->generalModel->get_excavation(["idExcavation" => $idExcavation]),
+			'excavationWorkers' => $this->generalModel->get_excavation_workers(["idExcavation" => $idExcavation]),
+			'excavationSubcontractors' => $this->generalModel->get_excavation_subcontractors(["idExcavation" => $idExcavation]),
+			'companyList' => $this->generalModel->get_company(["company_type" => 2]),
+		];
+
+		return $this->render('App\Modules\Jobs\Views\form_excavation_personnel', $data);
+	}
+
+	/**
+	 * Save Excavation and Trenching Plan - Personnel
+	 * @since 14/08/2021
+	 * @author BMOTTAG
+	 * @review 22/04/2026 - new CI4 version
+	 */
+	public function save_personnel()
+	{
+		$post = $this->request->getPost();
+
+		$data = [];
+
+		$idExcavation =  $post['hddIdentificador'] ?? null;
+
+		if ($this->jobsModel->updatePersonnel($post)) {
+			$data["idExcavation"] = $idExcavation;
+			$data["status"] = "success";
+			session()->setFlashdata('retornoExito', 'You have updated the information of  your Excavation and Trenching Plan.');
+		} else {
+			$data["status"] = "error";
+			session()->setFlashdata('retornoError', '<strong>Error!!!</strong> Ask for help');
+		}
+
+		return $this->response->setJSON($data);
+	}
+
+	/**
+	 * Form Add Workers - Excavation
+	 * @since 14/8/2021
+	 * @author BMOTTAG
+	 * @review 22/04/2026 - new CI4 version
+	 */
+	public function add_workers_excavation($idExcavation)
+	{
+		$workersList = $this->generalModel->get_user(["state" => 1]); //workers list
+
+		// 🔥 traemos todos los workers asignados de una sola vez
+		$selectedWorkers = array_column(
+			$this->jobsModel->get_selected_workers_excavation($idExcavation),
+			'fk_id_user'
+		);
+
+		// 🔁 marcamos checked en memoria
+		foreach ($workersList as &$worker) {
+			$worker['found'] = in_array($worker['id_user'], $selectedWorkers);
+		}
+
+		$data = [
+			'workersList' => $workersList,
+			'idExcavation' => $idExcavation
+		];
+
+		return $this->render('App\Modules\Jobs\Views\form_add_workers_excavation', $data);
+	}
+
+	/**
+	 * Save worker - Excavation and Trenching Plan
+	 * @since 14/8/2021
+	 * @author BMOTTAG
+	 * @review 22/04/2026 - new CI4 version
+	 */
+	public function save_excavation_workers()
+	{
+		$post = $this->request->getPost();
+
+		$data = [];
+
+		$data["idRecord"] =  $post['hddIdExcavation'] ?? null;
+
+		if ($this->jobsModel->add_excavation_worker($post)) {
+			$data["status"] = "success";
+			session()->setFlashdata('retornoExito', 'You have added the Workers, remember to get the signature of each one.');
+		} else {
+			$data["status"] = "error";
+			session()->setFlashdata('retornoError', '<strong>Error!!!</strong> Ask for help');
+		}
+
+		return $this->response->setJSON($data);
+	}
+
+	/**
+	 * Delete worker - Excavation and Trenching Plan
+	 * @since 14/8/2021
+	 * @author BMOTTAG
+	 * @review 22/04/2026 - new CI4 version
+	 */
+	public function deleteExcavationWorker($idExcavation, $idWorker)
+	{
+		$arrParam = [
+			"table" => "job_excavation_workers",
+			"primaryKey" => "id_excavation_worker",
+			"id" => $idWorker
+		];
+		if ($this->generalModel->deleteRecord($arrParam)) {
+			$data["status"] = "success";
+			session()->setFlashdata('retornoExito', 'You have deleted one worker.');
+		} else {
+			$data["status"] = "error";
+			session()->setFlashdata('retornoError', '<strong>Error!!!</strong> Ask for help');
+		}
+
+		return redirect()->to(base_url('jobs/upload_excavation_personnel/' . $idExcavation));
+	}
+
+	/**
+	 * Save one worker to Excavation and Trenching Plan
+	 * @since 14/8/2021
+	 * @author BMOTTAG
+	 * @review 22/04/2026 - new CI4 version
+	 */
+	public function excavation_One_Worker()
+	{
+		$post = $this->request->getPost();
+		$id = $post['hddIdExcavation'];
+		
+		if ($this->jobsModel->excavationSaveOneWorker($post)) {
+			session()->setFlashdata('retornoExito', 'You have added one Worker.');
+		} else {
+			session()->setFlashdata('retornoError', '<strong>Error!!!</strong> Ask for help');
+		}
+
+		return redirect()->to(base_url('jobs/upload_excavation_personnel/' . $id));
+	}
+
+	/**
+	 * Excavation - Subcontractor worker
+	 * @since 14/8/2021
+	 * @author BMOTTAG
+	 * @review 22/04/2026 - new CI4 version
+	 */
+	public function excavation_subcontractor_Worker()
+	{
+		$post = $this->request->getPost();
+		$id = $post['hddIdExcavation'];
+
+		if ($this->jobsModel->saveSubcontractorWorkerExcavation($post)) {
+			session()->setFlashdata('retornoExito', 'You have added one Worker.');
+		} else {
+			session()->setFlashdata('retornoError', '<strong>Error!!!</strong> Ask for help');
+		}
+
+		return redirect()->to(base_url('jobs/upload_excavation_personnel/' . $id));
+	}
+
+	/**
+	 * Delete subcontractor - Excavation and Trenching Plan
+	 * @since 14/8/2021
+	 * @author BMOTTAG
+	 * @review 22/04/2026 - new CI4 version
+	 */
+	public function deleteExcavationSubcontractorWorker($idExcavation, $idSubcontractor)
+	{
+		$arrParam = [
+			"table" => "job_excavation_subcontractor",
+			"primaryKey" => "id_excavation_subcontractor",
+			"id" => $idSubcontractor
+		];
+		if ($this->generalModel->deleteRecord($arrParam)) {
+			$data["status"] = "success";
+			session()->setFlashdata('retornoExito', 'You have deleted one worker.');
+		} else {
+			$data["status"] = "error";
+			session()->setFlashdata('retornoError', '<strong>Error!!!</strong> Ask for help');
+		}
+
+		return redirect()->to(base_url('jobs/upload_excavation_personnel/' . $idExcavation));
+	}
+
+	/**
+	 * Subcontractors view to sign
+	 * @since 14/8/2021
+	 * @author BMOTTAG
+	 * @review 22/04/2026 - new CI4 version
+	 */
+	public function review_excavation($idExcavation)
+	{
+		$this->load->model("general_model");
+		$arrParam = array("idExcavation" => $idExcavation);
+		$data['information'] = $this->general_model->get_excavation($arrParam);
+
+		$data['excavationWorkers'] = $this->general_model->get_excavation_workers($arrParam); //excavation_worker list
+		$data['excavationSubcontractors'] = $this->general_model->get_excavation_subcontractors($arrParam); //excavation 
+
+		$data["view"] = 'review_excavation';
+		$this->load->view("layout_calendar", $data);
+	}
+
 
 
 

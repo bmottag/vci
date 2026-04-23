@@ -31,6 +31,13 @@ $routes->group('jobs', ['namespace' => 'App\Modules\Jobs\Controllers'], function
     $routes->get('bitacora/(:num)', 'Jobs::bitacora/$1');
     $routes->get('locates/(:num)', 'Jobs::locates/$1');
     $routes->get('deleteJobLocate/(:num)/(:num)', 'Jobs::deleteJobLocate/$1/$2');
+    $routes->get('excavation/(:num)', 'Jobs::excavation/$1');
+    $routes->get('add_excavation/(:num)/(:num)', 'Jobs::add_excavation/$1/$2');
+    $routes->get('add_excavation/(:num)', 'Jobs::add_excavation/$1');
+    $routes->get('upload_excavation_personnel/(:num)', 'Jobs::upload_excavation_personnel/$1');
+    $routes->get('add_workers_excavation/(:num)', 'Jobs::add_workers_excavation/$1');
+    $routes->get('deleteExcavationWorker/(:num)/(:num)', 'Jobs::deleteExcavationWorker/$1/$2');
+    $routes->get('deleteExcavationSubcontractorWorker/(:num)/(:num)', 'Jobs::deleteExcavationSubcontractorWorker/$1/$2');
 
     $routes->post('save_safety_hazards', 'Jobs::save_safety_hazards');
     $routes->post('save_tool_box', 'Jobs::save_tool_box');
@@ -54,4 +61,9 @@ $routes->group('jobs', ['namespace' => 'App\Modules\Jobs\Controllers'], function
     $routes->post('loadModalBitacora', 'Jobs::loadModalBitacora');
     $routes->post('save_bitacora', 'Jobs::save_bitacora');
     $routes->post('do_upload_locates', 'Jobs::do_upload_locates');
+    $routes->post('save_excavation', 'Jobs::save_excavation');
+    $routes->post('save_personnel', 'Jobs::save_personnel');
+    $routes->post('save_excavation_workers', 'Jobs::save_excavation_workers');
+    $routes->post('excavation_One_Worker', 'Jobs::excavation_One_Worker');
+    $routes->post('excavation_subcontractor_Worker', 'Jobs::excavation_subcontractor_Worker');
 });

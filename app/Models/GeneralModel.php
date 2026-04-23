@@ -776,7 +776,7 @@ class GeneralModel extends Model
 		}
 		if (isset($arrData["idUserMANAGERS"])) {
 			$IDmagers = array(2, 3);
-			$builder->where_in('U.id_user', $IDmagers);
+			$builder->whereIn('U.id_user', $IDmagers);
 		}
 		if (isset($arrData["state"])) {
 			$builder->where('U.state', $arrData["state"]);
@@ -790,7 +790,7 @@ class GeneralModel extends Model
 		}
 		if (isset($arrData["idRolesSupervisors"])) {
 			$idRoles = array(ID_ROL_SUPER_ADMIN, ID_ROL_MANAGER, ID_ROL_SAFETY, ID_ROL_SUPERVISOR);
-			$builder->where_in('U.perfil', $idRoles);
+			$builder->whereIn('U.perfil', $idRoles);
 			$builder->where('U.id_user !=', 1);
 		}
 
@@ -1260,7 +1260,7 @@ class GeneralModel extends Model
 	public function get_company($arrData)
 	{
 		$builder = $this->db->table('param_company C');
-		if (isset($arrData["company_type"])) {
+		if (isset($arrData["idCompany"])) {
 			$builder->where('C.id_company', $arrData["idCompany"]);
 		}
 		if (isset($arrData["company_type"])) {
@@ -1268,7 +1268,7 @@ class GeneralModel extends Model
 		}
 		if (isset($arrData["allSubcontractors"])) {
 			$types = array(2, 3);
-			$builder->where_in('C.company_type', $types);
+			$builder->whereIn('C.company_type', $types);
 		}
 		if (isset($arrData["isHauling"])) {
 			$builder->where('C.does_hauling', 1);
@@ -1298,6 +1298,108 @@ class GeneralModel extends Model
 			$builder->where('id_tool_box', $arrDatos["idToolBox"]);
 		}
 		$builder->orderBy('id_tool_box', 'ASC');
+
+		return $builder->get()->getResultArray();
+	}
+
+	/**
+	 * Excavation and Trenching Plan list
+	 * For current year
+	 * @since 1/08/2021
+	 */
+	public function get_excavation($arrDatos)
+	{
+		$builder = $this->db->table('job_excavation E');
+		$builder->select('E.*, CONCAT(W.first_name, " " , W.last_name) name, CONCAT(U.first_name, " " , U.last_name) manager, CONCAT(X.first_name, " " , X.last_name) operator, CONCAT(Z.first_name, " " , Z.last_name) supervisor, J.id_job, J.job_description');
+		$builder->join('param_jobs J', 'J.id_job = E.fk_id_job', 'INNER');
+		$builder->join('user W', 'W.id_user = E.fk_id_user', 'INER');
+		$builder->join('user U', 'U.id_user = E.fk_id_user_manager', 'LEFT');
+		$builder->join('user X', 'X.id_user = E.fk_id_user_operator', 'LEFT');
+		$builder->join('user Z', 'Z.id_user = E.fk_id_user_supervisor', 'LEFT');
+		if (isset($arrDatos["idJob"])) {
+			$builder->where('fk_id_job', $arrDatos["idJob"]);
+		}
+		if (isset($arrDatos["fecha"])) {
+			$builder->where('date_excavation', $arrDatos["fecha"]);
+		}
+		if (isset($arrDatos["idExcavation"])) {
+			$builder->where('id_job_excavation', $arrDatos["idExcavation"]);
+		}
+
+		$builder->orderBy('id_job_excavation', 'ASC');
+		return $builder->get()->getResultArray();
+	}
+
+	/**
+	 * confined space entry permit list
+	 * @since 13/1/2020
+	 */
+	public function get_confined_space($arrDatos)
+	{
+		$builder = $this->db->table('job_confined C');
+		$builder->select('C.*, CONCAT(U.first_name, " " , U.last_name) name, J.id_job, J.job_description, CONCAT(X.first_name, " " , X.last_name) user_authorization, CONCAT(Z.first_name, " " , Z.last_name) user_cancellation');
+		$builder->join('param_jobs J', 'J.id_job = C.fk_id_job', 'INNER');
+		$builder->join('user U', 'U.id_user = C.fk_id_user', 'INNER');
+		$builder->join('user X', 'X.id_user = C.fk_id_user_authorization', 'INNER');
+		$builder->join('user Z', 'Z.id_user = C.fk_id_user_cancellation', 'INNER');
+
+		if (isset($arrDatos["idJob"]) && $arrDatos["idJob"] != 'x') {
+			$builder->where('fk_id_job', $arrDatos["idJob"]);
+		}
+
+		if (isset($arrDatos["idConfined"])) {
+			$builder->where('id_job_confined', $arrDatos["idConfined"]);
+		}
+
+		if (isset($arrDatos["from"])) {
+			$builder->where('date_confined >=', $arrDatos["from"]);
+		}
+		if (isset($arrDatos["to"])) {
+			$builder->where('date_confined <=', $arrDatos["to"]);
+		}
+
+		$builder->orderBy('id_job_confined', 'ASC');
+
+		return $builder->get()->getResultArray();
+	}
+
+	/**
+	 * Get Excavation workers info
+	 * @since 2/8/2021
+	 */
+	public function get_excavation_workers($arrData)
+	{
+		$builder = $this->db->table('job_excavation_workers W');
+		$builder->select("W.*, CONCAT(first_name, ' ', last_name) name");
+		$builder->join('user U', 'U.id_user = W.fk_id_user', 'INNER');
+		if (array_key_exists("idExcavation", $arrData)) {
+			$builder->where('W.fk_id_job_excavation', $arrData["idExcavation"]);
+		}
+		$builder->orderBy('U.first_name, U.last_name', 'ASC');
+
+		return $builder->get()->getResultArray();
+	}
+
+	/**
+	 * Get Excavation subcontractor workers info
+	 * @since 2/8/2021
+	 */
+	public function get_excavation_subcontractors($arrData)
+	{
+		$builder = $this->db->table('job_excavation_subcontractor W');
+		$builder->select();
+		$builder->join('param_company C', 'C.id_company = W.fk_id_company', 'INNER');
+		if (array_key_exists("idExcavation", $arrData)) {
+			$builder->where('W.fk_id_job_excavation', $arrData["idExcavation"]);
+		}
+		if (array_key_exists("idSubcontractor", $arrData) && $arrData["idSubcontractor"] != 'x') {
+			$builder->where('W.id_excavation_subcontractor', $arrData["idSubcontractor"]);
+		}
+		if (array_key_exists("movilNumber", $arrData)) {
+			$where = "W.worker_movil_number != ''";
+			$builder->where($where);
+		}
+		$builder->orderBy('C.company_name, W.worker_name', 'ASC');
 
 		return $builder->get()->getResultArray();
 	}

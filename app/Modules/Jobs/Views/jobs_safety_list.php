@@ -23,7 +23,7 @@
 						<?php
 							foreach ($info as $lista):
 								echo "<tr>";
-								echo "<td>" . $lista['job_description'] . "</td>";
+								echo "<td><h4>" . $lista['job_description'] . "</h4></td>";
 								echo "<td class='text-center'>";
 								
 								$userRol = session()->rol;

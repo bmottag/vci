@@ -745,6 +745,163 @@ Y.movil phone_emer_1, CONCAT(Y.first_name, " " , Y.last_name) emer_1, Z.movil ph
 		return $builder->insert($data);
 	}
 
+	/**
+	 * Add Excavation
+	 * @since 2/8/2021
+	 */
+	public function addExcavation(array $post)
+	{
+		$id = $post['hddIdentificador'] ?? null;
+
+		$data = [
+			'fk_id_job' => $post['hddIdJob'] ?? null,
+			'project_location' => $post['project_location'] ?? null,
+			'depth' => $post['depth'] ?? null,
+			'width' => $post['width'] ?? null,
+			'length' => $post['length'] ?? null,
+			'confined_space' => $post['confined_space'] ?? null,
+			'fk_id_confined' => $post['idConfined'] ?? null,
+			'tested_daily' => $post['tested_daily'] ?? null,
+			'tested_daily_explanation' => $post['tested_daily_explanation'] ?? null,
+			'ventilation' => $post['ventilation'] ?? null,
+			'ventilation_explanation' => $post['ventilation_explanation'] ?? null,
+			'soil_classification' => $post['soil_classification'] ?? null,
+			'soil_type' => $post['soil_type'] ?? null,
+			'description_safe_work' => $post['description_safe_work'] ?? null,
+			'practice_work_alone' => $post['practice_work_alone'] ?? null,
+			'practice_eye_contact' => $post['practice_eye_contact'] ?? null,
+			'practice_communication' => $post['practice_communication'] ?? null,
+			'practice_walls' => $post['practice_walls'] ?? null,
+			'practice_protective_structures' => $post['practice_protective_structures'] ?? null,
+			'practice_identify_underground' => $post['practice_identify_underground'] ?? null,
+			'practice_scope' => $post['practice_scope'] ?? null,
+			'practice_site_locates' => $post['practice_site_locates'] ?? null,
+			'practice_provided_safe' => $post['practice_provided_safe'] ?? null,
+			'practice_traffic_control' => $post['practice_traffic_control'] ?? null,
+			'practice_flaggers' => $post['practice_flaggers'] ?? null,
+			'practice_barricades' => $post['practice_barricades'] ?? null,
+		];
+
+		//solo usuarios SUPER_ADMIN pueden ingresar la fecha de la inspeccion
+		$userRol = session()->get('rol');
+		$dateIssue = $post['date'] ?? null;
+		$data['date_excavation'] = date("Y-m-d"); //fecha del registro
+		if ($userRol == 99 && $dateIssue != "") {
+			$data['date_excavation'] = $dateIssue;
+		}
+		
+		$builder = $this->db->table('job_excavation');
+
+		if (empty($id)) {
+			$data['fk_id_user'] = session()->get('id');
+			if ($builder->insert($data)) {
+				return $this->db->insertID();
+			}
+			return false;
+		} else {
+			$update = $builder->where('id_job_excavation', $id)
+							->update($data);
+
+			return $update ? $id : false;
+		}
+	}
+
+	/**
+	 * Update Excavation - Personnel
+	 * @since 14/8/2021
+	 */
+	public function updatePersonnel($post)
+	{
+		$id = $post['hddIdentificador'] ?? null;
+
+		$data = [
+			'fk_id_user_manager' => $post['manager'] ?? null,
+			'fk_id_user_operator' => $post['operator'] ?? null,
+			'fk_id_user_supervisor' => $post['supervisor'] ?? null,
+		];
+
+		$builder = $this->db->table('job_excavation');
+
+		return $builder->where('id_job_excavation', $id)
+						->update($data);
+	}
+
+	/**
+	 * @author BMOTTAG
+	 * @since 14/11/2021
+	 * Consulta de empleados para un formato de excavation
+	 */
+	public function get_selected_workers_excavation($idExcavation)
+	{
+		return $this->db->table('job_excavation_workers')
+			->select('fk_id_user')
+			->where('fk_id_job_excavation', $idExcavation)
+			->get()
+			->getResultArray();
+	}
+
+	/**
+	 * Add Excavation and Trenching Plan WORKER
+	 * @since 14/8/2021
+	 */
+	public function add_excavation_worker(array $post = []): bool
+	{
+		$id =  $post['hddIdExcavation'];
+		$workers =  $post['workers'];
+
+		// 🔥 INSERT hazards
+		if (!empty($workers)) {
+			$dataBatch = [];
+			foreach ($workers as $idWorker) {
+				$dataBatch[] = [
+					'fk_id_job_excavation' => (int)$id,
+					'fk_id_user' => (int)$idWorker
+				];
+			}
+
+			return (bool) $this->db->table('job_excavation_workers')
+								->insertBatch($dataBatch);
+		}
+
+		return true;
+	}
+
+	/**
+	 * Save one worker - Excavation and Trenching Plan
+	 * @since 14/8/2021
+	 */
+	public function excavationSaveOneWorker(array $post = []): bool
+	{
+		$data = [
+			'fk_id_job_excavation' => $post['hddIdExcavation'] ?? null,
+			'fk_id_user' => $post['worker'] ?? null
+		];
+
+		$builder = $this->db->table('job_excavation_workers');
+		return $builder->insert($data);
+	}
+
+	/**
+	 * Save subcontractor worker
+	 * @since 26/2/2018
+	 */
+	public function saveSubcontractorWorkerExcavation(array $post = []): bool
+	{
+		$data = [
+			'fk_id_job_excavation' => $post['hddIdExcavation'] ?? null,
+			'fk_id_company' => $post['company'] ?? null,
+			'worker_name' => $post['workerName'] ?? null,
+			'worker_movil_number' => $post['phone_number'] ?? null
+		];
+
+		$builder = $this->db->table('job_excavation_subcontractor');
+		return $builder->insert($data);
+	}
+
+
+
+
+
 
 
 
