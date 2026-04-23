@@ -982,6 +982,28 @@ Y.movil phone_emer_1, CONCAT(Y.first_name, " " , Y.last_name) emer_1, Z.movil ph
 					->update($data);
 	}
 
+	/**
+	 * Update Excavation - De-Watering
+	 * @since 8/8/2021
+	 */
+	public function updateExcavationDeWatering(array $post = []): bool
+	{
+		$id = $post['hddIdentificador'] ?? null;
+
+		$data = [
+			'dewatering_needed' => $post['dewatering_needed'] ?? null,
+			'explain_equipment' => $post['explain_equipment'] ?? null,
+			'body_water' => $post['body_water'] ?? null,
+			'water_conducted' => $post['water_conducted'] ?? null,
+			'additional_notes' => $post['additional_notes'] ?? null
+		];
+
+		$builder = $this->db->table('job_excavation');
+
+		return $builder->where('id_job_excavation', $id)
+						->update($data);
+	}
+
 
 
 

@@ -387,4 +387,3 @@ if($information)
 </form>
 
 </div>
-<!-- /#page-wrapper -->

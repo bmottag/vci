@@ -1670,25 +1670,6 @@ class Jobs extends BaseController
 	}
 
 	/**
-	 * Subcontractors view to sign
-	 * @since 14/8/2021
-	 * @author BMOTTAG
-	 * @review 22/04/2026 - new CI4 version
-	 */
-	public function review_excavation($idExcavation)
-	{
-		$this->load->model("general_model");
-		$arrParam = array("idExcavation" => $idExcavation);
-		$data['information'] = $this->general_model->get_excavation($arrParam);
-
-		$data['excavationWorkers'] = $this->general_model->get_excavation_workers($arrParam); //excavation_worker list
-		$data['excavationSubcontractors'] = $this->general_model->get_excavation_subcontractors($arrParam); //excavation 
-
-		$data["view"] = 'review_excavation';
-		$this->load->view("layout_calendar", $data);
-	}
-
-	/**
 	 * Form Excavation and Trenching Plan - Protection Methods
 	 * @since 3/08/2021
 	 * @author BMOTTAG
@@ -1704,7 +1685,7 @@ class Jobs extends BaseController
 	 * Save Excavation and Trenching Plan - Protection Methods
 	 * @since 8/08/2021
 	 * @author BMOTTAG
-	 * @review 22/04/2026 - new CI4 version
+	 * @review 23/04/2026 - new CI4 version
 	 */
 	public function save_protection_methods()
 	{
@@ -1742,7 +1723,7 @@ class Jobs extends BaseController
 	 * Form Excavation and Trenching Plan - Access & Egress
 	 * @since 3/08/2021
 	 * @author BMOTTAG
-	 * @review 22/04/2026 - new CI4 version
+	 * @review 23/04/2026 - new CI4 version
 	 */
 	public function upload_access_egress($idExcavation)
 	{
@@ -1754,7 +1735,7 @@ class Jobs extends BaseController
 	 * Save Excavation and Trenching Plan - Access & Egress
 	 * @since 8/08/2021
 	 * @author BMOTTAG
-	 * @review 22/04/2026 - new CI4 version
+	 * @review 23/04/2026 - new CI4 version
 	 */
 	public function save_access_egress()
 	{
@@ -1766,7 +1747,7 @@ class Jobs extends BaseController
 
 		if ($this->jobsModel->updateExcavationAccess($post)) {
 			$data["status"] = "success";
-			session()->setFlashdata('retornoExito', 'You have updated the information of  your Excavation and Trenching Plan.');
+			session()->setFlashdata('retornoExito', 'You have updated the information of your Excavation and Trenching Plan.');
 		} else {
 			$data["status"] = "error";
 			session()->setFlashdata('retornoError', '<strong>Error!!!</strong> Ask for help');
@@ -1779,7 +1760,7 @@ class Jobs extends BaseController
 	 * Form Excavation and Trenching Plan - Affected Zone, Traffic & Utilities
 	 * @since 3/08/2021
 	 * @author BMOTTAG
-	 * @review 22/04/2026 - new CI4 version
+	 * @review 23/04/2026 - new CI4 version
 	 */
 	public function upload_affected_zone($idExcavation)
 	{
@@ -1791,7 +1772,7 @@ class Jobs extends BaseController
 	 * Save Excavation and Trenching Plan - Affected Zone, Traffic & Utilities
 	 * @since 8/08/2021
 	 * @author BMOTTAG
-	 * @review 22/04/2026 - new CI4 version
+	 * @review 23/04/2026 - new CI4 version
 	 */
 	public function save_affected_zone()
 	{
@@ -1829,48 +1810,175 @@ class Jobs extends BaseController
 	 * Form Excavation and Trenching Plan - De-Watering
 	 * @since 3/08/2021
 	 * @author BMOTTAG
-	 * @review 22/04/2026 - new CI4 version
+	 * @review 23/04/2026 - new CI4 version
 	 */
 	public function upload_de_watering($idExcavation)
 	{
-		if (empty($idExcavation)) {
-			show_error('ERROR!!! - You are in the wrong place.');
-		}
-
-		$this->load->model("general_model");
-		$arrParam = array("idExcavation" => $idExcavation);
-		$data['information'] = $this->general_model->get_excavation($arrParam);
-
-		$data["view"] = 'form_excavation_de_watering';
-		$this->load->view("layout", $data);
+		$data['information'] = $this->generalModel->get_excavation(["idExcavation" => $idExcavation]);
+		return $this->render('App\Modules\Jobs\Views\form_excavation_de_watering', $data);
 	}
 
 	/**
 	 * Save Excavation and Trenching Plan - De-Watering
 	 * @since 8/08/2021
 	 * @author BMOTTAG
-	 * @review 22/04/2026 - new CI4 version
+	 * @review 23/04/2026 - new CI4 version
 	 */
 	public function save_de_watering()
 	{
-		header('Content-Type: application/json');
-		$data = array();
-		$idExcavation = $this->input->post('hddIdentificador');
+		$post = $this->request->getPost();
 
-		if ($this->jobs_model->updateExcavationDeWatering()) {
-			$data["result"] = true;
-			$data["mensaje"] = "Solicitud guardada correctamente.";
-			$data["idExcavation"] = $idExcavation;
-			$this->session->set_flashdata('retornoExito', 'You have updated the information of  your Excavation and Trenching Plan.');
+		$data = [];
+
+		$data["idExcavation"] =  $post['hddIdentificador'] ?? null;
+
+		if ($this->jobsModel->updateExcavationDeWatering($post)) {
+			$data["status"] = "success";
+			session()->setFlashdata('retornoExito', 'You have updated the information of your Excavation and Trenching Plan.');
 		} else {
-			$data["result"] = "error";
-			$data["mensaje"] = "Error al guardar. Intente nuevamente o actualice la p\u00e1gina.";
-			$data["idExcavation"] = "";
-			$this->session->set_flashdata('retornoError', '<strong>Error!!!</strong> Ask for help');
+			$data["status"] = "error";
+			session()->setFlashdata('retornoError', '<strong>Error!!!</strong> Ask for help');
 		}
 
-		echo json_encode($data);
+		return $this->response->setJSON($data);
 	}
+
+	/**
+	 * Form Excavation and Trenching Plan - Sketch
+	 * @since 20/01/2022
+	 * @author BMOTTAG
+	 * @review 23/04/2026 - new CI4 version
+	 */
+	public function upload_sketch($idExcavation)
+	{
+		$data['information'] = $this->generalModel->get_excavation(["idExcavation" => $idExcavation]);
+		return $this->render('App\Modules\Jobs\Views\form_excavation_sketch', $data);
+	}
+
+	/**
+	 * Signature
+	 * param $typo: supervisor / worker
+	 * param $idExcavation: llave principal del formulario
+	 * param $idWorker: llave principal del trabajador
+	 * @since 14/8/2021
+	 * @author BMOTTAG
+	 * @review 23/04/2026 - new CI4 version
+	 */
+	public function add_signature_excavation()
+	{
+		$imageData = $this->request->getPost('map_image'); 
+		$id = $this->request->getPost('extraValue'); 
+		$typo = $this->request->getPost('otherValue'); 
+		
+		switch ($typo) {
+			case "sketch":
+				$msj = "Good job, you have saved the excavation/trench sketch.";
+				$fileName = "sketch_" . $id . ".png";
+				$arrParam = [
+					"table" => "job_excavation",
+					"primaryKey" => "id_job_excavation",
+					"id" => $id,
+					"column" => "excavation_sketch",
+					"value" => 'images/signature/etp/' . $fileName
+				];
+				break;
+
+			case "manager":
+				$fileName = "manager_" . $id . ".png";
+				$arrParam = [
+					"table" => "job_jso",
+					"primaryKey" => "id_job_jso",
+					"id" => $id,
+					"column" => "manager_signature",
+					"value" => 'images/signature/jso/' . $fileName
+				];
+				break;
+
+			case "worker":
+				$fileName = "worker_" . $id . ".png";
+				$arrParam = [
+					"table" => "job_jso_workers",
+					"primaryKey" => "id_job_jso_worker",
+					"id" => $id,
+					"column" => "signature",
+					"value" => 'images/signature/jso/' . $fileName
+				];
+				break;
+
+			default:
+				return $this->response->setJSON([
+					"status" => "error",
+					"message" => "Invalid user type"
+				]);
+		}
+		$filePath = WRITEPATH . '../public/images/signature/etp/' . $fileName;
+
+		if(!$imageData){
+			return redirect()->back()->with('error', 'No signature provided.');
+		}
+
+		$imageData = str_replace('data:image/png;base64,', '', $imageData);
+		$imageData = str_replace(' ', '+', $imageData);
+
+		if(!is_dir(dirname($filePath))) mkdir(dirname($filePath), 0755, true);
+
+		if(file_put_contents($filePath, base64_decode($imageData))){
+			$this->generalModel->updateRecord($arrParam);
+			return redirect()->back()->with('retornoExito', $msj);
+		} else {
+			return redirect()->back()->with('retornoError', 'Error saving signature.');
+		}
+	}
+
+	/**
+	 * Save Trenching Plan - Sketch
+	 * @since 12/03/2022
+	 * @author BMOTTAG
+	 * @review 23/04/2026 - new CI4 version
+	 */
+	public function save_upload_sketch()
+	{
+		$post = $this->request->getPost();
+		$idExcavation = $post['hddIdentificador'] ?? null;
+
+		$file = $this->request->getFile('userfile');
+
+		if (!$file || !$file->isValid() || $file->hasMoved()) {
+			session()->setFlashdata('retornoError', $file ? $file->getErrorString() : 'No file uploaded');
+			return redirect()->to(base_url('jobs/upload_sketch/' . $idExcavation));
+		}
+
+		$newName = $file->getName();
+
+		// Ruta absoluta
+		$path = FCPATH . 'files/excavation/';
+
+		// Mover archivo
+		$file->move($path, $newName, true); // true = overwrite
+
+		$arrParam = array(
+			"table" => "job_excavation",
+			"primaryKey" => "id_job_excavation",
+			"id" => $idExcavation,
+			"column" => "excavation_sketch_doc",
+			"value" => $newName
+		);
+		if ($this->generalModel->updateRecord($arrParam)) {
+			session()->setFlashdata('retornoExito', 'You have updated the information of your Excavation and Trenching Plan.');
+		} else {
+			session()->setFlashdata('retornoError', 'Ask for help.');
+		}
+
+		// Redirigir a la vista de regreso
+		return redirect()->to(base_url('jobs/upload_sketch/' . $idExcavation));
+	}
+
+
+
+
+
+
+
 
 
 

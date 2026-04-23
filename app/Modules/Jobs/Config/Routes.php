@@ -41,6 +41,8 @@ $routes->group('jobs', ['namespace' => 'App\Modules\Jobs\Controllers'], function
     $routes->get('upload_protection_methods/(:num)', 'Jobs::upload_protection_methods/$1');
     $routes->get('upload_access_egress/(:num)', 'Jobs::upload_access_egress/$1');
     $routes->get('upload_affected_zone/(:num)', 'Jobs::upload_affected_zone/$1');
+    $routes->get('upload_de_watering/(:num)', 'Jobs::upload_de_watering/$1');
+    $routes->get('upload_sketch/(:num)', 'Jobs::upload_sketch/$1');
 
     $routes->post('save_safety_hazards', 'Jobs::save_safety_hazards');
     $routes->post('save_tool_box', 'Jobs::save_tool_box');
@@ -72,4 +74,7 @@ $routes->group('jobs', ['namespace' => 'App\Modules\Jobs\Controllers'], function
     $routes->post('save_protection_methods', 'Jobs::save_protection_methods');
     $routes->post('save_access_egress', 'Jobs::save_access_egress');
     $routes->post('save_affected_zone', 'Jobs::save_affected_zone');
+    $routes->post('save_de_watering', 'Jobs::save_de_watering');
+    $routes->post('add_signature_excavation', 'Jobs::add_signature_excavation');
+    $routes->post('save_upload_sketch', 'Jobs::save_upload_sketch');
 });
