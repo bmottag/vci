@@ -1,5 +1,5 @@
 <?php
-$hiddenName = $hiddenName ?? 'map_image';
+$hiddenName = $hiddenName ?? 'image';
 $width  = $width ?? '100%';
 $height = $height ?? '50vh';
 

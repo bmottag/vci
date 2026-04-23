@@ -252,7 +252,7 @@ class Jobs extends BaseController
 
 	/**
 	 * Signature
-	 * param $typo: supervisor / worker
+	 * param $type: supervisor / worker
 	 * param $idToolBox: llave principal del formulario
 	 * param $idWorker: llave principal del trabajador
 	 * @since 24/5/2017
@@ -263,9 +263,9 @@ class Jobs extends BaseController
 	{
 		$imageData = $this->request->getPost('image'); 
 		$id = $this->request->getPost('extraValue'); 
-		$typo = $this->request->getPost('otherValue'); 
+		$type = $this->request->getPost('otherValue'); 
 		
-		switch ($typo) {
+		switch ($type) {
 			case "supervisor":
 				$fileName = "supervisor_" . $id . ".png";
 				$arrParam = [
@@ -1102,7 +1102,7 @@ class Jobs extends BaseController
 
 	/**
 	 * Signature
-	 * param $typo: supervisor / worker
+	 * param $type: supervisor / worker
 	 * param $idJSO: llave principal del formulario
 	 * param $idWorker: llave principal del trabajador
 	 * @since 5/1/2018
@@ -1113,9 +1113,9 @@ class Jobs extends BaseController
 	{
 		$imageData = $this->request->getPost('image'); 
 		$id = $this->request->getPost('extraValue'); 
-		$typo = $this->request->getPost('otherValue'); 
+		$type = $this->request->getPost('otherValue'); 
 		
-		switch ($typo) {
+		switch ($type) {
 			case "supervisor":
 				$fileName = "supervisor_" . $id . ".png";
 				$arrParam = [
@@ -1857,7 +1857,7 @@ class Jobs extends BaseController
 
 	/**
 	 * Signature
-	 * param $typo: supervisor / worker
+	 * param $type: supervisor / worker
 	 * param $idExcavation: llave principal del formulario
 	 * param $idWorker: llave principal del trabajador
 	 * @since 14/8/2021
@@ -1866,11 +1866,13 @@ class Jobs extends BaseController
 	 */
 	public function add_signature_excavation()
 	{
-		$imageData = $this->request->getPost('map_image'); 
+		$imageData = $this->request->getPost('image'); 
 		$id = $this->request->getPost('extraValue'); 
-		$typo = $this->request->getPost('otherValue'); 
+		$type = $this->request->getPost('otherValue'); 
+
+		$msj = "Signature saved successfully.";
 		
-		switch ($typo) {
+		switch ($type) {
 			case "sketch":
 				$msj = "Good job, you have saved the excavation/trench sketch.";
 				$fileName = "sketch_" . $id . ".png";
@@ -1884,24 +1886,37 @@ class Jobs extends BaseController
 				break;
 
 			case "manager":
-				$fileName = "manager_" . $id . ".png";
+			case "supervisor":
+			case "operator":
+				$fileName = $type . "_" . $id . ".png";
 				$arrParam = [
-					"table" => "job_jso",
-					"primaryKey" => "id_job_jso",
+					"table" => "job_excavation",
+					"primaryKey" => "id_job_excavation",
 					"id" => $id,
-					"column" => "manager_signature",
-					"value" => 'images/signature/jso/' . $fileName
+					"column" => $type . "_signature",
+					"value" => 'images/signature/etp/' . $fileName
 				];
 				break;
 
 			case "worker":
 				$fileName = "worker_" . $id . ".png";
 				$arrParam = [
-					"table" => "job_jso_workers",
-					"primaryKey" => "id_job_jso_worker",
+					"table" => "job_excavation_workers",
+					"primaryKey" => "id_excavation_worker",
 					"id" => $id,
 					"column" => "signature",
-					"value" => 'images/signature/jso/' . $fileName
+					"value" => 'images/signature/etp/' . $fileName
+				];
+				break;
+
+			case "subcontractor":
+				$fileName = "subcontractor_" . $id . ".png";
+				$arrParam = [
+					"table" => "job_excavation_subcontractor",
+					"primaryKey" => "id_excavation_subcontractor",
+					"id" => $id,
+					"column" => "signature",
+					"value" => 'images/signature/etp/' . $fileName
 				];
 				break;
 
@@ -1971,6 +1986,21 @@ class Jobs extends BaseController
 
 		// Redirigir a la vista de regreso
 		return redirect()->to(base_url('jobs/upload_sketch/' . $idExcavation));
+	}
+
+	/**
+	 * Subcontractors view to sign
+	 * @since 14/8/2021
+	 * @author BMOTTAG
+	 */
+	public function review_excavation($idExcavation)
+	{
+		$data = [
+			'information' => $this->generalModel->get_excavation(["idExcavation" => $idExcavation]),
+			'excavationWorkers' => $this->generalModel->get_excavation_workers(["idExcavation" => $idExcavation]),
+			'excavationSubcontractors' => $this->generalModel->get_excavation_subcontractors(["idExcavation" => $idExcavation])
+		];
+		return $this->render('App\Modules\Jobs\Views\review_excavation', $data);
 	}
 
 

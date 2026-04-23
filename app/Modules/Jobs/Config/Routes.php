@@ -43,6 +43,7 @@ $routes->group('jobs', ['namespace' => 'App\Modules\Jobs\Controllers'], function
     $routes->get('upload_affected_zone/(:num)', 'Jobs::upload_affected_zone/$1');
     $routes->get('upload_de_watering/(:num)', 'Jobs::upload_de_watering/$1');
     $routes->get('upload_sketch/(:num)', 'Jobs::upload_sketch/$1');
+    $routes->get('review_excavation/(:num)', 'Jobs::review_excavation/$1');
 
     $routes->post('save_safety_hazards', 'Jobs::save_safety_hazards');
     $routes->post('save_tool_box', 'Jobs::save_tool_box');
