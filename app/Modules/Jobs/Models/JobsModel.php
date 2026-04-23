@@ -898,6 +898,91 @@ Y.movil phone_emer_1, CONCAT(Y.first_name, " " , Y.last_name) emer_1, Z.movil ph
 		return $builder->insert($data);
 	}
 
+	/**
+	 * Update Excavation - Protection Methods
+	 * @since 8/8/2021
+	 */
+	public function updateExcavation($post, $file)
+	{
+		$id = $post['hddIdentificador'] ?? null;
+
+		$data = [
+			'protection_sloping' => $post['sloping'] ?? null,
+			'protection_type_a' => $post['type_a'] ?? null,
+			'protection_type_b' => $post['type_b'] ?? null,
+			'protection_type_c' => $post['type_c'] ?? null,
+			'protection_benching' => $post['benching'] ?? null,
+			'protection_shoring' => $post['shoring'] ?? null,
+			'protection_shielding' => $post['shielding'] ?? null,
+			'additional_comments' => $post['additional_comments'] ?? null
+		];
+
+		if ($file !== null) {
+			$data['method_system_doc'] = $file;
+		}
+
+		$builder = $this->db->table('job_excavation');
+
+		return $builder->where('id_job_excavation', $id)
+						->update($data);
+	}
+
+	/**
+	 * Update Excavation - Access & Egress
+	 * @since 8/8/2021
+	 */
+	public function updateExcavationAccess(array $post = []): bool
+	{
+		$id = $post['hddIdentificador'] ?? null;
+
+		$data = [
+			'access_ladder' => $post['ladder'] ?? null,
+			'access_ramp' => $post['ramp'] ?? null,
+			'access_other' => $post['other'] ?? null,
+			'access_explain' => $post['access_explain'] ?? null
+		];
+
+		$builder = $this->db->table('job_excavation');
+
+		return $builder->where('id_job_excavation', $id)
+						->update($data);
+	}
+
+	/**
+	 * Update Excavation - Affected Zone, Traffic & Utilities
+	 * @since 8/8/2021
+	 */
+	public function updateExcavationAffectedZone($post, $file)
+	{
+		$id = $post['hddIdentificador'] ?? null;
+
+		$data = [
+			'located' => $post['located'] ?? null,
+			'permit_required' => $post['permit_required'] ?? null,
+			'utility_lines' => $post['utility_lines'] ?? null,
+			'utility_lines_explain' => $post['utility_lines_explain'] ?? null,
+			'encumbrances' => $post['encumbrances'] ?? null,
+			'method_support' => $post['method_support'] ?? null,
+			'utility_shutdown' => $post['utility_shutdown'] ?? null,
+			'spoil_piles' => $post['spoil_piles'] ?? null,
+			'spoils_transported' => $post['spoils_transported'] ?? null,
+			'environmental_controls' => $post['environmental_controls'] ?? null,
+			'open_overnight' => $post['open_overnight'] ?? null,
+			'methods_secure' => $post['methods_secure'] ?? null,
+			'vehicle_traffic' => $post['vehicle_traffic'] ?? null,
+		];
+
+		if ($file !== null) {
+			$data['permit_required_doc'] = $file;
+		}
+
+		$builder = $this->db->table('job_excavation');
+
+		return $builder->where('id_job_excavation', $id)
+					->update($data);
+	}
+
+
 
 
 

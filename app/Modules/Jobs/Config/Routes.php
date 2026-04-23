@@ -38,6 +38,9 @@ $routes->group('jobs', ['namespace' => 'App\Modules\Jobs\Controllers'], function
     $routes->get('add_workers_excavation/(:num)', 'Jobs::add_workers_excavation/$1');
     $routes->get('deleteExcavationWorker/(:num)/(:num)', 'Jobs::deleteExcavationWorker/$1/$2');
     $routes->get('deleteExcavationSubcontractorWorker/(:num)/(:num)', 'Jobs::deleteExcavationSubcontractorWorker/$1/$2');
+    $routes->get('upload_protection_methods/(:num)', 'Jobs::upload_protection_methods/$1');
+    $routes->get('upload_access_egress/(:num)', 'Jobs::upload_access_egress/$1');
+    $routes->get('upload_affected_zone/(:num)', 'Jobs::upload_affected_zone/$1');
 
     $routes->post('save_safety_hazards', 'Jobs::save_safety_hazards');
     $routes->post('save_tool_box', 'Jobs::save_tool_box');
@@ -66,4 +69,7 @@ $routes->group('jobs', ['namespace' => 'App\Modules\Jobs\Controllers'], function
     $routes->post('save_excavation_workers', 'Jobs::save_excavation_workers');
     $routes->post('excavation_One_Worker', 'Jobs::excavation_One_Worker');
     $routes->post('excavation_subcontractor_Worker', 'Jobs::excavation_subcontractor_Worker');
+    $routes->post('save_protection_methods', 'Jobs::save_protection_methods');
+    $routes->post('save_access_egress', 'Jobs::save_access_egress');
+    $routes->post('save_affected_zone', 'Jobs::save_affected_zone');
 });

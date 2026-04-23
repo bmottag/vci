@@ -72,7 +72,7 @@
 			<div class="form-group">
 				<div class="row" align="center">
 					<div style="width:70%;" align="center">
-						<h3><a href="<?php echo base_url($information[0]["evacuation_map"]); ?>" target="_blank" /> - View map -</a></h3>
+						<h3><a href="<?php echo base_url($information[0]["evacuation_map"]); ?>" target="_blank" > - View map -</a></h3>
 					</div>
 				</div>
 			</div>

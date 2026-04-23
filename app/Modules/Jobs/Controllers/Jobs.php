@@ -1688,6 +1688,191 @@ class Jobs extends BaseController
 		$this->load->view("layout_calendar", $data);
 	}
 
+	/**
+	 * Form Excavation and Trenching Plan - Protection Methods
+	 * @since 3/08/2021
+	 * @author BMOTTAG
+	 * @review 23/04/2026 - new CI4 version
+	 */
+	public function upload_protection_methods($idExcavation)
+	{
+		$data['information'] = $this->generalModel->get_excavation(["idExcavation" => $idExcavation]);
+		return $this->render('App\Modules\Jobs\Views\form_excavation_protection_methods', $data);
+	}
+
+	/**
+	 * Save Excavation and Trenching Plan - Protection Methods
+	 * @since 8/08/2021
+	 * @author BMOTTAG
+	 * @review 22/04/2026 - new CI4 version
+	 */
+	public function save_protection_methods()
+	{
+		$post = $this->request->getPost();
+		$idExcavation = $post['hddIdentificador'] ?? null;
+
+		$file = $this->request->getFile('userfile');
+
+		$name = null;
+		if ($file && $file->isValid() && !$file->hasMoved()) 
+		{
+			$name = $file->getName();
+
+			$path = FCPATH . 'files/excavation/';
+
+			// crear carpeta si no existe
+			if (!is_dir($path)) {
+				mkdir($path, 0777, true);
+			}
+
+			$file->move($path, $name, true);
+		}
+
+		if ($this->jobsModel->updateExcavation($post, $name)) {
+			session()->setFlashdata('retornoExito', 'You have updated the information of your Excavation and Trenching Plan.');
+		} else {
+			session()->setFlashdata('retornoError', 'Ask for help.');
+		}
+
+		// Redirigir a la vista de regreso
+		return redirect()->to(base_url('jobs/upload_protection_methods/' . $idExcavation));
+	}
+
+	/**
+	 * Form Excavation and Trenching Plan - Access & Egress
+	 * @since 3/08/2021
+	 * @author BMOTTAG
+	 * @review 22/04/2026 - new CI4 version
+	 */
+	public function upload_access_egress($idExcavation)
+	{
+		$data['information'] = $this->generalModel->get_excavation(["idExcavation" => $idExcavation]);
+		return $this->render('App\Modules\Jobs\Views\form_excavation_access_egress', $data);
+	}
+
+	/**
+	 * Save Excavation and Trenching Plan - Access & Egress
+	 * @since 8/08/2021
+	 * @author BMOTTAG
+	 * @review 22/04/2026 - new CI4 version
+	 */
+	public function save_access_egress()
+	{
+		$post = $this->request->getPost();
+
+		$data = [];
+
+		$data["idExcavation"] =  $post['hddIdentificador'] ?? null;
+
+		if ($this->jobsModel->updateExcavationAccess($post)) {
+			$data["status"] = "success";
+			session()->setFlashdata('retornoExito', 'You have updated the information of  your Excavation and Trenching Plan.');
+		} else {
+			$data["status"] = "error";
+			session()->setFlashdata('retornoError', '<strong>Error!!!</strong> Ask for help');
+		}
+
+		return $this->response->setJSON($data);
+	}
+
+	/**
+	 * Form Excavation and Trenching Plan - Affected Zone, Traffic & Utilities
+	 * @since 3/08/2021
+	 * @author BMOTTAG
+	 * @review 22/04/2026 - new CI4 version
+	 */
+	public function upload_affected_zone($idExcavation)
+	{
+		$data['information'] = $this->generalModel->get_excavation(["idExcavation" => $idExcavation]);
+		return $this->render('App\Modules\Jobs\Views\form_excavation_affected_zone', $data);
+	}
+
+	/**
+	 * Save Excavation and Trenching Plan - Affected Zone, Traffic & Utilities
+	 * @since 8/08/2021
+	 * @author BMOTTAG
+	 * @review 22/04/2026 - new CI4 version
+	 */
+	public function save_affected_zone()
+	{
+		$post = $this->request->getPost();
+		$idExcavation = $post['hddIdentificador'] ?? null;
+
+		$file = $this->request->getFile('userfile');
+
+		$name = null;
+		if ($file && $file->isValid() && !$file->hasMoved()) 
+		{
+			$name = $file->getName();
+
+			$path = FCPATH . 'files/excavation/';
+
+			// crear carpeta si no existe
+			if (!is_dir($path)) {
+				mkdir($path, 0777, true);
+			}
+
+			$file->move($path, $name, true);
+		}
+
+		if ($this->jobsModel->updateExcavationAffectedZone($post, $name)) {
+			session()->setFlashdata('retornoExito', 'You have updated the information of your Excavation and Trenching Plan.');
+		} else {
+			session()->setFlashdata('retornoError', 'Ask for help.');
+		}
+
+		// Redirigir a la vista de regreso
+		return redirect()->to(base_url('jobs/upload_affected_zone/' . $idExcavation));
+	}
+
+	/**
+	 * Form Excavation and Trenching Plan - De-Watering
+	 * @since 3/08/2021
+	 * @author BMOTTAG
+	 * @review 22/04/2026 - new CI4 version
+	 */
+	public function upload_de_watering($idExcavation)
+	{
+		if (empty($idExcavation)) {
+			show_error('ERROR!!! - You are in the wrong place.');
+		}
+
+		$this->load->model("general_model");
+		$arrParam = array("idExcavation" => $idExcavation);
+		$data['information'] = $this->general_model->get_excavation($arrParam);
+
+		$data["view"] = 'form_excavation_de_watering';
+		$this->load->view("layout", $data);
+	}
+
+	/**
+	 * Save Excavation and Trenching Plan - De-Watering
+	 * @since 8/08/2021
+	 * @author BMOTTAG
+	 * @review 22/04/2026 - new CI4 version
+	 */
+	public function save_de_watering()
+	{
+		header('Content-Type: application/json');
+		$data = array();
+		$idExcavation = $this->input->post('hddIdentificador');
+
+		if ($this->jobs_model->updateExcavationDeWatering()) {
+			$data["result"] = true;
+			$data["mensaje"] = "Solicitud guardada correctamente.";
+			$data["idExcavation"] = $idExcavation;
+			$this->session->set_flashdata('retornoExito', 'You have updated the information of  your Excavation and Trenching Plan.');
+		} else {
+			$data["result"] = "error";
+			$data["mensaje"] = "Error al guardar. Intente nuevamente o actualice la p\u00e1gina.";
+			$data["idExcavation"] = "";
+			$this->session->set_flashdata('retornoError', '<strong>Error!!!</strong> Ask for help');
+		}
+
+		echo json_encode($data);
+	}
+
+
 
 
 
