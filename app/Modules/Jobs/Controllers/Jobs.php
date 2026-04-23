@@ -1992,6 +1992,7 @@ class Jobs extends BaseController
 	 * Subcontractors view to sign
 	 * @since 14/8/2021
 	 * @author BMOTTAG
+	 * @review 23/04/2026 - new CI4 version
 	 */
 	public function review_excavation($idExcavation)
 	{
@@ -2001,6 +2002,59 @@ class Jobs extends BaseController
 			'excavationSubcontractors' => $this->generalModel->get_excavation_subcontractors(["idExcavation" => $idExcavation])
 		];
 		return $this->render('App\Modules\Jobs\Views\review_excavation', $data);
+	}
+
+	/**
+	 * Generate Report in PDF - Excavation and Trenching Plan
+	 * @param int $idExcavation
+	 * @since 15/08/2021
+	 * @author BMOTTAG
+	 * @review 23/04/2026 - new CI4 version
+	 */
+	public function generaExcavationPDF($idExcavation)
+	{
+		$pdf = new TCPDF();
+
+		$pdf->SetCreator('VCI');
+		$pdf->SetAuthor('VCI');
+		$pdf->SetTitle('Excavation and Trenching Plan Report');
+
+		$pdf->setPrintHeader(false);
+		$pdf->setPrintFooter(false);
+
+		// 👇 espacio para logo
+		$pdf->SetMargins(10, 25, 10);
+		$pdf->SetAutoPageBreak(TRUE, 10);
+
+		$pdf->SetFont('dejavusans', '', 8);
+
+		$data = [
+			'info' => $this->generalModel->get_excavation(["idExcavation" => $idExcavation]),
+			'excavationWorkers' => $this->generalModel->get_excavation_workers(["idExcavation" => $idExcavation]),
+			'excavationSubcontractors' => $this->generalModel->get_excavation_subcontractors(["idExcavation" => $idExcavation])
+		];
+
+		$pdf->AddPage();
+
+		// LOGO
+		$logo = FCPATH . 'images/logo.png';
+
+		if (is_file($logo)) {
+			$pdf->Image($logo, 10, 8, 30);
+		}
+
+		$html = view('jobs/reporte_excavation', $data);
+
+		$pdf->writeHTML($html, true, false, true, false, '');
+
+		$pdf->lastPage();
+
+		$date = $data['info'][0]['date_excavation'];
+		$filename = 'Excavation_Trenching_Plan_' . $date . '.pdf';
+
+		return $this->response
+			->setHeader('Content-Type', 'application/pdf')
+			->setBody($pdf->Output($filename, 'I'));
 	}
 
 
