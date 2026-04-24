@@ -2001,7 +2001,8 @@ class Jobs extends BaseController
 			'excavationWorkers' => $this->generalModel->get_excavation_workers(["idExcavation" => $idExcavation]),
 			'excavationSubcontractors' => $this->generalModel->get_excavation_subcontractors(["idExcavation" => $idExcavation])
 		];
-		return $this->render('App\Modules\Jobs\Views\review_excavation', $data);
+
+		return $this->renderTopOnly('App\Modules\Jobs\Views\review_excavation', $data);
 	}
 
 	/**
@@ -2051,6 +2052,228 @@ class Jobs extends BaseController
 
 		$date = $data['info'][0]['date_excavation'];
 		$filename = 'Excavation_Trenching_Plan_' . $date . '.pdf';
+
+		return $this->response
+			->setHeader('Content-Type', 'application/pdf')
+			->setBody($pdf->Output($filename, 'I'));
+	}
+
+	/**
+	 * Fire watch list
+	 * @since 27/1/2023
+	 * @author BMOTTAG
+	 * @review 23/04/2026 - new CI4 version
+	 */
+	public function fire_watch($idJob)
+	{
+		$data = [
+			'jobInfo' => $this->generalModel->get_job(['idJob' => $idJob]),
+			'infoFireWatchSetup' => $this->jobsModel->get_fire_watch_setup(['idJob' => $idJob]),
+			'information' => $this->jobsModel->get_fire_watch(['idJob' => $idJob])
+		];
+
+		return $this->render('App\Modules\Jobs\Views\fire_watch_list', $data);
+	}
+
+	/**
+	 * Cargo modal - formulario fire watch setup
+	 * @since 27/1/2023
+	 * @review 24/04/2026 - new CI4 version
+	 */
+	public function cargarModalFireWatchSetup()
+	{
+		$data = [];
+
+		$idJob = $this->request->getPost("idJob");
+
+		$data = [
+			'metodo'	  => $this->request->getPost("metodo"),
+			'idJob'		  => $idJob,
+			'workersList' => $this->generalModel->get_user(["state" => 1, "idRolesSupervisors" => true]),
+			'information' => $this->jobsModel->get_fire_watch_setup(['idJob' => $idJob])
+		];
+
+		return $this->response
+					->setContentType('text/html')
+					->setBody(view('App\Modules\Jobs\Views\fire_watch_setup_modal', $data));
+	}
+
+	/**
+	 * Cargo modal - formulario fire watch
+	 * @since 27/1/2023
+	 * @review 24/04/2026 - new CI4 version
+	 */
+	public function cargarModalFireWatch()
+	{
+		$idJob = $this->request->getPost("idJob");
+		
+		$data = [];
+
+		$data = [
+			'idFireWatch' => $this->request->getPost("idFireWatch"),
+			'idJob'		  => $idJob,
+			'workersList' => $this->generalModel->get_user(["state" => 1]),
+			'information' => $this->jobsModel->get_fire_watch_setup(['idJob' => $idJob])
+		];
+
+		return $this->response
+					->setContentType('text/html')
+					->setBody(view('App\Modules\Jobs\Views\fire_watch_modal', $data));
+	}
+
+	/**
+	 * Save fire watch
+	 * @since 27/1/2023
+	 * @author BMOTTAG
+	 * @review 24/04/2026 - new CI4 version
+	 */
+	public function save_fire_watch_setup()
+	{
+		$post = $this->request->getPost();
+
+		$data = [];
+		$data["idRecord"] = $post['hddIdJob'] ?? null;
+
+		if ($this->jobsModel->saveFireWatchSetup($post)) {
+			$data["status"] = "success";
+			session()->setFlashdata('retornoExito', "You have saved the information!!");
+		} else {
+			$data["status"] = "error";
+			session()->setFlashdata('retornoError', '<strong>Error!!!</strong> Ask for help');
+		}
+
+		return $this->response->setJSON($data);
+	}
+
+	/**
+	 * Save fire watch
+	 * @since 27/1/2023
+	 * @author BMOTTAG
+	 * @review 24/04/2026 - new CI4 version
+	 */
+	public function save_fire_watch()
+	{
+		$post = $this->request->getPost();
+
+		$id = $post['hddIdFireWatch'] ?? null;
+		$msj = $id 
+			? "You have updated a Fire Watch!!" 
+			: "You have added a new Fire Watch!!";
+
+		$data = [];
+		$data["idRecord"] = $post['hddIdJob'] ?? null;
+
+		if ($this->jobsModel->saveFireWatch($post)) {
+			$data["status"] = "success";
+			session()->setFlashdata('retornoExito', $msj);
+		} else {
+			$data["status"] = "error";
+			session()->setFlashdata('retornoError', '<strong>Error!!!</strong> Ask for help');
+		}
+
+		return $this->response->setJSON($data);
+	}
+
+	/**
+	 * Form Checkin for Fire Watch
+	 * @since 3/2/2023
+	 * @author BMOTTAG
+	 * @review 24/04/2026 - new CI4 version
+	 */
+	public function fire_watch_checkin($idFireWatch, $idCheckin = null)
+	{
+		$arrParam = [
+			"today" => date('Y-m-d'),
+			"idFireWatch" => $idFireWatch
+		];
+		if ($idCheckin !== null) {
+			$arrParam = ["idCheckin" => $idCheckin];
+		}
+		$data = [
+			'idCheckin' => $idCheckin ?? false,
+			'checkinList' => $this->jobsModel->get_fire_watch_checkin($arrParam),
+			'information' => $this->jobsModel->get_fire_watch(["idFireWatch" => $idFireWatch])
+		];
+
+		return $this->renderTopOnly('App\Modules\Jobs\Views\form_fire_watch_checkin', $data);
+	}
+
+	/**
+	 * Save Fire Watch Checkin
+	 * @since 3/2/2023
+	 * @author BMOTTAG
+	 * @review 24/04/2026 - new CI4 version
+	 */
+	public function save_fire_watch_checkin()
+	{
+		$post = $this->request->getPost();
+		$data = [];
+		$data["idFireWatch"] = $post['idFireWatch'] ?? null;
+		$msj = "Information saved successfully!";
+
+		if ($this->jobsModel->saveFireWatchCheckin($post)) {
+			$data["status"] = "success";
+			session()->setFlashdata('retornoExito', $msj);
+		} else {
+			$data["status"] = "error";
+			session()->setFlashdata('retornoError', '<strong>Error!!!</strong> Ask for help');
+		}
+
+		return $this->response->setJSON($data);
+	}
+
+	/**
+	 * Generate Fire Watch Record Report in PDF
+	 * @param int $idFireWatch
+	 * @since 26/07/2023
+	 * @author BMOTTAG
+	 */
+	public function generaFIREWATCHPDF($idFireWatch)
+	{
+		$pdf = new TCPDF();
+
+		$pdf->SetCreator('VCI');
+		$pdf->SetAuthor('VCI');
+		$pdf->SetTitle('Fire Watch  Report');
+
+		$pdf->setPrintHeader(false);
+		$pdf->setPrintFooter(false);
+
+		// 👇 espacio para logo
+		$pdf->SetMargins(10, 25, 10);
+		$pdf->SetAutoPageBreak(TRUE, 10);
+
+		$pdf->SetFont('dejavusans', '', 8);
+
+		$data = [
+			'info' => $this->jobsModel->get_fire_watch(["idFireWatch" => $idFireWatch]),
+			'checkinList' => $this->jobsModel->get_fire_watch_checkin([
+				"idFireWatch" => $idFireWatch,
+				"distinctUser" => true
+			]),
+			'checkinList_log' => $this->jobsModel->get_fire_watch_checkin(["idFireWatch" => $idFireWatch])
+			
+		];
+
+		$pdf->AddPage();
+
+		// LOGO
+		$logo = FCPATH . 'images/logo.png';
+
+		if (is_file($logo)) {
+			$pdf->Image($logo, 10, 8, 30);
+		}
+
+		$html = view('jobs/reporte_fire_watch_pdf', $data);
+		$pdf->writeHTML($html, true, false, true, false, '');
+
+		$pdf->AddPage();
+		$html = view('jobs/reporte_fire_watch_log_pdf', $data);
+		$pdf->writeHTML($html, true, false, true, false, '');
+
+		$pdf->lastPage();
+
+		$filename = 'fire_watch_report' . $data['info'][0]['job_description'] . '.pdf';
 
 		return $this->response
 			->setHeader('Content-Type', 'application/pdf')

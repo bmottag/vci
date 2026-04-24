@@ -45,6 +45,10 @@ $routes->group('jobs', ['namespace' => 'App\Modules\Jobs\Controllers'], function
     $routes->get('upload_sketch/(:num)', 'Jobs::upload_sketch/$1');
     $routes->get('review_excavation/(:num)', 'Jobs::review_excavation/$1');
     $routes->get('generaExcavationPDF/(:num)', 'Jobs::generaExcavationPDF/$1');
+    $routes->get('fire_watch/(:num)', 'Jobs::fire_watch/$1');
+    $routes->get('fire_watch_checkin/(:num)/(:num)', 'Jobs::fire_watch_checkin/$1/$2');
+    $routes->get('fire_watch_checkin/(:num)', 'Jobs::fire_watch_checkin/$1');
+    $routes->get('generaFIREWATCHPDF/(:num)', 'Jobs::generaFIREWATCHPDF/$1');
 
     $routes->post('save_safety_hazards', 'Jobs::save_safety_hazards');
     $routes->post('save_tool_box', 'Jobs::save_tool_box');
@@ -79,4 +83,9 @@ $routes->group('jobs', ['namespace' => 'App\Modules\Jobs\Controllers'], function
     $routes->post('save_de_watering', 'Jobs::save_de_watering');
     $routes->post('add_signature_excavation', 'Jobs::add_signature_excavation');
     $routes->post('save_upload_sketch', 'Jobs::save_upload_sketch');
+    $routes->post('cargarModalFireWatchSetup', 'Jobs::cargarModalFireWatchSetup');
+    $routes->post('save_fire_watch_setup', 'Jobs::save_fire_watch_setup');
+    $routes->post('cargarModalFireWatch', 'Jobs::cargarModalFireWatch');
+    $routes->post('save_fire_watch', 'Jobs::save_fire_watch');
+    $routes->post('save_fire_watch_checkin', 'Jobs::save_fire_watch_checkin');
 });

@@ -1004,6 +1004,212 @@ Y.movil phone_emer_1, CONCAT(Y.first_name, " " , Y.last_name) emer_1, Z.movil ph
 						->update($data);
 	}
 
+	/**
+	 * Fire watch setup
+	 * @since 27/1/2023
+	 */
+	public function get_fire_watch_setup($arrDatos)
+	{
+		$builder = $this->db->table('job_fire_watch_setttings F');
+		$builder->select('F.*, CONCAT(U.first_name, " " , U.last_name) reportedby, CONCAT(Z.first_name, " " , Z.last_name) supervisor, Z.movil as super_number, J.id_job, J.job_description');
+		$builder->join('param_jobs J', 'J.id_job = F.fk_id_job', 'INNER');
+		$builder->join('user U', 'U.id_user = F.fk_id_user', 'INNER');
+		$builder->join('user Z', 'Z.id_user = F.fk_id_supervisor', 'INNER');
+		if (isset($arrDatos["idJob"])) {
+			$builder->where('fk_id_job', $arrDatos["idJob"]);
+		}
+		$builder->orderBy('id_job_fire_watch_settings', 'DESC');
+
+		return $builder->get()->getResultArray();
+	}
+
+	/**
+	 * Fire watch list
+	 * @since 27/1/2023
+	 */
+	public function get_fire_watch($arrDatos)
+	{
+		$builder = $this->db->table('job_fire_watch F');
+		$builder->select('F.*, CONCAT(U.first_name, " " , U.last_name) reportedby, CONCAT(X.first_name, " " , X.last_name) conductedby, CONCAT(Z.first_name, " " , Z.last_name) supervisor, Z.movil as super_number, J.id_job, J.job_description');
+		$builder->join('param_jobs J', 'J.id_job = F.fk_id_job', 'INNER');
+		$builder->join('user U', 'U.id_user = F.fk_id_user', 'INNER');
+		$builder->join('user X', 'X.id_user = F.fk_id_conducted_by', 'INNER');
+		$builder->join('user Z', 'Z.id_user = F.fk_id_supervisor', 'INNER');
+		if (isset($arrDatos["idJob"])) {
+			$builder->where('fk_id_job', $arrDatos["idJob"]);
+		}
+		if (isset($arrDatos["idFireWatch"])) {
+			$builder->where('id_job_fire_watch', $arrDatos["idFireWatch"]);
+		}
+
+		$builder->orderBy('id_job_fire_watch', 'DESC');
+
+		return $builder->get()->getResultArray();
+	}
+
+	/**
+	 * Add/Edit FIRE WATCH
+	 * @since 27/3/2023
+	 */
+	public function saveFireWatchSetup(array $post = []): bool
+	{
+		$metodo = $post['hddMetodo'] ?? null;
+		$date = $post['date'] ?? null;
+		$time = $post['time'] ?? null;
+		$completeDate = ($date && $time) ? $date . " " . $time . ":00:00" : null;
+
+		$dateRestored = $post['dateRestored'] ?? null;
+		$timeRestored = $post['timeRestored'] ?? null;
+		$completeDateRestored = ($dateRestored && $timeRestored)
+			? $dateRestored . " " . $timeRestored . ":00:00"
+			: null;
+
+		$data = [
+			'fk_id_user' => session()->get('id'),
+			'fk_id_supervisor' => $post['supervisor'] ?? null,
+			'building_address' => $post['address'] ?? null,
+			'date_out' => $completeDate,
+			'date_restored' => $completeDateRestored,
+			'fire_alarm' => $post['fire_alarm'] ?? null,
+			'fire_sprinkler' => $post['fire_sprinkler'] ?? null,
+			'standpipe' => $post['standpipe'] ?? null,
+			'fire_pump' => $post['fire_pump'] ?? null,
+			'fire_suppression' => $post['fire_suppression'] ?? null,
+			'other' => $post['other'] ?? null,
+			'areas' => $post['areas'] ?? null,
+		];
+
+		$builder = $this->db->table('job_fire_watch_setttings');
+
+		if ($metodo == 'create') {
+			$data["fk_id_job"] = $post['hddIdJob'];
+			return $builder->insert($data);
+		} else {
+			return $builder->where('fk_id_job', $post['hddIdJob'])
+						->update($data);
+		}
+	}
+
+	/**
+	 * Add/Edit FIRE WATCH
+	 * @since 27/3/2023
+	 */
+	public function saveFireWatch(array $post = []): bool
+	{
+		$idUser = session()->get('id'); 
+		$id = $post['hddIdFireWatch'] ?? null;
+		$date = $post['date'] ?? null;
+		$time = $post['time'] ?? null;
+		$completeDate = ($date && $time) ? $date . " " . $time . ":00:00" : null;
+
+		$dateRestored = $post['dateRestored'] ?? null;
+		$timeRestored = $post['timeRestored'] ?? null;
+		$completeDateRestored = ($dateRestored && $timeRestored)
+			? $dateRestored . " " . $timeRestored . ":00:00"
+			: null;
+
+		$data = [
+			'fk_id_job' => $post['hddIdJob'] ?? null,
+			'fk_id_user' => $idUser,
+			'fk_id_conducted_by' => $idUser,
+			'fk_id_supervisor' => $post['supervisor'] ?? null,
+			'building_address' => $post['address'] ?? null,
+			'date_out' => $completeDate,
+			'date_restored' => $completeDateRestored,
+			'fire_alarm' => $post['fire_alarm'] ?? null,
+			'fire_sprinkler' => $post['fire_sprinkler'] ?? null,
+			'standpipe' => $post['standpipe'] ?? null,
+			'fire_pump' => $post['fire_pump'] ?? null,
+			'fire_suppression' => $post['fire_suppression'] ?? null,
+			'other' => $post['other'] ?? null,
+			'areas' => $post['areas'] ?? null,
+			'training_completed' => $post['training'] ?? null,
+			'safety_shoes' => $post['safety_shoes'] ?? null,
+			'safety_vest' => $post['safety_vest'] ?? null,
+			'safety_glasses' => $post['safety_glasses'] ?? null,
+			'hearing_protection' => $post['hearing_protection'] ?? null,
+			'snow_cleets' => $post['snow_cleets'] ?? null,
+			'dust_proof_mask' => $post['dust_proof_mask'] ?? null,
+			'hard_hat' => $post['hard_hat'] ?? null,
+			'gloves' => $post['gloves'] ?? null,
+			'other_ppe' => $post['other_ppe'] ?? null,
+			'operational_impacts' => $post['operational_impacts'] ?? null,
+			'map_routing' => $post['map_routing'] ?? null,
+			'raic_access' => $post['raic_access'] ?? null,
+			'radio' => $post['radio'] ?? null,
+			'emergency_contacts' => $post['emergency_contacts'] ?? null,
+			'keys_access' => $post['keys_access'] ?? null,
+		];
+
+		$builder = $this->db->table('job_fire_watch');
+
+		if (empty($id)) {
+			$data["date_commenced"] = date("Y-m-d G:i:s");
+			return $builder->insert($data);
+		} else {
+			return $builder->where('id_job_fire_watch', $id)
+						->update($data);
+		}
+	}
+
+	/**
+	 * Check In List for fire watch
+	 * @since 1/6/2022
+	 */
+	public function get_fire_watch_checkin($arrDatos)
+	{
+		$builder = $this->db->table('job_fire_watch_checkin C');
+		$builder->join('user U', 'U.id_user = C.fk_id_worker', 'INNER');
+
+		if (isset($arrDatos["distinctUser"])) {
+			$builder->select('U.id_user, U.first_name, U.last_name, U.movil');
+			$builder->groupBy('U.id_user');
+			$builder->orderBy('U.first_name, U.last_name', 'ASC');
+		} else {
+			$builder->select('C.*, U.first_name, U.last_name, U.movil');
+			$builder->orderBy('C.fk_id_job_fire_watch, C.id_checkin', 'ASC');
+		}		
+
+		
+		if (isset($arrDatos["idCheckin"])) {
+			$builder->where('C.id_checkin', $arrDatos["idCheckin"]);
+		}
+		if (isset($arrDatos["idFireWatch"])) {
+			$builder->where('C.fk_id_job_fire_watch', $arrDatos["idFireWatch"]);
+		}
+		if (isset($arrDatos["checkout"])) {
+			$builder->where('C.checkout_time', '0000-00-00 00:00:00');
+		}
+
+		if (isset($arrDatos["distinctUser"])) {
+			$builder->orderBy('U.first_name, U.last_name', 'ASC');
+		} else {
+			$builder->orderBy('C.fk_id_job_fire_watch, C.id_checkin', 'ASC');
+		}
+
+		return $builder->get()->getResultArray();
+	}
+
+	/**
+	 * Add Fire Watch checkin
+	 * @since 3/02/2023
+	 */
+	public function saveFireWatchCheckin(array $post): bool
+	{
+		$data = [
+			'fk_id_job_fire_watch' => $post['idFireWatch'] ?? null,
+			'fk_id_worker' => session()->get("id"),
+			'checkin_date' => date('Y-m-d'),
+			'checkin_time' => date("Y-m-d H:i:s"),
+			'address_start' => $post['address'] ?? null,
+			'latitude_start' => $post['latitude'] ?? null,
+			'longitude_start' => $post['longitude'] ?? null,
+			'notes' => $post['notes'] ?? null,
+		];
+
+		$builder = $this->db->table('job_fire_watch_checkin');
+		return $builder->insert($data);
+	}
 
 
 
