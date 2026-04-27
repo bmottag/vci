@@ -2234,7 +2234,7 @@ class Jobs extends BaseController
 
 		$pdf->SetCreator('VCI');
 		$pdf->SetAuthor('VCI');
-		$pdf->SetTitle('Fire Watch  Report');
+		$pdf->SetTitle('Fire Watch Report');
 
 		$pdf->setPrintHeader(false);
 		$pdf->setPrintFooter(false);
@@ -2273,7 +2273,7 @@ class Jobs extends BaseController
 
 		$pdf->lastPage();
 
-		$filename = 'fire_watch_report' . $data['info'][0]['job_description'] . '.pdf';
+		$filename = 'fire_watch_report_' . $data['info'][0]['job_description'] . '.pdf';
 
 		return $this->response
 			->setHeader('Content-Type', 'application/pdf')

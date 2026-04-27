@@ -131,3 +131,7 @@ docker-compose.override.yml
 /public/assets/bootstrap/
 /public/images/
 /public/files/
+/legacy/
+/app/Modules/zzzzz
+
+CLAUDE.md
