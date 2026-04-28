@@ -1337,11 +1337,12 @@ class GeneralModel extends Model
 	public function get_confined_space($arrDatos)
 	{
 		$builder = $this->db->table('job_confined C');
-		$builder->select('C.*, CONCAT(U.first_name, " " , U.last_name) name, J.id_job, J.job_description, CONCAT(X.first_name, " " , X.last_name) user_authorization, CONCAT(Z.first_name, " " , Z.last_name) user_cancellation');
+		$builder->select('C.*, CONCAT(W.first_name, " " , W.last_name) name_post_entry, CONCAT(U.first_name, " " , U.last_name) name, J.id_job, J.job_description, CONCAT(X.first_name, " " , X.last_name) user_authorization, CONCAT(Z.first_name, " " , Z.last_name) user_cancellation');
 		$builder->join('param_jobs J', 'J.id_job = C.fk_id_job', 'INNER');
 		$builder->join('user U', 'U.id_user = C.fk_id_user', 'INNER');
 		$builder->join('user X', 'X.id_user = C.fk_id_user_authorization', 'INNER');
 		$builder->join('user Z', 'Z.id_user = C.fk_id_user_cancellation', 'INNER');
+		$builder->join('user W', 'W.id_user = C.fk_id_post_entry_user', 'INNER');
 
 		if (isset($arrDatos["idJob"]) && $arrDatos["idJob"] != 'x') {
 			$builder->where('fk_id_job', $arrDatos["idJob"]);

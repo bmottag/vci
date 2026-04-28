@@ -129,6 +129,7 @@ _modules/*
 docker-compose.override.yml
 
 /public/assets/bootstrap/
+/public/assets/timepicker/
 /public/images/
 /public/files/
 /legacy/

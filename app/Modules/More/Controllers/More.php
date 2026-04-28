@@ -4,7 +4,7 @@ namespace App\Modules\More\Controllers;
 use App\Controllers\BaseController;
 use App\Modules\More\Models\MoreModel;
 use App\Models\GeneralModel;
-use TCPDF;
+use App\Libraries\PdfBuilder;
 
 class More extends BaseController
 {
@@ -17,18 +17,30 @@ class More extends BaseController
         $this->generalModel = new GeneralModel();
     }
 
+	/**
+	 * environmental list
+	 * @since 10/1/2018
+	 * @author BMOTTAG
+     * @review 27/04/2026 - new CI4 version
+	 */
     public function environmental($idJob)
     {
-        $data['jobInfo']     = $this->generalModel->get_basic_search(['table' => 'param_jobs', 'order' => 'job_description', 'column' => 'id_job', 'id' => $idJob]);
+        $data['jobInfo'] = $this->generalModel->get_job(['idJob' => $idJob]);
         $data['information'] = $this->moreModel->get_environmental(['idJob' => $idJob]);
 
         return $this->render('App\Modules\More\Views\environmental_list', $data);
     }
 
+	/**
+	 * Form enviromental
+	 * @since 10/1/2018
+	 * @author BMOTTAG
+     * @review 27/04/2026 - new CI4 version
+	 */
     public function add_environmental($idJob, $idEnvironmental = 'x')
     {
         $data['information'] = false;
-        $data['jobInfo']     = $this->generalModel->get_basic_search(['table' => 'param_jobs', 'order' => 'job_description', 'column' => 'id_job', 'id' => $idJob]);
+        $data['jobInfo'] = $this->generalModel->get_job(['idJob' => $idJob]);
         $data['workersList'] = $this->generalModel->get_user(['state' => 1]);
 
         if ($idEnvironmental != 'x') {
@@ -41,6 +53,12 @@ class More extends BaseController
         return $this->render('App\Modules\More\Views\form_environmental', $data);
     }
 
+	/**
+	 * save_environmental
+	 * @since 13/1/2018
+	 * @author BMOTTAG
+     * @review 27/04/2026 - new CI4 version
+	 */
     public function save_environmental()
     {
         $post    = $this->request->getPost();
@@ -48,13 +66,11 @@ class More extends BaseController
         $data    = ['idRecord' => $post['hddIdJob'] ?? null];
 
         if ($idEnvironmental = $this->moreModel->add_environmental($post, $idUser)) {
-            $data['result']          = true;
-            $data['mensaje']         = 'You have saved the Environmental Site Inspection, continue uploading the information.';
+            $data["status"] = "success";
             $data['idEnvironmental'] = $idEnvironmental;
             session()->setFlashdata('retornoExito', 'You have saved the Environmental Site Inspection, continue uploading the information!!');
         } else {
-            $data['result']          = 'error';
-            $data['mensaje']         = 'Error!!! Ask for help.';
+            $data['status']          = 'error';
             $data['idEnvironmental'] = '';
             session()->setFlashdata('retornoError', '<strong>Error!!!</strong> Ask for help');
         }
@@ -64,11 +80,11 @@ class More extends BaseController
 
 	/**
 	 * Signature
-	 * param $type: supervisor / worker
-	 * param $id: llave principal del formulario
-	 * @since 5/1/2018
+	 * param $type: supervisor / manager
+	 * param $idEnvironmental: llave principal del formulario
+	 * @since 13/1/2018
 	 * @author BMOTTAG
-	 * @review 21/04/2026 - new CI4 version
+     * @review 27/04/2026 - new CI4 version
 	 */
 	public function add_signature_esi()
 	{
@@ -104,46 +120,30 @@ class More extends BaseController
 		}
 	}
 
+	/**
+	 * Generate Environmental Report in PDF
+	 * @param int $idJob
+	 * @since 14/1/2018
+	 * @author BMOTTAG
+     * @review 27/04/2026 - new CI4 version
+	 */
     public function generaEnvironmentalPDF($idJob)
     {
-		$pdf = new TCPDF();
+        $data['info'] = $this->moreModel->get_environmental(['idJob' => $idJob]);
 
-		$pdf->SetCreator('VCI');
-		$pdf->SetAuthor('VCI');
-		$pdf->SetTitle('ESI Report');
-
-		$pdf->setPrintHeader(false);
-		$pdf->setPrintFooter(false);
-
-		// 👇 espacio para logo
-		$pdf->SetMargins(10, 25, 10);
-		$pdf->SetAutoPageBreak(TRUE, 10);
-
-		$pdf->SetFont('dejavusans', '', 8);
-
-		$data = [
-			'info' => $this->moreModel->get_environmental(['idJob' => $idJob])			
-		];
-
-		$pdf->AddPage();
-
-		// LOGO
-		$logo = FCPATH . 'images/logo.png';
-
-		if (is_file($logo)) {
-			$pdf->Image($logo, 10, 8, 30);
-		}
+        $builder = new PdfBuilder();
+        $pdf = $builder->create('ESI Report');
 
         $html = view('App\Modules\More\Views\reporte_esi', $data);
-		$pdf->writeHTML($html, true, false, true, false, '');
+        $pdf->writeHTML($html, true, false, true, false, '');
+        $pdf->lastPage();
+        if (ob_get_length()) {
+            ob_end_clean();
+        }
 
-		$pdf->lastPage();
-
-		$filename = 'esi_' . $idJob . '.pdf';
-
-		return $this->response
-			->setHeader('Content-Type', 'application/pdf')
-			->setBody($pdf->Output($filename, 'I'));
+        return $this->response
+            ->setHeader('Content-Type', 'application/pdf')
+            ->setBody($pdf->Output('esi_' . $idJob . '.pdf', 'I'));        
     }
 
     public function ppe_inspection()
@@ -268,10 +268,10 @@ class More extends BaseController
         $workers         = $post['workers'] ?? [];
 
         if ($this->moreModel->add_ppe_inspection_worker($idPPEInspection, $workers)) {
-            $data['result'] = true;
+            $data["status"] = "success";
             session()->setFlashdata('retornoExito', 'You have added the Workers, remember to get the signature of each one.');
         } else {
-            $data['result'] = 'error';
+            $data['status'] = 'error';
             session()->setFlashdata('retornoError', '<strong>Error!!!</strong> Ask for help');
         }
 
@@ -289,10 +289,10 @@ class More extends BaseController
         $arrParam = ['table' => 'ppe_inspection_workers', 'primaryKey' => 'id_ppe_inspection_worker', 'id' => $idPPEInspectionWorker];
 
         if ($this->generalModel->deleteRecord($arrParam)) {
-            $data['result'] = true;
+            $data["status"] = "success";
             session()->setFlashdata('retornoExito', 'You have deleted one worker.');
         } else {
-            $data['result'] = 'error';
+            $data['status'] = 'error';
             session()->setFlashdata('retornoError', '<strong>Error!!!</strong> Ask for help');
         }
 
@@ -351,18 +351,30 @@ class More extends BaseController
         return $this->render('App\Modules\More\Views\video', $data);
     }
 
+	/**
+	 * confined space entry permit list
+	 * @since 13/1/2020
+	 * @author BMOTTAG
+     * @review 28/04/2026 - new CI4 version
+	 */
     public function confined($idJob)
     {
-        $data['jobInfo']     = $this->generalModel->get_basic_search(['table' => 'param_jobs', 'order' => 'job_description', 'column' => 'id_job', 'id' => $idJob]);
+        $data['jobInfo'] = $this->generalModel->get_job(['idJob' => $idJob]);
         $data['information'] = $this->generalModel->get_confined_space(['idJob' => $idJob]);
 
         return $this->render('App\Modules\More\Views\confined_list', $data);
     }
 
+	/**
+	 * Form confined space entry permit
+	 * @since 14/1/2020
+	 * @author BMOTTAG
+     * @review 28/04/2026 - new CI4 version
+	 */
     public function add_confined($idJob, $idConfined = 'x')
     {
         $data['information'] = false;
-        $data['jobInfo']     = $this->generalModel->get_basic_search(['table' => 'param_jobs', 'order' => 'job_description', 'column' => 'id_job', 'id' => $idJob]);
+        $data['jobInfo'] = $this->generalModel->get_job(['idJob' => $idJob]);
         $data['workersList'] = $this->generalModel->get_user(['state' => 1]);
 
         if ($idConfined != 'x') {
@@ -377,6 +389,12 @@ class More extends BaseController
         return $this->render('App\Modules\More\Views\form_confined', $data);
     }
 
+	/**
+	 * Save confined space entry permit
+	 * @since 13/1/2020
+	 * @author BMOTTAG
+     * @review 28/04/2026 - new CI4 version
+	 */
     public function save_confined()
     {
         $post    = $this->request->getPost();
@@ -385,24 +403,27 @@ class More extends BaseController
         $data    = ['idRecord' => $post['hddIdJob'] ?? null];
 
         if ($idConfined = $this->moreModel->add_confined($post, $idUser, $userRol)) {
-            $data['result']    = true;
-            $data['mensaje']   = 'You have saved the Confined Space Entry Permit, continue uploading the information.';
-            $data['idConfined'] = $idConfined;
+            $data['idConfined'] = $idConfined;    
+            $data["status"] = "success";
             session()->setFlashdata('retornoExito', 'You have saved the Confined Space Entry Permit, continue uploading the information. Add Worker(s) in charge of entry and signatures at the end of the form.');
         } else {
-            $data['result']    = 'error';
-            $data['mensaje']   = 'Error!!! Ask for help.';
-            $data['idConfined'] = '';
+            $data['status']    = 'error';
             session()->setFlashdata('retornoError', '<strong>Error!!!</strong> Ask for help');
         }
 
         return $this->response->setJSON($data);
     }
 
+	/**
+	 * Form confined space entry permit WORKERS
+	 * @since 5/2/2020
+	 * @author BMOTTAG
+     * @review 28/04/2026 - new CI4 version
+	 */
     public function confined_workers($idJob, $idConfined)
     {
         $data['information']    = false;
-        $data['jobInfo']        = $this->generalModel->get_basic_search(['table' => 'param_jobs', 'order' => 'job_description', 'column' => 'id_job', 'id' => $idJob]);
+        $data['jobInfo'] = $this->generalModel->get_job(['idJob' => $idJob]);
         $data['workersList']    = $this->generalModel->get_user(['state' => 1]);
 
         if ($idConfined != 'x') {
@@ -417,10 +438,16 @@ class More extends BaseController
         return $this->render('App\Modules\More\Views\form_confined_workers', $data);
     }
 
+	/**
+	 * Form confined space entry permit WORKERS
+	 * @since 5/2/2020
+	 * @author BMOTTAG
+     * @review 28/04/2026 - new CI4 version
+	 */
     public function workers_site($idJob, $idConfined)
     {
         $data['information']    = false;
-        $data['jobInfo']        = $this->generalModel->get_basic_search(['table' => 'param_jobs', 'order' => 'job_description', 'column' => 'id_job', 'id' => $idJob]);
+        $data['jobInfo'] = $this->generalModel->get_job(['idJob' => $idJob]);
         $data['workersList']    = $this->generalModel->get_user(['state' => 1]);
 
         if ($idConfined != 'x') {
@@ -435,12 +462,14 @@ class More extends BaseController
         return $this->render('App\Modules\More\Views\form_confined_workers_site', $data);
     }
 
+	/**
+	 * Form Add Workers confined
+	 * @since 20/1/2020
+	 * @author BMOTTAG
+     * @review 28/04/2026 - new CI4 version
+	 */
     public function add_workers_confined($idJob, $idConfined, $wos)
     {
-        if (empty($idJob) || empty($idConfined)) {
-            throw new \CodeIgniter\Exceptions\PageNotFoundException('Invalid parameters.');
-        }
-
         $data['workersList'] = $this->generalModel->get_user(['state' => 1]);
         $data['idConfined']  = $idConfined;
         $data['idJob']       = $idJob;
@@ -449,6 +478,12 @@ class More extends BaseController
         return $this->render('App\Modules\More\Views\form_add_workers_confined', $data);
     }
 
+	/**
+	 * Save worker
+	 * @since 20/1/2020
+	 * @author BMOTTAG
+     * @review 28/04/2026 - new CI4 version
+	 */
     public function save_confined_workers()
     {
         $post      = $this->request->getPost();
@@ -460,18 +495,20 @@ class More extends BaseController
         $data = ['idRecord' => $wos == 2 ? 'confined_workers/' . $idJob . '/' . $idConfined : 'workers_site/' . $idJob . '/' . $idConfined];
 
         if ($this->moreModel->add_confined_worker($idConfined, $wos, $workers)) {
-            $data['result']  = true;
-            $data['mensaje'] = 'Solicitud guardada correctamente.';
+            $data["status"] = "success";
             session()->setFlashdata('retornoExito', 'You have added the Workers, remember to get the signature of each one.');
         } else {
-            $data['result']  = 'error';
-            $data['mensaje'] = 'Error al guardar. Intente nuevamente.';
+            $data['status'] = 'error';
             session()->setFlashdata('retornoError', '<strong>Error!!!</strong> Ask for help');
         }
 
         return $this->response->setJSON($data);
     }
 
+	/**
+	 * Delete confined worker
+     * @review 28/04/2026 - new CI4 version
+	 */
     public function deleteConfinedWorker($idJob, $idConfined, $idConfinedWorker)
     {
         if (empty($idJob) || empty($idConfined) || empty($idConfinedWorker)) {
@@ -488,6 +525,10 @@ class More extends BaseController
         return redirect()->to(base_url('more/confined_workers/' . $idJob . '/' . $idConfined));
     }
 
+	/**
+	 * Delete confined worker
+     * @review 28/04/2026 - new CI4 version
+	 */
     public function deleteConfinedWorkerSite($idJob, $idConfined, $idConfinedWorker)
     {
         if (empty($idJob) || empty($idConfined) || empty($idConfinedWorker)) {
@@ -504,6 +545,10 @@ class More extends BaseController
         return redirect()->to(base_url('more/workers_site/' . $idJob . '/' . $idConfined));
     }
 
+	/**
+	 * Safe one worker to Confined Space Entry
+     * @review 28/04/2026 - new CI4 version
+	 */
     public function confined_One_Worker()
     {
         $post      = $this->request->getPost();
@@ -534,64 +579,109 @@ class More extends BaseController
         return redirect()->to(base_url('more/workers_site/' . $idJob . '/' . $idConfined));
     }
 
-    public function add_signature_confined($typo, $idJob, $idConfined, $idWorker)
-    {
-        if (empty($typo) || empty($idConfined) || empty($idWorker)) {
-            throw new \CodeIgniter\Exceptions\PageNotFoundException('Invalid parameters.');
-        }
+	/**
+	 * Signature
+	 * param $type: supervisor / worker
+	 * param $idConfined: llave principal del formulario
+	 * param $idWorker: llave principal del trabajador
+	 * @since 20/1/2020
+	 * @author BMOTTAG
+	 */
+	public function save_signature_confined()
+	{
+		$imageData = $this->request->getPost('image'); 
+		$id = $this->request->getPost('extraValue'); 
+		$type = $this->request->getPost('otherValue'); 
+		
+		switch ($type) {
+			case "worker":
+				$fileName = $type . '_' . $id . '.png';
+                $this->moreModel->updateConfinedWorkerInOut(['id' => $id, 'column' => 'date_time_in']);
+				$arrParam = [
+					"table" => "job_confined_workers",
+					"primaryKey" => "id_job_confined_worker",
+					"id" => $id,
+					"column" => "signature",
+					"value" => 'images/signature/confined/' . $fileName
+				];
+				break;
 
-        if ($this->request->getMethod() === 'post') {
-            switch ($typo) {
-                case 'authorization':
-                    $name     = 'images/signature/confined/' . $typo . '_' . $idWorker . '.png';
-                    $arrParam = ['table' => 'job_confined', 'primaryKey' => 'id_job_confined', 'id' => $idConfined, 'column' => 'authorization_signature', 'value' => $name];
-                    $data['linkBack'] = 'more/add_confined/' . $idJob . '/' . $idConfined . '#anclaSignature';
-                    break;
-                case 'worker':
-                    $name     = 'images/signature/confined/' . $typo . '_' . $idWorker . '.png';
-                    $this->moreModel->updateConfinedWorkerInOut(['id' => $idWorker, 'column' => 'date_time_in']);
-                    $arrParam = ['table' => 'job_confined_workers', 'primaryKey' => 'id_job_confined_worker', 'id' => $idWorker, 'column' => 'signature', 'value' => $name];
-                    $data['linkBack'] = 'more/confined_workers/' . $idJob . '/' . $idConfined . '#anclaWorker';
-                    break;
-                case 'worker_out':
-                    $name     = 'images/signature/confined/' . $typo . '_' . $idWorker . '.png';
-                    $this->moreModel->updateConfinedWorkerInOut(['id' => $idWorker, 'column' => 'date_time_out']);
-                    $arrParam = ['table' => 'job_confined_workers', 'primaryKey' => 'id_job_confined_worker', 'id' => $idWorker, 'column' => 'signature_out', 'value' => $name];
-                    $data['linkBack'] = 'more/confined_workers/' . $idJob . '/' . $idConfined . '#anclaWorker';
-                    break;
-                case 'cancellation':
-                    $name     = 'images/signature/confined/' . $typo . '_' . $idWorker . '.png';
-                    $arrParam = ['table' => 'job_confined', 'primaryKey' => 'id_job_confined', 'id' => $idConfined, 'column' => 'cancellation_signature', 'value' => $name];
-                    $data['linkBack'] = 'more/add_confined/' . $idJob . '/' . $idConfined . '#anclaSignature';
-                    break;
-                case 'post_entry':
-                    $name     = 'images/signature/confined/' . $typo . '_' . $idWorker . '.png';
-                    $arrParam = ['table' => 'job_confined', 'primaryKey' => 'id_job_confined', 'id' => $idConfined, 'column' => 'post_entry_signature', 'value' => $name];
-                    $data['linkBack'] = 'more/post_entry/' . $idJob . '/' . $idConfined;
-                    break;
-                default:
-                    throw new \CodeIgniter\Exceptions\PageNotFoundException('Invalid type.');
-            }
+			case "worker_out":
+				$fileName = $type . '_' . $id . '.png';
+                $this->moreModel->updateConfinedWorkerInOut(['id' => $id, 'column' => 'date_time_out']);
+				$arrParam = [
+					"table" => "job_confined_workers",
+					"primaryKey" => "id_job_confined_worker",
+					"id" => $id,
+					"column" => "signature_out",
+					"value" => 'images/signature/confined/' . $fileName
+				];
+				break;
+                
+			case "post_entry":
+				$fileName = $type . '_' . $id . '.png';
+				$arrParam = [
+					"table" => "job_confined",
+					"primaryKey" => "id_job_confined",
+					"id" => $id,
+					"column" => "post_entry_signature",
+					"value" => 'images/signature/confined/' . $fileName
+				];
+				break;
 
-            $dataUri      = $this->request->getPost('image');
-            $encodedImage = explode(',', $dataUri)[1];
-            file_put_contents(FCPATH . $name, base64_decode($encodedImage));
+			case "authorization":
+				$fileName = $type . '_' . $id . '.png';
+				$arrParam = [
+					"table" => "job_confined",
+					"primaryKey" => "id_job_confined",
+					"id" => $id,
+					"column" => "authorization_signature",
+					"value" => 'images/signature/confined/' . $fileName
+				];
+				break;
 
-            $data['titulo'] = "<i class='fa fa-life-saver fa-fw'></i>SIGNATURE";
-            if ($this->generalModel->updateRecord($arrParam)) {
-                $data['clase'] = 'alert-success';
-                $data['msj']   = 'Good job, you have saved your signature.';
-            } else {
-                $data['clase'] = 'alert-danger';
-                $data['msj']   = 'Ask for help.';
-            }
+			case "cancellation":
+				$fileName = $type . '_' . $id . '.png';
+				$arrParam = [
+					"table" => "job_confined",
+					"primaryKey" => "id_job_confined",
+					"id" => $id,
+					"column" => "cancellation_signature",
+					"value" => 'images/signature/confined/' . $fileName
+				];
+				break;
 
-            return $this->render('App\Views\template\answer', $data);
-        }
+			default:
+				return $this->response->setJSON([
+					"status" => "error",
+					"message" => "Invalid user type"
+				]);
+		}
+		$filePath = WRITEPATH . '../public/images/signature/confined/' . $fileName;
 
-        return $this->response->setBody(view('template/make_signature'));
-    }
+		if(!$imageData){
+			return redirect()->back()->with('error', 'No signature provided.');
+		}
 
+		$imageData = str_replace('data:image/png;base64,', '', $imageData);
+		$imageData = str_replace(' ', '+', $imageData);
+
+		if(!is_dir(dirname($filePath))) mkdir(dirname($filePath), 0755, true);
+
+		if(file_put_contents($filePath, base64_decode($imageData))){
+			$this->generalModel->updateRecord($arrParam);
+			return redirect()->back()->with('retornoExito', 'Signature saved successfully.');
+		} else {
+			return redirect()->back()->with('retornoError', 'Error saving signature.');
+		}
+	}
+
+	/**
+	 * Update datos trabajdores
+	 * @since 5/2/2020
+	 * @author BMOTTAG
+     * @review 28/04/2026 - new CI4 version
+	 */
     public function update_confined_worker()
     {
         $post      = $this->request->getPost();
@@ -607,15 +697,26 @@ class More extends BaseController
         return redirect()->to(base_url('more/confined_workers/' . $idJob . '/' . $idConfined));
     }
 
+	/**
+	 * Form re testing
+	 * @since 4/2/2020
+	 * @author BMOTTAG
+     * @review 28/04/2026 - new CI4 version
+	 */
     public function re_testing($idJob, $idConfined)
     {
-        $data['jobInfo']     = $this->generalModel->get_basic_search(['table' => 'param_jobs', 'order' => 'job_description', 'column' => 'id_job', 'id' => $idJob]);
+        $data['jobInfo'] = $this->generalModel->get_job(['idJob' => $idJob]);
         $data['information'] = $this->generalModel->get_confined_space(['idConfined' => $idConfined]);
         $data['info']        = $this->moreModel->get_confined_re_testing(['idConfined' => $idConfined]);
 
         return $this->render('App\Modules\More\Views\form_confined_re_testing', $data);
     }
 
+	/**
+	 * Cargo modal - formulario re-testing
+	 * @since 4/2/2020
+     * @review 28/04/2026 - new CI4 version
+	 */
     public function cargarModalRetesting()
     {
         $data['information'] = false;
@@ -636,6 +737,11 @@ class More extends BaseController
             ->setBody(view('App\Modules\More\Views\re_testing_modal', $data));
     }
 
+	/**
+	 * ADD retesting
+	 * @since 4/2/2020
+     * @review 28/04/2026 - new CI4 version
+	 */
     public function save_re_testing()
     {
         $post      = $this->request->getPost();
@@ -644,25 +750,37 @@ class More extends BaseController
         $data       = ['idRecord' => $idJob . '/' . $idConfined];
 
         if ($this->moreModel->saveRetesting($post)) {
-            $data['result'] = true;
+            $data["status"] = "success";
             session()->setFlashdata('retornoExito', 'You have saved the ENVIRONMENTAL CONDITIONS - RE TESTING');
         } else {
-            $data['result'] = 'error';
+            $data['status'] = 'error';
             session()->setFlashdata('retornoError', '<strong>Error!!!</strong> Ask for help');
         }
 
         return $this->response->setJSON($data);
     }
-
+    
+	/**
+	 * Form post entry inspection
+	 * @since 6/2/2020
+	 * @author BMOTTAG
+     * @review 28/04/2026 - new CI4 version
+	 */
     public function post_entry($idJob, $idConfined)
     {
-        $data['jobInfo']     = $this->generalModel->get_basic_search(['table' => 'param_jobs', 'order' => 'job_description', 'column' => 'id_job', 'id' => $idJob]);
+        $data['jobInfo'] = $this->generalModel->get_job(['idJob' => $idJob]);
         $data['workersList'] = $this->generalModel->get_user(['state' => 1]);
         $data['information'] = $this->generalModel->get_confined_space(['idConfined' => $idConfined]);
 
         return $this->render('App\Modules\More\Views\form_confined_post_entry', $data);
     }
 
+	/**
+	 * Save post entry inspection
+	 * @since 6/2/2020
+	 * @author BMOTTAG
+     * @review 28/04/2026 - new CI4 version
+	 */
     public function save_post_entry()
     {
         $post      = $this->request->getPost();
@@ -671,12 +789,10 @@ class More extends BaseController
         $data       = ['idRecord' => $idJob . '/' . $idConfined];
 
         if ($this->moreModel->save_post_entry($post)) {
-            $data['result']  = true;
-            $data['mensaje'] = 'You have saved the Post-entry Inspection.';
+            $data["status"] = "success";
             session()->setFlashdata('retornoExito', 'You have saved the Post-entry Inspection.');
         } else {
-            $data['result']  = 'error';
-            $data['mensaje'] = 'Error!!! Ask for help.';
+            $data['status'] = 'error';
             session()->setFlashdata('retornoError', '<strong>Error!!!</strong> Ask for help');
         }
 
@@ -686,7 +802,7 @@ class More extends BaseController
     public function rescue_plan($idJob, $idConfined)
     {
         $data['information'] = false;
-        $data['jobInfo']     = $this->generalModel->get_basic_search(['table' => 'param_jobs', 'order' => 'job_description', 'column' => 'id_job', 'id' => $idJob]);
+        $data['jobInfo'] = $this->generalModel->get_job(['idJob' => $idJob]);
         $data['workersList'] = $this->generalModel->get_user(['state' => 1]);
 
         if ($idConfined != 'x') {
@@ -709,11 +825,11 @@ class More extends BaseController
         $data       = ['idRecord' => $idJob . '/' . $idConfined];
 
         if ($this->moreModel->save_rescue_plan($post)) {
-            $data['result']  = true;
+            $data["status"] = "success";
             $data['mensaje'] = 'You have saved the ON-SITE RESCUE PLAN.';
             session()->setFlashdata('retornoExito', 'You have saved the ON-SITE RESCUE PLAN.');
         } else {
-            $data['result']  = 'error';
+            $data['status'] = 'error';
             $data['mensaje'] = 'Error!!! Ask for help.';
             session()->setFlashdata('retornoError', '<strong>Error!!!</strong> Ask for help');
         }
@@ -721,6 +837,13 @@ class More extends BaseController
         return $this->response->setJSON($data);
     }
 
+	/**
+	 * Generate Template Report in PDF
+	 * @param int $idConfined
+	 * @since 29/1/2020
+	 * @author BMOTTAG
+     * @review 28/04/2026 - new CI4 version
+	 */
     public function generaConfinedPDF($idConfined)
     {
         $data['info']          = $this->generalModel->get_confined_space(['idConfined' => $idConfined]);
@@ -728,18 +851,24 @@ class More extends BaseController
         $data['WorkersOnSite'] = $this->moreModel->get_confined_workers($idConfined, 1);
         $data['retesting']     = $this->moreModel->get_confined_re_testing(['idConfined' => $idConfined]);
 
-        $pdf = $this->_buildPDF('Confined space entry permit report');
-        $pdf->AddPage();
+        $builder = new PdfBuilder();
+        $pdf = $builder->create('Confined space entry permit report');
+
         $html = view('App\Modules\More\Views\reporte_confined', $data);
         $pdf->writeHTML($html, true, false, true, false, '');
         $pdf->lastPage();
-        ob_end_clean();
-        $pdf->Output('confined_' . $idConfined . '.pdf', 'I');
+        if (ob_get_length()) {
+            ob_end_clean();
+        }
+
+        return $this->response
+            ->setHeader('Content-Type', 'application/pdf')
+            ->setBody($pdf->Output('confined_' . $idConfined . '.pdf', 'I'));        
     }
 
     public function task_control($idJob)
     {
-        $data['jobInfo']     = $this->generalModel->get_basic_search(['table' => 'param_jobs', 'order' => 'job_description', 'column' => 'id_job', 'id' => $idJob]);
+        $data['jobInfo'] = $this->generalModel->get_job(['idJob' => $idJob]);
         $data['information'] = $this->moreModel->get_task_control(['idJob' => $idJob]);
 
         return $this->render('App\Modules\More\Views\task_control_list', $data);
@@ -748,7 +877,7 @@ class More extends BaseController
     public function add_task_control($idJob, $idTaskControl = 'x')
     {
         $data['information'] = false;
-        $data['jobInfo']     = $this->generalModel->get_basic_search(['table' => 'param_jobs', 'order' => 'job_description', 'column' => 'id_job', 'id' => $idJob]);
+        $data['jobInfo'] = $this->generalModel->get_job(['idJob' => $idJob]);
         $data['companyList'] = $this->generalModel->get_basic_search(['table' => 'param_company', 'order' => 'company_name', 'column' => 'company_type', 'id' => 2]);
 
         if ($idTaskControl != 'x') {
@@ -824,23 +953,4 @@ class More extends BaseController
         $pdf->Output('tac_' . $idTaskControl . '.pdf', 'I');
     }
 
-    private function _buildPDF($title)
-    {
-        $pdf = new TCPDF(PDF_PAGE_ORIENTATION, PDF_UNIT, PDF_PAGE_FORMAT, true, 'UTF-8', false);
-        $pdf->SetCreator(PDF_CREATOR);
-        $pdf->SetAuthor('VCI');
-        $pdf->SetTitle($title);
-        $pdf->SetHeaderData(PDF_HEADER_LOGO, PDF_HEADER_LOGO_WIDTH, '', PDF_HEADER_STRING, [0, 64, 255], [0, 64, 128]);
-        $pdf->setHeaderFont([PDF_FONT_NAME_MAIN, '', PDF_FONT_SIZE_MAIN]);
-        $pdf->setFooterFont([PDF_FONT_NAME_DATA, '', PDF_FONT_SIZE_DATA]);
-        $pdf->SetDefaultMonospacedFont(PDF_FONT_MONOSPACED);
-        $pdf->setPrintFooter(false);
-        $pdf->SetMargins(PDF_MARGIN_LEFT, PDF_MARGIN_TOP, PDF_MARGIN_RIGHT);
-        $pdf->SetHeaderMargin(PDF_MARGIN_HEADER);
-        $pdf->SetFooterMargin(PDF_MARGIN_FOOTER);
-        $pdf->SetAutoPageBreak(true, PDF_MARGIN_BOTTOM);
-        $pdf->setImageScale(PDF_IMAGE_SCALE_RATIO);
-        $pdf->SetFont('dejavusans', '', 8);
-        return $pdf;
-    }
 }

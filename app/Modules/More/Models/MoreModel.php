@@ -7,6 +7,10 @@ class MoreModel extends Model
 {
     protected $protectFields = false;
 
+	/**
+	 * environmental list
+	 * @since 10/1/2018
+	 */
     public function get_environmental($arrDatos)
     {
         $builder = $this->db->table('job_environmental E');
@@ -24,6 +28,10 @@ class MoreModel extends Model
         return !empty($result) ? $result : false;
     }
 
+	/**
+	 * Add environmental
+	 * @since 13/1/2018
+	 */
     public function add_environmental($post, $idUser)
     {
         $idEnvironmental = $post['hddIdentificador'] ?? '';
