@@ -146,13 +146,23 @@ class More extends BaseController
             ->setBody($pdf->Output('esi_' . $idJob . '.pdf', 'I'));        
     }
 
+	/**
+	 * PPE inspection list
+	 * @since 15/1/2018
+	 * @author BMOTTAG
+     * @review 28/04/2026 - new CI4 version
+	 */
     public function ppe_inspection()
     {
         $data['information'] = $this->moreModel->get_ppe_inspection([]);
-
         return $this->render('App\Modules\More\Views\ppe_inspection_list', $data);
     }
 
+	/**
+	 * Cargo modal - pps inspection
+	 * @since 15/1/2018
+     * @review 28/04/2026 - new CI4 version
+	 */
     public function cargarModalPPEInspection()
     {
         $data['information']     = false;
@@ -172,6 +182,12 @@ class More extends BaseController
             ->setBody(view('App\Modules\More\Views\ppe_modal', $data));
     }
 
+	/**
+	 * Save PPE INSPECTION
+	 * @since 15/1/2018
+	 * @author BMOTTAG
+     * @review 28/04/2026 - new CI4 version
+	 */
     public function save_ppe_inspection()
     {
         $post            = $this->request->getPost();
@@ -183,11 +199,11 @@ class More extends BaseController
         $data = [];
 
         if ($id = $this->moreModel->savePPEInspection($post, $idUser, $userRol)) {
-            $data['result']   = true;
+            $data["status"] = "success";
             $data['idRecord'] = $id;
             session()->setFlashdata('retornoExito', $msj);
         } else {
-            $data['result']   = 'error';
+            $data['status'] = 'error';
             $data['idRecord'] = '';
             session()->setFlashdata('retornoError', '<strong>Error!!!</strong> Ask for help');
         }
@@ -195,6 +211,12 @@ class More extends BaseController
         return $this->response->setJSON($data);
     }
 
+	/**
+	 * Form PPE INSPECTION
+	 * @since 15/1/2018
+	 * @author BMOTTAG
+     * @review 28/04/2026 - new CI4 version
+	 */
     public function add_ppe_inspection($idPPEInspection = 'x')
     {
         $data['information'] = false;
@@ -212,42 +234,75 @@ class More extends BaseController
         return $this->render('App\Modules\More\Views\form_ppe_inspection', $data);
     }
 
-    public function add_signature($typo, $idPPEInspection, $idWorker)
-    {
-        if (empty($typo) || empty($idPPEInspection) || empty($idWorker)) {
-            throw new \CodeIgniter\Exceptions\PageNotFoundException('Invalid parameters.');
-        }
+	/**
+	 * Signature
+	 * param $typo: inspector / worker
+	 * param $idPPEInspection: llave principal del formulario
+	 * param $idWorker: llave principal del trabajador
+	 * @since 22/1/2018
+	 * @author BMOTTAG
+     * @review 28/04/2026 - new CI4 version
+	 */
+	public function save_signature_ppe()
+	{
+		$imageData = $this->request->getPost('image'); 
+		$id = $this->request->getPost('extraValue'); 
+		$type = $this->request->getPost('otherValue'); 
+		
+		switch ($type) {
+			case "worker":
+				$fileName = $type . '_' . $id . '.png';
+				$arrParam = [
+					"table" => "ppe_inspection_workers",
+					"primaryKey" => "id_ppe_inspection_worker",
+					"id" => $id,
+					"column" => "signature",
+					"value" => 'images/signature/ppe_inspection/' . $fileName
+				];
+				break;
 
-        if ($this->request->getMethod() === 'post') {
-            if ($typo == 'inspector') {
-                $name     = 'images/signature/ppe_inspection/' . $typo . '_' . $idPPEInspection . '.png';
-                $arrParam = ['table' => 'ppe_inspection', 'primaryKey' => 'id_ppe_inspection', 'id' => $idPPEInspection, 'column' => 'inspector_signature', 'value' => $name];
-                $data['linkBack'] = 'more/add_ppe_inspection/' . $idPPEInspection;
-            } else {
-                $name     = 'images/signature/ppe_inspection/' . $typo . '_' . $idWorker . '.png';
-                $arrParam = ['table' => 'ppe_inspection_workers', 'primaryKey' => 'id_ppe_inspection_worker', 'id' => $idWorker, 'column' => 'signature', 'value' => $name];
-                $data['linkBack'] = 'more/add_ppe_inspection/' . $idPPEInspection . '#anclaWorker';
-            }
+			case "inspector":
+				$fileName = $type . '_' . $id . '.png';
+				$arrParam = [
+					"table" => "ppe_inspection",
+					"primaryKey" => "id_ppe_inspection",
+					"id" => $id,
+					"column" => "inspector_signature",
+					"value" => 'images/signature/ppe_inspection/' . $fileName
+				];
+				break;
 
-            $dataUri      = $this->request->getPost('image');
-            $encodedImage = explode(',', $dataUri)[1];
-            file_put_contents(FCPATH . $name, base64_decode($encodedImage));
+			default:
+				return $this->response->setJSON([
+					"status" => "error",
+					"message" => "Invalid user type"
+				]);
+		}
+		$filePath = WRITEPATH . '../public/images/signature/ppe_inspection/' . $fileName;
 
-            $data['titulo'] = "<i class='fa fa-life-saver fa-fw'></i>SIGNATURE";
-            if ($this->generalModel->updateRecord($arrParam)) {
-                $data['clase'] = 'alert-success';
-                $data['msj']   = 'Good job, you have saved your signature.';
-            } else {
-                $data['clase'] = 'alert-danger';
-                $data['msj']   = 'Ask for help.';
-            }
+		if(!$imageData){
+			return redirect()->back()->with('error', 'No signature provided.');
+		}
 
-            return $this->render('App\Views\template\answer', $data);
-        }
+		$imageData = str_replace('data:image/png;base64,', '', $imageData);
+		$imageData = str_replace(' ', '+', $imageData);
 
-        return $this->response->setBody(view('template/make_signature'));
-    }
+		if(!is_dir(dirname($filePath))) mkdir(dirname($filePath), 0755, true);
 
+		if(file_put_contents($filePath, base64_decode($imageData))){
+			$this->generalModel->updateRecord($arrParam);
+			return redirect()->back()->with('retornoExito', 'Signature saved successfully.');
+		} else {
+			return redirect()->back()->with('retornoError', 'Error saving signature.');
+		}
+	}
+
+	/**
+	 * Form Add Workers PPE INSPECTION
+	 * @since 20/1/2018
+	 * @author BMOTTAG
+     * @review 28/04/2026 - new CI4 version
+	 */
     public function add_workers_ppe_inspection($idPPEInspection)
     {
         if (empty($idPPEInspection)) {
@@ -260,6 +315,12 @@ class More extends BaseController
         return $this->render('App\Modules\More\Views\form_add_workers', $data);
     }
 
+	/**
+	 * Save worker
+	 * @since 21/1/2018
+	 * @author BMOTTAG
+     * @review 28/04/2026 - new CI4 version
+	 */
     public function save_ppe_inspection_workers()
     {
         $post            = $this->request->getPost();
@@ -278,6 +339,10 @@ class More extends BaseController
         return $this->response->setJSON($data);
     }
 
+	/**
+	 * Delete PPE INSPECTION worker
+     * @review 28/04/2026 - new CI4 version
+	 */
     public function deleteInspectionWorker()
     {
         $identificador = $this->request->getPost('identificador');
@@ -299,6 +364,13 @@ class More extends BaseController
         return $this->response->setJSON($data);
     }
 
+	/**
+	 * Update inspection
+	 * para editar el estado de la inspeccion
+	 * @since 29/1/2018
+	 * @author BMOTTAG
+     * @review 28/04/2026 - new CI4 version
+	 */
     public function updateInspection()
     {
         $post            = $this->request->getPost();
@@ -313,6 +385,10 @@ class More extends BaseController
         return redirect()->to(base_url('more/add_ppe_inspection/' . $idPPEInspection));
     }
 
+	/**
+	 * Safe one worker for the inspection
+     * @review 28/04/2026 - new CI4 version
+	 */
     public function add_one_worker()
     {
         $post            = $this->request->getPost();
@@ -327,17 +403,31 @@ class More extends BaseController
         return redirect()->to(base_url('more/add_ppe_inspection/' . $idPPEInspection));
     }
 
+	/**
+	 * Generate PPE INSPECTION Report in PDF
+	 * @param int $idPPEInspection
+	 * @since 29/1/2018
+	 * @author BMOTTAG
+     * @review 28/04/2026 - new CI4 version
+	 */
     public function generaPPEInspectionPDF($idPPEInspection)
     {
         $data['info']                 = $this->moreModel->get_ppe_inspection(['idPPEInspection' => $idPPEInspection]);
         $data['ppeInspectionWorkers'] = $this->moreModel->get_ppe_inspection_workers($idPPEInspection);
 
-        $pdf = $this->_buildPDF('PPE INSPECTION REPORT');
-        $pdf->AddPage();
+        $builder = new PdfBuilder();
+        $pdf = $builder->create('PPE INSPECTION REPORT');
+
         $html = view('App\Modules\More\Views\reporte_ppe_inspection', $data);
         $pdf->writeHTML($html, true, false, true, false, '');
         $pdf->lastPage();
-        $pdf->Output('ppe_inspection_' . $idPPEInspection . '.pdf', 'I');
+        if (ob_get_length()) {
+            ob_end_clean();
+        }
+
+        return $this->response
+            ->setHeader('Content-Type', 'application/pdf')
+            ->setBody($pdf->Output('ppe_inspection_' . $idPPEInspection . '.pdf', 'I'));        
     }
 
     public function video($tema)
@@ -897,13 +987,11 @@ class More extends BaseController
         $data   = ['idRecord' => $post['hddIdJob'] ?? null];
 
         if ($idTaskControl = $this->moreModel->add_task_control($post, $idUser)) {
-            $data['result']        = true;
-            $data['mensaje']       = "You have saved the Task Assessment and Control, don't forget to sign..";
+            $data["status"] = "success";
             $data['idTaskControl'] = $idTaskControl;
             session()->setFlashdata('retornoExito', "You have saved the Task Assessment and Control, don't forget to sign.!!");
         } else {
-            $data['result']        = 'error';
-            $data['mensaje']       = 'Error!!! Ask for help.';
+            $data['status'] = 'error';
             $data['idTaskControl'] = '';
             session()->setFlashdata('retornoError', '<strong>Error!!!</strong> Ask for help');
         }

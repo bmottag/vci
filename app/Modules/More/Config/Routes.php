@@ -42,8 +42,7 @@ $routes->group('more', ['namespace' => 'App\Modules\More\Controllers'], function
     $routes->post('save_ppe_inspection',       'More::save_ppe_inspection');
     $routes->get('add_ppe_inspection',         'More::add_ppe_inspection');
     $routes->get('add_ppe_inspection/(:any)',  'More::add_ppe_inspection/$1');
-    $routes->get('add_signature/(:any)/(:num)/(:any)', 'More::add_signature/$1/$2/$3');
-    $routes->post('add_signature/(:any)/(:num)/(:any)', 'More::add_signature/$1/$2/$3');
+    $routes->post('save_signature_ppe',       'More::save_signature_ppe');
     $routes->get('add_workers_ppe_inspection/(:num)', 'More::add_workers_ppe_inspection/$1');
     $routes->post('save_ppe_inspection_workers', 'More::save_ppe_inspection_workers');
     $routes->post('deleteInspectionWorker',    'More::deleteInspectionWorker');
