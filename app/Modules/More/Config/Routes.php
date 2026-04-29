@@ -50,15 +50,4 @@ $routes->group('more', ['namespace' => 'App\Modules\More\Controllers'], function
     $routes->post('add_one_worker',            'More::add_one_worker');
     $routes->get('generaPPEInspectionPDF/(:num)', 'More::generaPPEInspectionPDF/$1');
 
-    // Video
-    $routes->get('video/(:any)',               'More::video/$1');
-
-    // Task Control
-    $routes->get('task_control/(:num)',        'More::task_control/$1');
-    $routes->get('add_task_control/(:num)',    'More::add_task_control/$1');
-    $routes->get('add_task_control/(:num)/(:any)', 'More::add_task_control/$1/$2');
-    $routes->post('save_task_control',         'More::save_task_control');
-    $routes->get('add_signature_tac/(:any)/(:num)/(:num)', 'More::add_signature_tac/$1/$2/$3');
-    $routes->post('add_signature_tac/(:any)/(:num)/(:num)', 'More::add_signature_tac/$1/$2/$3');
-    $routes->get('generaTaskControlPDF/(:num)', 'More::generaTaskControlPDF/$1');
 });

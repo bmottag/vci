@@ -430,17 +430,6 @@ class More extends BaseController
             ->setBody($pdf->Output('ppe_inspection_' . $idPPEInspection . '.pdf', 'I'));        
     }
 
-    public function video($tema)
-    {
-        $data = [];
-        if ($tema == 'jobs') {
-            $data['titulo'] = 'Jobs Info intro';
-            $data['enlace'] = 'http://youtu.be/ESHRC4o8Hnk';
-        }
-
-        return $this->render('App\Modules\More\Views\video', $data);
-    }
-
 	/**
 	 * confined space entry permit list
 	 * @since 13/1/2020
@@ -889,44 +878,6 @@ class More extends BaseController
         return $this->response->setJSON($data);
     }
 
-    public function rescue_plan($idJob, $idConfined)
-    {
-        $data['information'] = false;
-        $data['jobInfo'] = $this->generalModel->get_job(['idJob' => $idJob]);
-        $data['workersList'] = $this->generalModel->get_user(['state' => 1]);
-
-        if ($idConfined != 'x') {
-            $data['information']    = $this->generalModel->get_confined_space(['idConfined' => $idConfined]);
-            $data['confinedWorkers'] = $this->moreModel->get_confined_workers($idConfined, 1);
-
-            if (!$data['information']) {
-                throw new \CodeIgniter\Exceptions\PageNotFoundException('Record not found.');
-            }
-        }
-
-        return $this->render('App\Modules\More\Views\form_confined_rescue_plan', $data);
-    }
-
-    public function save_rescue_plan()
-    {
-        $post      = $this->request->getPost();
-        $idJob     = $post['hddIdJob'] ?? null;
-        $idConfined = $post['hddConfined'] ?? null;
-        $data       = ['idRecord' => $idJob . '/' . $idConfined];
-
-        if ($this->moreModel->save_rescue_plan($post)) {
-            $data["status"] = "success";
-            $data['mensaje'] = 'You have saved the ON-SITE RESCUE PLAN.';
-            session()->setFlashdata('retornoExito', 'You have saved the ON-SITE RESCUE PLAN.');
-        } else {
-            $data['status'] = 'error';
-            $data['mensaje'] = 'Error!!! Ask for help.';
-            session()->setFlashdata('retornoError', '<strong>Error!!!</strong> Ask for help');
-        }
-
-        return $this->response->setJSON($data);
-    }
-
 	/**
 	 * Generate Template Report in PDF
 	 * @param int $idConfined
@@ -954,91 +905,6 @@ class More extends BaseController
         return $this->response
             ->setHeader('Content-Type', 'application/pdf')
             ->setBody($pdf->Output('confined_' . $idConfined . '.pdf', 'I'));        
-    }
-
-    public function task_control($idJob)
-    {
-        $data['jobInfo'] = $this->generalModel->get_job(['idJob' => $idJob]);
-        $data['information'] = $this->moreModel->get_task_control(['idJob' => $idJob]);
-
-        return $this->render('App\Modules\More\Views\task_control_list', $data);
-    }
-
-    public function add_task_control($idJob, $idTaskControl = 'x')
-    {
-        $data['information'] = false;
-        $data['jobInfo'] = $this->generalModel->get_job(['idJob' => $idJob]);
-        $data['companyList'] = $this->generalModel->get_basic_search(['table' => 'param_company', 'order' => 'company_name', 'column' => 'company_type', 'id' => 2]);
-
-        if ($idTaskControl != 'x') {
-            $data['information'] = $this->moreModel->get_task_control(['idTaskControl' => $idTaskControl]);
-            if (!$data['information']) {
-                throw new \CodeIgniter\Exceptions\PageNotFoundException('Record not found.');
-            }
-        }
-
-        return $this->render('App\Modules\More\Views\form_task_control', $data);
-    }
-
-    public function save_task_control()
-    {
-        $post   = $this->request->getPost();
-        $idUser = $this->session->get('id');
-        $data   = ['idRecord' => $post['hddIdJob'] ?? null];
-
-        if ($idTaskControl = $this->moreModel->add_task_control($post, $idUser)) {
-            $data["status"] = "success";
-            $data['idTaskControl'] = $idTaskControl;
-            session()->setFlashdata('retornoExito', "You have saved the Task Assessment and Control, don't forget to sign.!!");
-        } else {
-            $data['status'] = 'error';
-            $data['idTaskControl'] = '';
-            session()->setFlashdata('retornoError', '<strong>Error!!!</strong> Ask for help');
-        }
-
-        return $this->response->setJSON($data);
-    }
-
-    public function add_signature_tac($typo, $idJob, $idTaskControl)
-    {
-        if (empty($typo) || empty($idJob) || empty($idTaskControl)) {
-            throw new \CodeIgniter\Exceptions\PageNotFoundException('Invalid parameters.');
-        }
-
-        if ($this->request->getMethod() === 'post') {
-            $name     = 'images/signature/tac/' . $typo . '_' . $idTaskControl . '.png';
-            $arrParam = ['table' => 'job_task_control', 'primaryKey' => 'id_job_task_control', 'id' => $idTaskControl, 'column' => $typo . '_signature', 'value' => $name];
-            $data['linkBack'] = 'more/add_task_control/' . $idJob . '/' . $idTaskControl;
-
-            $dataUri      = $this->request->getPost('image');
-            $encodedImage = explode(',', $dataUri)[1];
-            file_put_contents(FCPATH . $name, base64_decode($encodedImage));
-
-            $data['titulo'] = "<i class='fa fa-life-saver fa-fw'></i>SIGNATURE";
-            if ($this->generalModel->updateRecord($arrParam)) {
-                $data['clase'] = 'alert-success';
-                $data['msj']   = 'Good job, you have saved your signature.';
-            } else {
-                $data['clase'] = 'alert-danger';
-                $data['msj']   = 'Ask for help.';
-            }
-
-            return $this->render('App\Views\template\answer', $data);
-        }
-
-        return $this->response->setBody(view('template/make_signature'));
-    }
-
-    public function generaTaskControlPDF($idTaskControl)
-    {
-        $data['info'] = $this->moreModel->get_task_control(['idTaskControl' => $idTaskControl]);
-
-        $pdf = $this->_buildPDF('Task Control Report');
-        $pdf->AddPage();
-        $html = view('App\Modules\More\Views\reporte_task_control', $data);
-        $pdf->writeHTML($html, true, false, true, false, '');
-        $pdf->lastPage();
-        $pdf->Output('tac_' . $idTaskControl . '.pdf', 'I');
     }
 
 }
