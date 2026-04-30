@@ -202,69 +202,6 @@ class Inspection extends BaseController
     }
 
     /**
-     * Signature
-     * @since 27/12/2016
-     * @author BMOTTAG
-     * @review 29/04/2026 - new CI4 version
-     */
-    public function add_signature(string $typo, int $idInspection)
-    {
-        if (empty($typo) || empty($idInspection)) {
-            return $this->response->setStatusCode(403)->setBody('ERROR!!! - You are in the wrong place.');
-        }
-
-        if ($this->request->getMethod() === 'post') {
-            $imageData = $this->request->getPost('image');
-
-            if (!$imageData) {
-                session()->setFlashdata('retornoError', 'No signature provided.');
-                return redirect()->to(base_url('inspection/add_signature/' . $typo . '/' . $idInspection));
-            }
-
-            $fileName = $typo . '_' . $idInspection . '.png';
-            $filePath = WRITEPATH . '../public/images/signature/inspection/' . $fileName;
-            $dbPath   = 'images/signature/inspection/' . $fileName;
-
-            $arrParam = [
-                'table'      => 'inspection_' . $typo,
-                'primaryKey' => 'id_inspection_' . $typo,
-                'id'         => $idInspection,
-                'column'     => 'signature',
-                'value'      => $dbPath,
-            ];
-
-            $imageData    = str_replace('data:image/png;base64,', '', $imageData);
-            $imageData    = str_replace(' ', '+', $imageData);
-            $decodedImage = base64_decode($imageData);
-
-            if (!is_dir(dirname($filePath))) {
-                mkdir(dirname($filePath), 0755, true);
-            }
-
-            file_put_contents($filePath, $decodedImage);
-
-            $data['linkBack'] = 'inspection/add_' . $typo . '_inspection/' . $idInspection;
-            $data['titulo']   = "<i class='fa fa-life-saver fa-fw'></i>SIGNATURE";
-
-            if ($this->generalModel->updateRecord($arrParam)) {
-                $data['clase'] = 'alert-success';
-                $data['msj']   = 'Good job, you have saved your signature.';
-            } else {
-                $data['clase'] = 'alert-danger';
-                $data['msj']   = 'Ask for help.';
-            }
-
-            return $this->render('App\Views\template\answer', $data);
-        }
-
-        $data['typo']         = $typo;
-        $data['idInspection'] = $idInspection;
-        $data['formAction']   = base_url('inspection/add_signature/' . $typo . '/' . $idInspection);
-
-        return $this->render('App\Modules\Inspection\Views\form_signature', $data);
-    }
-
-    /**
      * Form Generator Inspection
      * @since 16/3/2017
      * @author BMOTTAG
@@ -496,7 +433,7 @@ class Inspection extends BaseController
      * Form water truck Inspection
      * @since 11/6/2017
      * @author BMOTTAG
-     * @review 29/04/2026 - new CI4 version
+     * @review 30/04/2026 - new CI4 version
      */
     public function add_watertruck_inspection($id = 'x')
     {
@@ -526,7 +463,7 @@ class Inspection extends BaseController
      * Save water truck inspection
      * @since 12/6/2017
      * @author BMOTTAG
-     * @review 29/04/2026 - new CI4 version
+     * @review 30/04/2026 - new CI4 version
      */
     public function save_watertruck_inspection()
     {
@@ -585,7 +522,7 @@ class Inspection extends BaseController
      * Vehicle information
      * @since 14/4/2020
      * @author BMOTTAG
-     * @review 29/04/2026 - new CI4 version
+     * @review 30/04/2026 - new CI4 version
      */
     public function vehicleInfo()
     {
