@@ -343,7 +343,7 @@ class Inspection extends BaseController
      * Form SWEEPER Inspection
      * @since 22/4/2017
      * @author BMOTTAG
-     * @review 29/04/2026 - new CI4 version
+     * @review 30/04/2026 - new CI4 version
      */
     public function add_sweeper_inspection($id = 'x')
     {
@@ -373,7 +373,7 @@ class Inspection extends BaseController
      * Save sweeper inspection
      * @since 22/4/2017
      * @author BMOTTAG
-     * @review 29/04/2026 - new CI4 version
+     * @review 30/04/2026 - new CI4 version
      */
     public function save_sweeper_inspection()
     {
@@ -407,7 +407,6 @@ class Inspection extends BaseController
             session()->setFlashdata('retornoExito', $msj);
         } else {
             $data["status"]                = 'error';
-            $data['mensaje']              = 'Error!!! Ask for help.';
             $data['idSweeperInspection']  = '';
             session()->setFlashdata('retornoError', '<strong>Error!!!</strong> Ask for help');
         }
