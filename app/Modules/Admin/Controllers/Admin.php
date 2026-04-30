@@ -2157,4 +2157,67 @@ class Admin extends BaseController
 		endforeach;
 		return true;
 	}
+
+	/**
+	 * Tags List
+	 * @since 24/04/2026
+	 * @author BMOTTAG
+	 */
+	public function tags()
+	{
+		$data['info'] = $this->adminModel->get_tags([]);
+
+		return $this->render('App\Modules\Admin\Views\tag', $data);
+	}
+
+	/**
+	 * Cargo modal - formulario Tags
+	 * @since 24/04/2026
+	 */
+	public function cargarModalTag()
+	{
+		$data = [];
+		$data['information'] = null;
+
+		$idTag = $this->request->getPost("idTag");
+		$data["idTag"] = $idTag;
+
+		$data['jobList'] = $this->generalModel->get_job(['state' => 1]);
+
+		if (!empty($idTag) && $idTag !== 'x') {
+			$data['information'] = $this->adminModel->get_tags(['idTag' => $data["idTag"]]);
+		}
+
+		return $this->response
+					->setContentType('text/html')
+					->setBody(view('App\Modules\Admin\Views\tag_modal', $data));
+	}
+
+	/**
+	 * Update Tag
+	 * @since 24/04/2026
+	 * @author BMOTTAG
+	 */
+	public function save_tag()
+	{
+		$post = $this->request->getPost();
+
+		$id = $post['hddId'] ?? null;
+		$msj = $id 
+			? "You have updated a Tag!!" 
+			: "You have added a new Tag!!";
+
+		$data = [];
+
+		if ($this->adminModel->saveTag($post)) {
+			$data["status"] = "success";
+			session()->setFlashdata('retornoExito', $msj);
+		} else {
+			$data["status"] = "error";
+			session()->setFlashdata('retornoError', '<strong>Error!!!</strong> Ask for help');
+		}
+
+		return $this->response->setJSON($data);
+	}
+
 }

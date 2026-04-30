@@ -45,6 +45,7 @@ $routes->group('jobs', ['namespace' => 'App\Modules\Jobs\Controllers'], function
     $routes->get('upload_sketch/(:num)', 'Jobs::upload_sketch/$1');
     $routes->get('review_excavation/(:num)', 'Jobs::review_excavation/$1');
     $routes->get('generaExcavationPDF/(:num)', 'Jobs::generaExcavationPDF/$1');
+    $routes->get('fire_watch/(:any)/(:any)', 'Jobs::fire_watch/$1/$2');
     $routes->get('fire_watch/(:num)', 'Jobs::fire_watch/$1');
     $routes->get('fire_watch_checkin/(:num)/(:num)', 'Jobs::fire_watch_checkin/$1/$2');
     $routes->get('fire_watch_checkin/(:num)', 'Jobs::fire_watch_checkin/$1');

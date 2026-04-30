@@ -17,6 +17,7 @@ $routes->group('admin', ['namespace' => 'App\Modules\Admin\Controllers'], functi
     $routes->get('hazardActivity', 'Admin::hazardActivity');
     $routes->get('notifications', 'Admin::notifications');
     $routes->get('attachments/(:any)', 'Admin::attachments/$1');
+    $routes->get('tags', 'Admin::tags');
 
     $routes->post('cargar-modal-employee', 'Admin::cargarModalEmployee');
     $routes->post('save_employee', 'Admin::save_employee');
@@ -48,6 +49,8 @@ $routes->group('admin', ['namespace' => 'App\Modules\Admin\Controllers'], functi
     $routes->post('save_attachments', 'Admin::save_attachments');
     $routes->post('equipmentList', 'Admin::equipmentList');
     $routes->post('update_status', 'Admin::update_status');
+    $routes->post('cargarModalTag', 'Admin::cargarModalTag');
+    $routes->post('save_tag', 'Admin::save_tag');
 
     $routes->match(['GET', 'POST'], 'certificate', 'Admin::certificate');
 });

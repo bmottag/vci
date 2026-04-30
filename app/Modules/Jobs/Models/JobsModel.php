@@ -1196,6 +1196,8 @@ Y.movil phone_emer_1, CONCAT(Y.first_name, " " , Y.last_name) emer_1, Z.movil ph
 	 */
 	public function saveFireWatchCheckin(array $post): bool
 	{
+		$site = session()->get("current_tag_name") ?? null;
+
 		$data = [
 			'fk_id_job_fire_watch' => $post['idFireWatch'] ?? null,
 			'fk_id_worker' => session()->get("id"),
@@ -1205,6 +1207,7 @@ Y.movil phone_emer_1, CONCAT(Y.first_name, " " , Y.last_name) emer_1, Z.movil ph
 			'latitude_start' => $post['latitude'] ?? null,
 			'longitude_start' => $post['longitude'] ?? null,
 			'notes' => $post['notes'] ?? null,
+			'site'  => $site
 		];
 
 		$builder = $this->db->table('job_fire_watch_checkin');

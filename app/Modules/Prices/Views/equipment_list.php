@@ -54,7 +54,7 @@
 								<tr>
 									<th class="text-center">Equipment Type</th>
 									<th class="text-center">Equipment</th>
-									<th class="text-center">Unit Cost</th>
+									<th class="text-center">VCI Cost</th>
 									<th class="text-center">Unit Price Without Driver</th>
 									<th class="text-center">Unit Price
 									<button type="submit" class="btn btn-primary btn-xs" id="btnSubmit2" name="btnSubmit2" >
@@ -82,7 +82,7 @@
 										echo "<td class='text-right'>";
 							?>
 							<input type="hidden" id="price" name="form[id][]" value="<?php echo $lista['id_vehicle']; ?>"/>
-							<input type="text" id="price" name="form[cost][]" class="form-control" placeholder="Unit Cost" value="<?php echo $unitCost; ?>" >
+							<input type="text" id="price" name="form[cost][]" class="form-control" placeholder="VCI Cost" value="<?php echo $unitCost; ?>" >
 							<?php
 										echo "</td>";
 

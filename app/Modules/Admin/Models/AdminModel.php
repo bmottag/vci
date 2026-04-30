@@ -953,4 +953,48 @@ class AdminModel extends Model
 
 		return $builder->get()->getResultArray();
 	}
+
+	/**
+	 * Tag
+	 * @since 25/04/2026
+	 */
+	public function saveTag($post)
+	{
+		$id = $post['hddId'] ?? null;
+
+		$data = [
+			'fk_id_job' => $post['idJob'] ?? null,
+			'name' => $post['name'] ?? null,
+			'number' => $post['number'] ?? null
+		];
+
+		$builder = $this->db->table('param_tags');
+
+		if (empty($id)) {
+			$data['token'] = bin2hex(random_bytes(16));
+			return $builder->insert($data);
+		} else {
+			return $builder->where('id_tag', $id)
+						->update($data);
+		}
+	}
+
+	/**
+	 * Get Tags list
+	 * @since 25/04/2026
+	 */
+	public function get_tags($arrData)
+	{
+		$builder = $this->db->table('param_tags T');
+		$builder->select();
+		$builder->join('param_jobs J', 'J.id_job = T.fk_id_job', 'INNER');
+
+		if (isset($arrData["idTag"])) {
+			$builder->where('T.id_tag', $arrData["idTag"]);
+		}
+
+		$builder->orderBy('T.fk_id_job, T.name', 'ASC');
+
+		return $builder->get()->getResultArray();
+	}
 }

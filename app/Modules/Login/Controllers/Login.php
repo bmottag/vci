@@ -19,11 +19,6 @@ class Login extends Controller
 
     public function index($id = 'x', $module = 'x', $idModule = 'x')
     {
-        if (session()->get('auth') == 'OK') {
-            $dashboardURL = session()->get('dashboardURL');
-            return redirect()->to($dashboardURL);
-        }
-
         $generalModel = new GeneralModel();
 
         $data = [
@@ -50,7 +45,7 @@ class Login extends Controller
 
         // 🔹 Caso 2: módulo
         if ($module !== 'x') {
-            $moduleDecoded = base64_decode($module);
+            $moduleDecoded = base64url_decode($module);
 
             $arrParam = [
                 "table"  => "param_module",
@@ -58,12 +53,18 @@ class Login extends Controller
                 "column" => "module_tag",
                 "id"     => $moduleDecoded
             ];
-
             $moduleInfo = $generalModel->get_basic_search($arrParam);
 
             if (!empty($moduleInfo)) {
                 $data['moduleInfo'] = $moduleInfo[0]['module_url'];
             }
+        }
+
+        if (session()->get('auth') == 'OK') {
+            session()->set(['moduleURL' => $data['moduleInfo']]);
+            session()->set(['moduleId' => $idModule]);
+
+            return $this->redirectUser();
         }
 
         return view('App\Modules\Login\Views\login', $data);
@@ -78,8 +79,8 @@ class Login extends Controller
         $data = [
             'idVehicle'      => $this->request->getPost('hddId'),
             'inspectionType' => $this->request->getPost('hddInpectionType'),
-            'moduleInfo'     => 'x',
-            'idModule'       => 'x',
+            'moduleURL'     => $this->request->getPost('hddModuleURL'),
+            'moduleId'       => $this->request->getPost('hddModuleId'),
             'linkInspection' => false,
             'formInspection' => false
         ];
@@ -141,7 +142,9 @@ class Login extends Controller
                     "idVehicle"       => $data['idVehicle'],
                     "inspectionType"  => $data['inspectionType'],
                     "linkInspection"  => $data['linkInspection'],
-                    "formInspection"  => $data['formInspection']
+                    "formInspection"  => $data['formInspection'],
+                    "moduleURL"       => $data['moduleURL'],
+                    "moduleId"        => $data['moduleId']
                 ]);
 
                 // Cookies
@@ -173,7 +176,6 @@ class Login extends Controller
     private function redirectUser()
     {
         $session = session();
-        $request = service('request');
 
         $idVehicle      = $session->get("idVehicle");
         $inspectionType = $session->get("inspectionType");
@@ -181,8 +183,8 @@ class Login extends Controller
         $state          = $session->get("state");
         $dashboardURL   = $session->get("dashboardURL");
 
-        $moduleURL = $request->getPost("hddModuleURL") ?? 'x';
-        $moduleId  = $request->getPost("hddModuleId")  ?? 'x';
+        $moduleURL = $session->get("moduleURL");
+        $moduleId  = $session->get("moduleId");
 
         if ($moduleURL != "x") {
             $state = 10;

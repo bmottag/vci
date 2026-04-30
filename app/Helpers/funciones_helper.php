@@ -35,3 +35,18 @@ if (!function_exists("mobile_adjustment")) {
         return $count == 10?"$num_tlf1 $num_tlf2 $num_tlf3 $num_tlf4":chunk_split($mobile,3," ");
     }
 }
+
+
+if (!function_exists('base64url_encode')) {
+    function base64url_encode($data)
+    {
+        return rtrim(strtr(base64_encode($data), '+/', '-_'), '=');
+    }
+}
+
+if (!function_exists('base64url_decode')) {
+    function base64url_decode($data)
+    {
+        return base64_decode(strtr($data, '-_', '+/'));
+    }
+}

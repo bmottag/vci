@@ -2064,8 +2064,28 @@ class Jobs extends BaseController
 	 * @author BMOTTAG
 	 * @review 23/04/2026 - new CI4 version
 	 */
-	public function fire_watch($idJob)
+	public function fire_watch($idJob, $token = null)
 	{
+		if($token){
+			$token = base64url_decode($token);
+			$tagInfo = $this->generalModel->get_basic_search([
+				"table" => "param_tags",
+				"order" => "id_tag",
+				"column" => "token",
+				"id" => $token 
+			]);
+
+			if ($tagInfo) {
+				$idJob = $tagInfo[0]['fk_id_job'];
+
+				// 🔥 AQUÍ guardas el punto en sesión
+				session()->set(['current_tag_name' => $tagInfo[0]['name']]);
+			}
+		}else {
+			// 🔥 limpiar si NO viene token
+			session()->remove(['current_tag_name']);
+		}
+
 		$data = [
 			'jobInfo' => $this->generalModel->get_job(['idJob' => $idJob]),
 			'infoFireWatchSetup' => $this->jobsModel->get_fire_watch_setup(['idJob' => $idJob]),

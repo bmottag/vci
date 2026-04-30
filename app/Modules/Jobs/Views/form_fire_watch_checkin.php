@@ -272,7 +272,7 @@ if($count == 10){
 								<th class="text-center">Phone Number</th>
 								<th class="text-center">Date & Time</th>
 								<!-- <th class="text-center">End Time</th> -->
-								<th>Address</th>
+								<th>Station</th>
 								<th >Notes/Observations</th>
 							</tr>
 						</thead>
@@ -306,9 +306,8 @@ if($count == 10){
 								}
 								echo "</td>";
 								*/
-								echo "<td>" . $lista['address_start'];
-								echo "<br><b>Latitud</b> " . $lista['latitude_start'];
-								echo "<br><b>Longitud</b> " . $lista['longitude_start'];
+								echo "<td>" . $lista['site'];
+								echo "<br>" . $lista['address_start'];
 								echo "</td>";
 								echo "<td >" . $lista['notes'] . "</td>";
 								echo "</tr>";
