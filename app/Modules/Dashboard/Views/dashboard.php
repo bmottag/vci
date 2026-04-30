@@ -566,7 +566,7 @@
 										echo "<td class='text-center'><p class='text-" . $class . "'>" . $lista['unit_number'] . "</p></td>";
 										echo "<td class='text-center'>";
 								?>
-										<a href='<?php echo base_url('report/generaInsectionSpecialPDF/x/x/x/x/watertruck/' . $lista['id_inspection_watertruck']); ?>' target="_blank"> <img src='<?php echo base_url_images('pdf.png'); ?>'></a>
+										<a href='<?php echo base_url('report/generaInsectionSpecialPDF/x/x/x/x/watertruck/' . $lista['id_inspection_watertruck']); ?>' target="_blank"> <img src='<?php echo base_url('images/pdf.png'); ?>'></a>
 								<?php
 										echo "</td>";
 										echo "<td><p class='text-" . $class . "'>" . $lista['description'] . "</p></td>";
@@ -693,7 +693,7 @@
 										echo "<td class='text-center'><p class='text-" . $class . "'>" . $lista['unit_number'] . "</p></td>";
 										echo "<td class='text-center'>";
 								?>
-										<a href='<?php echo base_url('report/generaInsectionSpecialPDF/x/x/x/x/hydrovac/' . $lista['id_inspection_hydrovac']); ?>' target="_blank"> <img src='<?php echo base_url_images('pdf.png'); ?>'></a>
+										<a href='<?php echo base_url('report/generaInsectionSpecialPDF/x/x/x/x/hydrovac/' . $lista['id_inspection_hydrovac']); ?>' target="_blank"> <img src='<?php echo base_url('images/pdf.png'); ?>'></a>
 								<?php
 										echo "</td>";
 										echo "<td><p class='text-" . $class . "'>" . $lista['description'] . "</p></td>";
@@ -819,7 +819,7 @@
 										echo "<td class='text-center'><p class='text-" . $class . "'>" . $lista['unit_number'] . "</p></td>";
 										echo "<td class='text-center'>";
 								?>
-										<a href='<?php echo base_url('report/generaInsectionSpecialPDF/x/x/x/x/sweeper/' . $lista['id_inspection_sweeper']); ?>' target="_blank"> <img src='<?php echo base_url_images('pdf.png'); ?>'></a>
+										<a href='<?php echo base_url('report/generaInsectionSpecialPDF/x/x/x/x/sweeper/' . $lista['id_inspection_sweeper']); ?>' target="_blank"> <img src='<?php echo base_url('images/pdf.png'); ?>'></a>
 								<?php
 										echo "</td>";
 										echo "<td><p class='text-" . $class . "'>" . $lista['description'] . "</p></td>";
@@ -905,7 +905,7 @@
 										echo "<td class='text-center'><p class='text-" . $class . "'>" . $lista['unit_number'] . "</p></td>";
 										echo "<td class='text-center'>";
 								?>
-										<a href='<?php echo base_url('report/generaInsectionSpecialPDF/x/x/x/x/generator/' . $lista['id_inspection_generator']); ?>' target="_blank"> <img src='<?php echo base_url_images('pdf.png'); ?>'></a>
+										<a href='<?php echo base_url('report/generaInsectionSpecialPDF/x/x/x/x/generator/' . $lista['id_inspection_generator']); ?>' target="_blank"> <img src='<?php echo base_url('images/pdf.png'); ?>'></a>
 								<?php
 										echo "</td>";
 										echo "<td><p class='text-" . $class . "'>" . $lista['description'] . "</p></td>";

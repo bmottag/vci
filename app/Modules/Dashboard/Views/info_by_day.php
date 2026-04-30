@@ -206,7 +206,7 @@
                                 echo "<td class='text-center'>";
                                 echo "<a href='" . base_url('workorders/add_workorder/' . $lista['id_workorder']) . "' target='_blanck'>" . $lista['id_workorder'] . "</a>";
                                 echo '<p class="' . $clase . '"><i class="fa ' . $icono . ' fa-fw"></i>' . $valor . '</p>';
-                                echo "<a href='" . base_url('workorders/generaWorkOrderPDF/' . $lista['id_workorder']) . "' target='_blanck'><img src='" . base_url_images('pdf.png') . "' ></a>";
+                                echo "<a href='" . base_url('workorders/generaWorkOrderPDF/' . $lista['id_workorder']) . "' target='_blanck'><img src='" . base_url('images/pdf.png') . "' ></a>";
                                 echo '</td>';
                                 echo "<td >" . $lista['job_description'] . "</td>";
                                 echo '<td>' . $lista['name'] . '</td>';
@@ -284,7 +284,7 @@
                                 echo "<td class='text-center'>";
                                 echo "<a href='" . base_url('forceaccount/add_forceaccount/' . $lista['id_forceaccount']) . "' target='_blanck'>" . $lista['id_forceaccount'] . "</a>";
                                 echo '<p class="' . $clase . '"><i class="fa ' . $icono . ' fa-fw"></i>' . $valor . '</p>';
-                                echo "<a href='" . base_url('forceaccount/generaForceAccountPDF/' . $lista['id_forceaccount']) . "' target='_blanck'><img src='" . base_url_images('pdf.png') . "' ></a>";
+                                echo "<a href='" . base_url('forceaccount/generaForceAccountPDF/' . $lista['id_forceaccount']) . "' target='_blanck'><img src='" . base_url('images/pdf.png') . "' ></a>";
                                 echo '</td>';
                                 echo "<td >" . $lista['job_description'] . "</td>";
                                 echo '<td>' . $lista['name'] . '</td>';
@@ -376,7 +376,7 @@
                                 /**
                                  * Opcion de editar horas para  SUPER ADMIN
                                  */
-                                $userRol = $this->session->rol;
+                                $userRol = session()->get('rol');
                                 if ($userRol == ID_ROL_SUPER_ADMIN || $userRol == ID_ROL_ACCOUNTING) {
                                     //si no se han pagado entonces se pueden editar
                                     if ($lista['period_status'] == 1) {
@@ -576,7 +576,7 @@
                                 echo "<td>" . $lista['name'] . "</td>";
                                 echo "<td class='text-center'>";
                             ?>
-                                <a href='<?php echo base_url('report/generaHaulingPDF/x/x/x/x/' . $lista['id_hauling']); ?>' target="_blank"> <img src='<?php echo base_url_images('pdf.png'); ?>'></a>
+                                <a href='<?php echo base_url('report/generaHaulingPDF/x/x/x/x/' . $lista['id_hauling']); ?>' target="_blank"> <img src='<?php echo base_url('images/pdf.png'); ?>'></a>
                             <?php
                                 echo "</td>";
                                 echo "<td class='text-center'>" . $lista['company_name'] . "</td>";
@@ -628,7 +628,7 @@
                                 echo "<td>" . $lista['work'] . "</td>";
                                 echo "<td class='text-center'>";
                             ?>
-                                <a href='<?php echo base_url('report/generaSafetyPDF/x/x/x/' . $lista['id_safety']); ?>' target="_blank"> <img src='<?php echo base_url_images('pdf.png'); ?>'></a>
+                                <a href='<?php echo base_url('report/generaSafetyPDF/x/x/x/' . $lista['id_safety']); ?>' target="_blank"> <img src='<?php echo base_url('images/pdf.png'); ?>'></a>
                             <?php
                                 echo "</td>";
                                 echo "</tr>";
@@ -673,7 +673,7 @@
                                 echo "<td>" . $lista['suggestions'] . "</td>";
                                 echo "<td class='text-center'>";
                             ?>
-                                <a href='<?php echo base_url('jobs/generaTemplatePDF/' . $lista['id_tool_box']); ?>' target="_blank"><img src='<?php echo base_url_images('pdf.png'); ?>'></a>
+                                <a href='<?php echo base_url('jobs/generaTemplatePDF/' . $lista['id_tool_box']); ?>' target="_blank"><img src='<?php echo base_url('images/pdf.png'); ?>'></a>
                             <?php
                                 echo "</td>";
                                 echo "</tr>";

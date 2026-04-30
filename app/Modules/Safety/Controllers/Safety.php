@@ -429,6 +429,16 @@ class Safety extends BaseController
 				];
 				break;
 
+			case "inspection":
+				$arrParam = [
+					"table" => $table,
+					"primaryKey" => "id_" . $table,
+					"id" => $idRecord,
+					"column" => "signature",
+					"value" => $user["user_signature"]
+				];
+				break;
+
 			default:
 				return $this->response->setJSON([
 					"status" => "error",

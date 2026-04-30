@@ -1,4 +1,4 @@
-<script type="text/javascript" src="<?php echo base_url("assets/js/validate/verify.js?v=5.0.0"); ?>"></script>
+<script type="text/javascript" src="<?php echo base_url("assets/js/validate/verify.js?v=7.0.0"); ?>"></script>
 <div class="modal-header">
 	<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
 	<h4 class="modal-title" id="exampleModalLabel">WORKER VERIFICATION
@@ -44,7 +44,7 @@
 				</div>
 			</div>
 		</div>
-		
+
 		<div class="form-group">
 			<div id="div_load_message" style="display:none">		
 				<div class="progress progress-striped active">
@@ -53,8 +53,11 @@
 					</div>
 				</div>
 			</div>
-			<div id="div_error" style="display:none">			
-				<div class="alert alert-danger"><span class="glyphicon glyphicon-remove" id="span_msj">&nbsp;</span></div>
+			<div id="div_error_message" style="display:none">	
+				<div class="alert alert-danger">
+					<span class="glyphicon glyphicon-remove"></span>
+					<span id="span_msj_error"></span>
+				</div>		
 			</div>	
 		</div>
 		

@@ -29,7 +29,7 @@ $( document ).ready( function () {
 		
 				//Activa icono guardando
 				$('#btnSubmit').prop('disabled', true);
-				$("#div_error").hide();
+				$("#div_error_message").hide();
 				$("#div_load").show();
 			
 				$.ajax({
@@ -45,8 +45,8 @@ $( document ).ready( function () {
 						$('#btnSubmit').prop('disabled', false);
 
 						if (data.status === "error") {
-							$("#div_error").show();
-							$("#span_msj").html(data.message);
+							$("#div_error_message").show();
+							$("#span_msj_error").html(data.message);
 							return;
 						}
 
@@ -54,14 +54,14 @@ $( document ).ready( function () {
 							window.location.href = base_url + data.path;
 						} else {
 							alert('Error. Reload the web page.');
-							$("#div_error").show();
+							$("#div_error_message").show();
 						}
 					},
 					error: function(xhr) {
 						console.error(xhr.responseText);
 						alert('Error. Reload the web page.');
 						$("#div_load").hide();
-						$("#div_error").show();
+						$("#div_error_message").show();
 						$('#btnSubmit').prop('disabled', false);
 					}
 					

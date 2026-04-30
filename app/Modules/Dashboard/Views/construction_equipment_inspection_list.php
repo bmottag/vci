@@ -110,7 +110,7 @@ if($lista['comments'] != ''){
 								echo "<td class='text-center'><p class='text-" . $class . "'>" . $lista['date_issue'] . "</p></td>";
 								echo "<td class='text-center'>";
 						?>
-<a href='<?php echo base_url('report/generaInsectionHeavyPDF/x/x/x/x/' . $lista['id_inspection_heavy'] ); ?>' target="_blank"> <img src='<?php echo base_url_images('pdf.png'); ?>' ></a>
+<a href='<?php echo base_url('report/generaInsectionHeavyPDF/x/x/x/x/' . $lista['id_inspection_heavy'] ); ?>' target="_blank"> <img src='<?php echo base_url('images/pdf.png'); ?>' ></a>
 						<?php
 								echo "</td>";
 								echo "<td><p class='text-" . $class . "'>" . $lista['name'] . "</p></td>";
