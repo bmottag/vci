@@ -268,7 +268,7 @@ class Inspection extends BaseController
      * Form Generator Inspection
      * @since 16/3/2017
      * @author BMOTTAG
-     * @review 29/04/2026 - new CI4 version
+     * @review 30/04/2026 - new CI4 version
      */
     public function add_generator_inspection($id = 'x')
     {
@@ -298,7 +298,7 @@ class Inspection extends BaseController
      * Save generator_inspection
      * @since 17/3/2017
      * @author BMOTTAG
-     * @review 29/04/2026 - new CI4 version
+     * @review 30/04/2026 - new CI4 version
      */
     public function save_generator_inspection()
     {
