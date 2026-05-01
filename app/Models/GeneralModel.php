@@ -1667,5 +1667,34 @@ class GeneralModel extends Model
 		return $builder->get()->getResultArray();
 	}
 
+	/**
+	 * Employee bank time list
+	 * @since 11/9/2022
+	 * @author BMOTTAG
+	 * @review 01/05/2026 - new CI4 version
+	 */
+	public function get_bank_time($arrData)
+	{
+		$builder = $this->db->table('payroll_bank_time T');
+		$builder->select("T.*, CONCAT(U.first_name, ' ', U.last_name) employee, CONCAT(W.first_name, ' ', W.last_name) done_by, X.period");
+		$builder->join('user U', 'U.id_user = T.fk_id_employee', 'INNER');
+		$builder->join('user W', 'W.id_user = T.change_done_by', 'INNER');
+		$builder->join('payroll_period X', 'X.id_period = T.fk_id_period', 'LEFT');
+
+		if (array_key_exists('idUser', $arrData)) {
+			$builder->where('T.fk_id_employee', $arrData['idUser']);
+		}
+
+		$builder->orderBy('id_bank_time', 'DESC');
+
+		if (array_key_exists('limit', $arrData)) {
+			$query = $builder->get($arrData['limit']);
+		} else {
+			$query = $builder->get();
+		}
+
+		return $query->getNumRows() >= 1 ? $query->getResultArray() : false;
+	}
+
 
 }

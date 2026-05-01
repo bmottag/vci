@@ -11,10 +11,8 @@
 				</div>
 			</div>
 		</div>
-		<!-- /.col-lg-12 -->				
 	</div>
 	
-	<!-- /.row -->
 	<div class="row">
 		<div class="col-lg-12">
 			<div class="panel panel-default">
@@ -22,35 +20,21 @@
 					<i class="fa fa-flag-o"></i> <b>EMPLOYEE SETTINGS</b>
 				</div>
 				<div class="panel-body">
-<?php
-$retornoExito = $this->session->flashdata('retornoExito');
-if ($retornoExito) {
-    ?>
-    <div class="row">
-		<div class="col-lg-12">	
-			<div class="alert alert-success ">
-				<span class="glyphicon glyphicon-ok" aria-hidden="true"></span>
-				<?php echo $retornoExito ?>		
-			</div>
-		</div>
-	</div>
-    <?php
-}
 
-$retornoError = $this->session->flashdata('retornoError');
-if ($retornoError) {
-    ?>
-    <div class="row">
-		<div class="col-lg-12">	
-			<div class="alert alert-danger ">
-				<span class="glyphicon glyphicon-exclamation-sign" aria-hidden="true"></span>
-				<?php echo $retornoError ?>
-			</div>
-		</div>
-	</div>
-    <?php
-}
-?> 
+					<?php if (session()->getFlashdata('retornoExito')): ?>
+						<div class="alert alert-success">
+							<span class="glyphicon glyphicon-ok" aria-hidden="true"></span>
+							<?= session()->getFlashdata('retornoExito') ?>
+						</div>
+					<?php endif; ?>
+
+					<?php if (session()->getFlashdata('retornoError')): ?>
+						<div class="alert alert-danger">
+							<span class="glyphicon glyphicon-exclamation-sign" aria-hidden="true"></span>
+							<?= session()->getFlashdata('retornoError') ?>
+						</div>
+					<?php endif; ?>
+
 				<?php
 					if($info){
 				?>
@@ -179,15 +163,10 @@ if($count == 10){
 </form>
 				<?php } ?>
 				</div>
-				<!-- /.panel-body -->
 			</div>
-			<!-- /.panel -->
 		</div>
-		<!-- /.col-lg-12 -->
 	</div>
-	<!-- /.row -->
 </div>
-<!-- /#page-wrapper -->
 		
 				
 <!--INICIO Modal para adicionar HAZARDS -->

@@ -1735,33 +1735,33 @@ class Admin extends BaseController
 	 * Employee Rate List
 	 * @since 16/2/2022
 	 * @author BMOTTAG
+	 * @review 01/04/2026 - new CI4 version
 	 */
 	public function employeeSettings()
 	{
-		$arrParam = array("filtroState" => TRUE);
-		$data['info'] = $this->generalModel->get_user($arrParam);
-
-		$data['dashboardURL'] = $this->session->userdata("dashboardURL");
-		$data["view"] = 'employee_settings';
-		$this->load->view("layout_calendar", $data);
+		$data['dashboardURL'] = session()->get("dashboardURL");
+		$data['info'] = $this->generalModel->get_user(["filtroState" => TRUE]);
+		return $this->renderTopOnly('App\Modules\Admin\Views\employee_settings', $data);
 	}
 
 	/**
 	 * Update the employee rate of each field
 	 * @since 16/2/2022
 	 * @author BMOTTAG
+	 * @review 01/04/2026 - new CI4 version
 	 */
 	public function update_employee_rate()
 	{
-		if ($this->adminModel->updateEmployeeRate()) {
-			$data["result"] = true;
-			$this->session->set_flashdata('retornoExito', "You have updated the Employee Rate List!!");
+		$post = $this->request->getPost();
+		if ($this->adminModel->updateEmployeeRate($post['form'])) {
+			$data["status"] = "success";
+			session()->setFlashdata('retornoExito', "You have updated the Employee Rate List!!");
 		} else {
-			$data["result"] = "error";
-			$this->session->set_flashdata('retornoError', '<strong>Error!!!</strong> Ask for help');
+			$data["status"] = "error";
+			session()->setFlashdata('retornoError', '<strong>Error!!!</strong> Ask for help');
 		}
 
-		redirect(base_url("admin/employeeSettings"), 'refresh');
+		return redirect()->to(base_url('admin/employeeSettings'));
 	}
 
 	/**

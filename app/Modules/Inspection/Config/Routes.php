@@ -33,5 +33,4 @@ $routes->group('inspection', ['namespace' => 'App\Modules\Inspection\Controllers
     $routes->get('add_watertruck_inspection',            'Inspection::add_watertruck_inspection');
     $routes->post('save_watertruck_inspection',          'Inspection::save_watertruck_inspection');
 
-    $routes->match(['get', 'post'], 'add_signature/(:alpha)/(:num)', 'Inspection::add_signature/$1/$2');
 });

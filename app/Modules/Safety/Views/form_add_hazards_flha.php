@@ -83,13 +83,8 @@
 					
 					</div>
 				</div>
-				<!-- .panel-body -->
 			</div>
-			<!-- /.panel -->
 		</div>
-		<!-- /.col-lg-12 -->
 	</div>
 </form>
-	<!-- /.row -->
 </div>
-<!-- /#page-wrapper -->

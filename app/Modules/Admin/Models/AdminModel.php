@@ -719,34 +719,32 @@ class AdminModel extends Model
 	 * Update employee rate
 	 * @since 16/2/2022
 	 */
-	public function updateEmployeeRate()
+	public function updateEmployeeRate(array $post = []): bool
 	{
-		//update states
-		$query = 1;
-
-		$employee = $this->request->getPost('form');
-		if ($employee) {
-			$tot = count($employee['id']);
-
-			for ($i = 0; $i < $tot; $i++) {
-				$bankTime = $employee['employee_subcontractor'][$i] == 1 ? 2 : $employee['bank_time'][$i];
-
-				$data = array(
-					'employee_rate' => $employee['employee_rate'][$i],
-					'employee_type' => $employee['type'][$i],
-					'employee_subcontractor' => $employee['employee_subcontractor'][$i],
-					'bank_time' => $bankTime
-				);
-				$this->db->where('id_user', $employee['id'][$i]);
-				$query = $this->db->update('user', $data);
-			}
-		}
-
-		if ($query) {
-			return true;
-		} else {
+		if (empty($post['id'])) {
 			return false;
 		}
+
+		$batch = [];
+
+		foreach ($post['id'] as $i => $idUser) {
+
+			$bankTime = ($post['employee_subcontractor'][$i] == 1)
+				? 2
+				: $post['bank_time'][$i];
+
+			$batch[] = [
+				'id_user'                => $idUser,
+				'employee_rate'          => $post['employee_rate'][$i],
+				'employee_type'          => $post['type'][$i],
+				'employee_subcontractor' => $post['employee_subcontractor'][$i],
+				'bank_time'              => $bankTime,
+			];
+		}
+
+		return (bool) $this->db
+			->table('user')
+			->updateBatch($batch, 'id_user');
 	}
 
 	/**
