@@ -424,11 +424,11 @@
 							<tbody>
 								<?php
 								foreach ($info as $lista) :
-									$finish = $lista['finish'] == "0000-00-00 00:00:00"?"":date('M j, Y - G:i:s', strtotime($lista['finish']));
-									$workingHours = $lista['finish'] == "0000-00-00 00:00:00"?"":$lista['working_hours_new'];
+									$finish = $lista['finish'] == "0000-00-00 00:00:00"?"":date('M j, Y - G:i', strtotime($lista['finish']));
+									$workingHours = $lista['finish'] == "0000-00-00 00:00:00"?"": substr($lista['working_hours_new'], 0, 5);
 									echo "<tr>";
 									echo "<td>" . $lista['first_name'] . " " . $lista['last_name'] . "</td>";
-									echo "<td class='text-center'>" . date('M j, Y - G:i:s', strtotime($lista['start'])) . "</td>";
+									echo "<td class='text-center'>" . date('M j, Y - G:i', strtotime($lista['start'])) . "</td>";
 									echo "<td class='text-center'>" . $finish . "</td>";
 									echo "<td class='text-right'>" . $workingHours . "</td>";
 									echo "<td>" . $lista['job_start'] . "</td>";

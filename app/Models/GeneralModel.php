@@ -1405,5 +1405,267 @@ class GeneralModel extends Model
 		return $builder->get()->getResultArray();
 	}
 
+	/**
+	 * Payroll period list
+	 * @since 9/02/2022
+	 * @review 30/04/2026 - new CI4 version
+	 */
+	public function get_period(array $arrData)
+	{
+		$builder = $this->db->table('payroll_period');
+
+		if (array_key_exists('idPeriod', $arrData)) {
+			$builder->where('id_period', $arrData['idPeriod']);
+		}
+		if (array_key_exists('year_period', $arrData)) {
+			$builder->where('year_period', $arrData['year_period']);
+		}
+		$builder->orderBy('id_period', 'DESC');
+
+		if (array_key_exists('limit', $arrData)) {
+			$query = $builder->get($arrData['limit']);
+		} else {
+			$query = $builder->get();
+		}
+
+		$result = $query->getResultArray();
+		return !empty($result) ? $result : false;
+	}
+
+	/**
+	 * Payroll weak period list
+	 * @since 9/02/2022
+	 * @review 30/04/2026 - new CI4 version
+	 */
+	public function get_weak_period(array $arrData)
+	{
+		$builder = $this->db->table('payroll_period_weaks');
+
+		if (array_key_exists('idPeriodWeak', $arrData)) {
+			$builder->where('id_period_weak', $arrData['idPeriodWeak']);
+		}
+		if (array_key_exists('idPeriod', $arrData)) {
+			$builder->where('fk_id_period', $arrData['idPeriod']);
+		}
+		$builder->orderBy('id_period_weak', 'DESC');
+
+		if (array_key_exists('limit', $arrData)) {
+			$query = $builder->get($arrData['limit']);
+		} else {
+			$query = $builder->get();
+		}
+
+		$result = $query->getResultArray();
+		return !empty($result) ? $result : false;
+	}
+
+	/**
+	 * Task list grouped by user
+	 * Modules: Payroll/search
+	 * @since 10/02/2022
+	 * @review 30/04/2026 - new CI4 version
+	 */
+	public function get_users_by_period(array $arrData)
+	{
+		$builder = $this->db->table('task T');
+		$builder->select('T.fk_id_user');
+		$builder->join('user U', 'U.id_user = T.fk_id_user', 'INNER');
+		$builder->join('payroll_period_weaks W', 'W.id_period_weak = T.fk_id_weak_period', 'LEFT');
+		$builder->join('payroll_period P', 'P.id_period = W.fk_id_period', 'INNER');
+
+		if (array_key_exists('idPeriod', $arrData)) {
+			$builder->where('P.id_period', $arrData['idPeriod']);
+		}
+		if (array_key_exists('idEmployee', $arrData) && $arrData['idEmployee'] != '') {
+			$builder->where('T.fk_id_user', $arrData['idEmployee']);
+		}
+		if (array_key_exists('from', $arrData)) {
+			$builder->where('T.start >=', $arrData['from']);
+		}
+		if (array_key_exists('to', $arrData)) {
+			$builder->where('T.start <=', $arrData['to']);
+		}
+		if (array_key_exists('employee_subcontractor', $arrData)) {
+			$builder->where('U.employee_subcontractor', $arrData['employee_subcontractor']);
+		}
+		$builder->groupBy('T.fk_id_user');
+		$builder->orderBy('U.first_name, U.last_name', 'ASC');
+
+		$result = $builder->get()->getResultArray();
+		return !empty($result) ? $result : false;
+	}
+
+	/**
+	 * Task list by period and user
+	 * Modules: Payroll/search
+	 * @since 11/02/2022
+	 * @review 30/04/2026 - new CI4 version
+	 */
+	public function get_task_by_period(array $arrData)
+	{
+		$builder = $this->db->table('task T');
+		$builder->select("T.*, CONCAT(first_name, ' ', last_name) name, id_user, W.period_weak, J.job_description job_start, H.job_description job_finish");
+		$builder->join('user U', 'U.id_user = T.fk_id_user', 'INNER');
+		$builder->join('param_jobs J', 'J.id_job = T.fk_id_job', 'INNER');
+		$builder->join('param_jobs H', 'H.id_job = T.fk_id_job_finish', 'LEFT');
+		$builder->join('payroll_period_weaks W', 'W.id_period_weak = T.fk_id_weak_period', 'LEFT');
+		$builder->join('payroll_period P', 'P.id_period = W.fk_id_period', 'INNER');
+
+		if (array_key_exists('idUser', $arrData)) {
+			$builder->where('U.id_user', $arrData['idUser']);
+		}
+		if (array_key_exists('idPeriod', $arrData)) {
+			$builder->where('P.id_period', $arrData['idPeriod']);
+		}
+		if (array_key_exists('weakNumber', $arrData)) {
+			$builder->where('W.weak_number', $arrData['weakNumber']);
+		}
+		if (array_key_exists('from', $arrData)) {
+			$builder->where('T.start >=', $arrData['from']);
+		}
+		if (array_key_exists('to', $arrData)) {
+			$builder->where('T.start <=', $arrData['to']);
+		}
+		$builder->orderBy('id_task', 'ASC');
+
+		$result = $builder->get()->getResultArray();
+		return !empty($result) ? $result : false;
+	}
+
+	/**
+	 * Paystub list by period or employee
+	 * Modules: Payroll/search
+	 * @since 25/02/2022
+	 * @review 30/04/2026 - new CI4 version
+	 */
+	public function get_paystub_by_period(array $arrData)
+	{
+		$builder = $this->db->table('payroll_paystub P');
+		$builder->select("P.*, CONCAT(U.first_name, ' ', U.last_name) name, CONCAT(W.first_name, ' ', W.last_name) employee, W.address, W.postal_code, X.date_start, X.date_finish");
+		$builder->join('user U', 'U.id_user = P.paystub_fk_id_user', 'INNER');
+		$builder->join('user W', 'W.id_user = P.fk_id_employee', 'INNER');
+		$builder->join('payroll_period X', 'X.id_period = P.fk_id_period', 'INNER');
+
+		if (array_key_exists('idPaytsub', $arrData)) {
+			$builder->where('P.id_paystub', $arrData['idPaytsub']);
+		}
+		if (array_key_exists('idEmployee', $arrData) && $arrData['idEmployee'] != '') {
+			$builder->where('P.fk_id_employee', $arrData['idEmployee']);
+		}
+		if (array_key_exists('idPeriod', $arrData)) {
+			$builder->where('P.fk_id_period', $arrData['idPeriod']);
+		}
+		if (array_key_exists('year', $arrData)) {
+			$builder->where('X.year_period', $arrData['year']);
+		}
+		$builder->orderBy('W.first_name, W.last_name, P.fk_id_period', 'ASC');
+
+		$result = $builder->get()->getResultArray();
+		return !empty($result) ? $result : false;
+	}
+
+	/**
+	 * Total paystub by year and employee
+	 * Modules: Payroll/search
+	 * @since 27/02/2022
+	 * @review 30/04/2026 - new CI4 version
+	 */
+	public function get_total_yearly(array $arrData)
+	{
+		$builder = $this->db->table('payroll_total_yearly Y');
+		$builder->select("Y.*, CONCAT(U.first_name, ' ', U.last_name) employee");
+		$builder->join('user U', 'U.id_user = Y.fk_id_employee', 'INNER');
+
+		if (array_key_exists('idUser', $arrData) && $arrData['idUser'] != '') {
+			$builder->where('Y.fk_id_employee', $arrData['idUser']);
+		}
+		if (array_key_exists('year', $arrData)) {
+			$builder->where('Y.year', $arrData['year']);
+		}
+		$builder->orderBy('U.first_name, U.last_name, year', 'ASC');
+
+		$result = $builder->get()->getResultArray();
+		return !empty($result) ? $result : false;
+	}
+
+	/**
+	 * Save bank time balance
+	 * @since 9/9/2022
+	 * @review 30/04/2026 - new CI4 version
+	 */
+	public function saveBankTimeBalance(array $arrData): bool
+	{
+		$idUser = session()->get('id');
+
+		return $this->db->table('payroll_bank_time')->insert([
+			'fk_id_period'    => $arrData['idPeriod'],
+			'fk_id_employee'  => $arrData['idEmployee'],
+			'time_in'         => $arrData['bankTimeAdd'],
+			'time_out'        => $arrData['bankTimeSubtract'],
+			'balance'         => $arrData['bankNewBalance'],
+			'change_done_by'  => $idUser,
+			'observation'     => $arrData['observation'],
+			'date_issue'      => date('Y-m-d G:i:s'),
+		]);
+	}
+
+	/**
+	 * Payroll check - tasks without finish time
+	 * @since 12/04/2022
+	 * @review 30/04/2026 - new CI4 version
+	 */
+	public function get_payroll_check()
+	{
+		$builder = $this->db->table('task T');
+		$builder->select('T.*, id_user, first_name, last_name, log_user, J.job_description job_start, H.job_description job_finish, O.task');
+		$builder->join('user U', 'U.id_user = T.fk_id_user', 'INNER');
+		$builder->join('param_jobs J', 'J.id_job = T.fk_id_job', 'INNER');
+		$builder->join('param_jobs H', 'H.id_job = T.fk_id_job_finish', 'LEFT');
+		$builder->join('param_operation O', 'O.id_operation = T.fk_id_operation', 'INNER');
+		$builder->where('T.finish', '0000-00-00 00:00:00');
+		$builder->orderBy('id_task', 'DESC');
+
+		$result = $builder->get()->getResultArray();
+		return !empty($result) ? $result : false;
+	}
+
+	public function get_payroll_full(array $arrData)
+	{
+		$builder = $this->db->table('task T');
+
+		$builder->select("
+			T.*,
+			U.id_user,
+			U.first_name,
+			U.last_name,
+			CONCAT(U.first_name, ' ', U.last_name) AS employee_name,
+			J.job_description AS job_start,
+			H.job_description AS job_finish,
+			W.period_weak
+		");
+
+		$builder->join('user U', 'U.id_user = T.fk_id_user', 'INNER');
+		$builder->join('param_jobs J', 'J.id_job = T.fk_id_job', 'INNER');
+		$builder->join('param_jobs H', 'H.id_job = T.fk_id_job_finish', 'LEFT');
+		$builder->join('payroll_period_weaks W', 'W.id_period_weak = T.fk_id_weak_period', 'LEFT');
+		$builder->join('payroll_period P', 'P.id_period = W.fk_id_period', 'INNER');
+
+		if (!empty($arrData['idEmployee'])) {
+			$builder->where('T.fk_id_user', $arrData['idEmployee']);
+		}
+
+		if (!empty($arrData['from'])) {
+			$builder->where('T.start >=', $arrData['from']);
+		}
+
+		if (!empty($arrData['to'])) {
+			$builder->where('T.start <=', $arrData['to']);
+		}
+
+		$builder->orderBy('U.first_name, U.last_name, T.start', 'ASC');
+
+		return $builder->get()->getResultArray();
+	}
+
 
 }

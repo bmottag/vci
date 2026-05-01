@@ -50,3 +50,19 @@ if (!function_exists('base64url_decode')) {
         return base64_decode(strtr($data, '-_', '+/'));
     }
 }
+
+if (!function_exists('calculate_time_difference_in_hours')) {
+    function calculate_time_difference_in_hours(string $start, string $end): float
+    {
+        $minutes = abs(strtotime($end) - strtotime($start)) / 60;
+        return round($minutes / 60, 2);
+    }
+}
+
+if (!function_exists('formatear_fecha')) {
+    function formatear_fecha(string $fecha): string
+    {
+        $date = date_create($fecha);
+        return $date ? date_format($date, 'Y-m-d') : $fecha;
+    }
+}
