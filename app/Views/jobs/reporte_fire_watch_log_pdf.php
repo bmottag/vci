@@ -50,7 +50,7 @@
 				<tr>
 					<th bgcolor="#337ab7" style="color:white;" width="10%"><strong>Patrol # </strong></th>
 					<th bgcolor="#337ab7" style="color:white;" width="20%"><strong>Date & Time </strong></th>
-					<th bgcolor="#337ab7" style="color:white;" width="40%"><strong>Address </strong></th>
+					<th bgcolor="#337ab7" style="color:white;" width="40%"><strong>Station </strong></th>
 					<th bgcolor="#337ab7" style="color:white;" width="30%"><strong>Notes/Observations</strong></th>
 				</tr>';
 
@@ -61,7 +61,8 @@
 			$html .=  "<td>" . $i. "</td>";
 			$html .=  "<td class='text-center'>" . $lista['checkin_time'] . "</td>";
 
-			$html .=  "<td class='text-center'>" . $lista['address_start'];
+			$html .=  "<td class='text-center'>" . $lista['site'];
+			$html .= "<br><b>Address:</b><br>" . $lista['address_start'];
 			$html .= "<br><b>Latitud</b> " . $lista['latitude_start'];
 			$html .= "<br><b>Longitud</b> " . $lista['longitude_start'];
 			$html .=  "</td>";

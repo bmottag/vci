@@ -121,7 +121,6 @@ if($companyType == 2){ //si es subcontractor
 							<tr>
 								<th class="text-center"><?php echo $labelCompany; ?></th>
 								<th class="text-center">Photo</th>
-								<th class="text-center">QR code</th>
 								<th class="text-center">Make</th>
 								<th class="text-center">Model</th>
 								<th class="text-center">Description</th>
@@ -156,28 +155,9 @@ if($companyType == 2){ //si es subcontractor
 						
 									if(!$deshabilitar){
 						?>
-									<a href="<?php echo base_url("admin/photo/" . $lista['id_vehicle']); ?>" class="btn btn-primary btn-xs">Photo</a>
+									<br><a href="<?php echo base_url("admin/photo/" . $lista['id_vehicle']); ?>" class="btn btn-primary btn-xs">Photo</a>
 						<?php
 									}
-									echo "</td>";
-									
-									echo "<td class='text-center'>";
-//si no se le hace inspeccion entonces no se le coloca codigo QR
-if($lista["inspection_type"] == 99 ){
-	echo "N/A";
-}else{
-						//si hay una foto la muestro
-						if($lista["qr_code"]){
-						?>
-							<img src="<?php echo base_url($lista["qr_code"]); ?>" class="img-rounded" width="32" height="32" />
-						<?php  
-									if(!$deshabilitar){
-						?>
-									<a href="<?php echo base_url("admin/qr_code/" . $lista['id_vehicle']); ?>" class="btn btn-primary btn-xs">QR code</a>
-						<?php
-									}
-						}
-}
 									echo "</td>";
 
 									echo "<td>" . $lista['make'] . "</td>";
