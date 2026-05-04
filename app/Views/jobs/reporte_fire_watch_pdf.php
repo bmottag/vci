@@ -78,10 +78,12 @@
 	
 		$date2 = "";
 		$time2 = "";
-		if($info[0]['date_restored'] != "0000-00-00 00:00:00") { 
-			$CompleteDateRestored = $info[0]['date_restored'];
-			$date2 = substr($CompleteDateRestored, 0, 10); 
-			$time2 = substr($CompleteDateRestored, 11, 2). ':00';
+
+		$CompleteDateRestored = $info[0]['date_restored'] ?? null;
+
+		if (!empty($CompleteDateRestored) && $CompleteDateRestored !== "0000-00-00 00:00:00") {
+			$date2 = substr($CompleteDateRestored, 0, 10);
+			$time2 = substr($CompleteDateRestored, 11, 2) . ':00';
 		}
 
 		$html .= '<table border="0" cellspacing="0" cellpadding="5">
