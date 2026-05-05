@@ -84,7 +84,7 @@ class Programming extends BaseController
             $jobPlanningData = $this->generalModel->get_job(['idJob' => $data['information'][0]['fk_id_job']]);
             $data['job_planning'] = $jobPlanningData[0]['planning_message'];
 
-            $data['programmingMaterials'] = $this->programmingModel->get_programming_materials($arrParam);
+            $data['programmingMaterials'] = $this->programmingModel->get_programming_materials(["idProgramming" => $idProgramming]);
         } else {
             $data['information'] = $this->generalModel->get_programming(['jobId' => $idJob, 'estado' => 'ACTIVAS']);
         }
@@ -534,7 +534,7 @@ class Programming extends BaseController
 
     /**
      * Save one worker
-     * @review 01/05/2026 - new CI4 version
+     * @review 05/05/2026 - new CI4 version
      */
     public function save_One_Worker_programming()
     {
@@ -686,19 +686,14 @@ class Programming extends BaseController
      * Form Flash Planning
      * @since 28/12/2022
      * @author BMOTTAG
-     * @review 01/05/2026 - new CI4 version
+     * @review 05/05/2026 - new CI4 version
      */
     public function flash_planning()
     {
         $data['information']       = false;
         $data['informationVehicles'] = $this->programmingModel->get_vehicles_inspection([]);
 
-        $data['jobs'] = $this->generalModel->get_basic_search([
-            'table'  => 'param_jobs',
-            'order'  => 'job_description',
-            'column' => 'state',
-            'id'     => 1,
-        ]);
+        $data['jobs'] = $this->generalModel->get_job(['state' => 1]);
 
         $data['workersList'] = $this->generalModel->get_user(['state' => 1]);
 
@@ -708,7 +703,7 @@ class Programming extends BaseController
     /**
      * Save Flash Planning
      * @since 28/12/2022
-     * @review 01/05/2026 - new CI4 version
+     * @review 05/05/2026 - new CI4 version
      */
     public function save_flash_planning()
     {
