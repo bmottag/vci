@@ -148,7 +148,7 @@
 									<?php
 									foreach ($info as $lista):
 										echo "<tr>";
-										echo "<td>" . $lista['job_description'] . "</td>";
+										echo "<td><h4>" . $lista['job_description'] . "</h4></td>";
 										echo "<td>" . $lista['company_name'] . "</td>";
 										echo "<td >" . $lista['notes'] . "</td>";
 										echo "<td class='text-center'>";

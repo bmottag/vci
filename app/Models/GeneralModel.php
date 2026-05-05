@@ -1696,5 +1696,354 @@ class GeneralModel extends Model
 		return $query->getNumRows() >= 1 ? $query->getResultArray() : false;
 	}
 
+	/**
+	 * Lista de programacion
+	 * @since 15/1/2018
+	 */
+	public function get_programming($arrData)
+	{
+		$year = date('Y');
+		$firstDay = date('Y-m-d', mktime(0, 0, 0, 1, 1, $year - 1));
+
+		$builder = $this->db->table('programming P');
+		$builder->select("P.*, X.id_job, X.job_description, X.fk_id_company id_company, U.id_user, CONCAT(U.first_name, ' ', U.last_name) name");
+		$builder->join('user U', 'U.id_user = P.fk_id_user', 'INNER');
+		$builder->join('param_jobs X', 'X.id_job = P.fk_id_job', 'INNER');
+
+		if (array_key_exists("idUser", $arrData)) {
+			$builder->where('P.fk_id_user', $arrData["idUser"]);
+		}
+		if (array_key_exists("idProgramming", $arrData)) {
+			$builder->where('P.id_programming', $arrData["idProgramming"]);
+		}
+		if (array_key_exists("jobId", $arrData)) {
+			$builder->where('P.fk_id_job', $arrData["jobId"]);
+		}
+		if (array_key_exists("idParent", $arrData)) {
+			$builder->where('P.parent_id', $arrData["idParent"]);
+		}
+		if (array_key_exists("fecha", $arrData)) {
+			$builder->where('P.date_programming', $arrData["fecha"]);
+		}
+		if (array_key_exists("smsAutomatic", $arrData)) {
+			$builder->where('X.planning_message', 1);
+		}
+		if (array_key_exists("estado", $arrData)) {
+			if ($arrData["estado"] == "ACTIVAS") {
+				$builder->where('P.state !=', 3);
+			} else {
+				$builder->where('P.state', $arrData["estado"]);
+			}
+		}
+
+		$builder->where('P.date_issue >=', $firstDay); //se filtran por registros mayores al primer dia del año
+
+		$builder->orderBy("P.date_programming DESC");
+		$query = $builder->get();
+
+		return $query->getResultArray();
+	}
+
+	/**
+	 * Lista trabajadores para una programacion
+	 * @since 15/1/2019
+	 */
+	public function get_programming_workers(array $arrData = [])
+	{
+		$builder = $this->db->table('programming_worker P');
+
+		$builder->select("
+			U.movil,
+			CONCAT(U.first_name, ' ', U.last_name) as name,
+			P.*,
+			H.hora,
+			H.formato_24
+		");
+
+		$builder->join('user U', 'U.id_user = P.fk_id_programming_user');
+		$builder->join('param_horas H', 'H.id_hora = P.fk_id_hour', 'left');
+
+		// filtros dinámicos
+		if (!empty($arrData['idUser'])) {
+			$builder->where('P.fk_id_programming_user', $arrData['idUser']);
+		}
+
+		if (!empty($arrData['idProgramming'])) {
+			$builder->where('P.fk_id_programming', $arrData['idProgramming']);
+		}
+
+		if (!empty($arrData['createWO'])) {
+			$builder->where('P.creat_wo', 1);
+		}
+
+		if (!empty($arrData['withEquipment'])) {
+			$builder->where('P.fk_id_machine IS NOT NULL');
+			$builder->where('P.fk_id_machine !=', '');
+		}
+
+		if (isset($arrData['safety'])) {
+			$builder->where('P.safety', $arrData['safety']);
+		}
+
+		$builder->orderBy('U.first_name', 'ASC');
+		$builder->orderBy('U.last_name', 'ASC');
+
+		$query = $builder->get();
+
+		return $query->getNumRows() > 0 ? $query->getResultArray() : [];
+	}
+
+	/**
+	 * Lista de horas
+	 * @since 18/1/2019
+	 */
+	public function get_horas()
+	{
+		$builder = $this->db->table('param_horas');
+		$builder->orderBy('`order`', 'ASC');
+
+		$query = $builder->get();
+
+		return $query->getNumRows() > 0 ? $query->getResultArray() : [];
+	}
+
+	/**
+	 * Lista de horas
+	 * @since 18/1/2019
+	 */
+	public function get_day_off_planning(array $arrData = [])
+	{
+		$firstDay       = date('Y-m-d', strtotime('-2 months'));
+		$actualDay      = date('Y-m-d');
+		$afterTomorrow  = date('Y-m-d', strtotime('+2 days'));
+
+		$builder = $this->db->table('dayoff D');
+
+		$builder->select("
+			U.id_user,
+			CONCAT(U.first_name, ' ', U.last_name) AS name,
+			GROUP_CONCAT(
+				DATE_FORMAT(D.date_dayoff, '%d %b %Y')
+				ORDER BY D.date_dayoff ASC
+				SEPARATOR ', '
+			) AS days_off
+		");
+
+		$builder->join('user U', 'U.id_user = D.fk_id_user', 'inner');
+
+		// filtro planning
+		if (!empty($arrData['forPlanning'])) {
+			$builder->where('D.state', 2);
+			$builder->where('D.date_dayoff >=', $actualDay);
+			$builder->where('D.date_dayoff <=', $afterTomorrow);
+		}
+
+		// últimos 2 meses
+		$builder->where('D.date_issue >=', $firstDay);
+
+		$builder->groupBy('U.id_user');
+		$builder->orderBy('U.first_name', 'ASC');
+
+		return $builder->get()->getResultArray();
+	}
+
+	/**
+	 * Verificacion si existe maquina programada para una fecha
+	 * @since 8/1/2021
+	 */
+	public function get_programming_machine_vs_date_programming(array $arrData = []): bool
+	{
+		$builder = $this->db->table('programming_worker W');
+
+		$builder->select('1'); // optimización: solo validar existencia
+		$builder->join('programming P', 'P.id_programming = W.fk_id_programming', 'inner');
+
+		if (!empty($arrData['idProgrammingWorker'])) {
+			$builder->where('W.id_programming_worker !=', $arrData['idProgrammingWorker']);
+		}
+
+		if (!empty($arrData['fechaProgramming'])) {
+			$builder->where('P.date_programming', $arrData['fechaProgramming']);
+		}
+
+		if (!empty($arrData['maquina']) && is_array($arrData['maquina'])) {
+			$builder->whereIn('W.fk_id_machine', $arrData['maquina']);
+		}
+
+		return $builder->countAllResults() > 0;
+	}
+
+	public function get_missing_programming_inspecciones(array $arrData = [])
+	{
+		$machines = json_decode($arrData['maquina'] ?? '[]', true);
+
+		if (empty($machines)) {
+			return [];
+		}
+
+		$builder = $this->db->table('inspection_total');
+
+		$registered_machines = $builder
+			->select('fk_id_machine')
+			->where('date_inspection', $arrData['fecha'] ?? null)
+			->get()
+			->getResultArray();
+
+		$registered_ids = array_column($registered_machines, 'fk_id_machine');
+
+		$missing_machines = array_diff($machines, $registered_ids);
+
+		return empty($missing_machines) ? [] : $missing_machines;
+	}
+
+	/**
+	 * Trucks list by company and type
+	 * @since 8/3/2017
+	 * @review 05/05/2026 - new CI4 version
+	 */
+	public function get_trucks_by_id2($idCompany, $type)
+	{
+		$sql = "SELECT id_vehicle, CONCAT(unit_number,' -----> ', description) as unit_description
+				FROM param_vehicle
+				WHERE fk_id_company = " . (int)$idCompany . " AND type_level_2 = " . (int)$type . " AND state = 1
+				ORDER BY unit_number";
+
+		$query  = $this->db->query($sql);
+		$trucks = [];
+		foreach ($query->getResult() as $row) {
+			$trucks[] = ['id_truck' => $row->id_vehicle, 'unit_number' => $row->unit_description];
+		}
+		return $trucks;
+	}
+
+	/**
+	 * Get Distinct Chapter list
+	 * @since 25/1/2023
+	 * @review 05/05/2026 - new CI4 version
+	 */
+	public function get_chapter_list($arrData)
+	{
+		$builder = $this->db->table('job_details');
+		$builder->select('distinct(chapter_number), chapter_name');
+		$builder->where('fk_id_job', $arrData['idJob']);
+		$builder->orderBy('chapter_number', 'asc');
+		$query = $builder->get();
+
+		return $query->getNumRows() > 0 ? $query->getResultArray() : false;
+	}
+
+	/**
+	 * Sumatoria de valores de porcentage para un job
+	 * @author BMOTTAG
+	 * @since 6/6/2023
+	 * @review 05/05/2026 - new CI4 version
+	 */
+	public function sumPercentageByJob($arrDatos)
+	{
+		$sql = "SELECT ROUND(SUM(percentage),2) TOTAL FROM job_details WHERE fk_id_job = " . (int)$arrDatos['idJob'];
+		$row = $this->db->query($sql)->getRow();
+		return $row->TOTAL;
+	}
+
+	/**
+	 * Get workorder expenses info (with workorder join)
+	 * @since 13/1/2023
+	 * @review 05/05/2026 - new CI4 version
+	 */
+	public function get_workorder_expense($arrData)
+	{
+		$builder = $this->db->table('workorder_expense E');
+		$builder->join('workorder W', 'W.id_workorder = E.fk_id_workorder', 'INNER');
+		$builder->join('job_details J', 'J.id_job_detail = E.fk_id_job_detail', 'INNER');
+
+		if (array_key_exists('idWorkOrder', $arrData)) {
+			$builder->where('E.fk_id_workorder', $arrData['idWorkOrder']);
+		}
+		if (array_key_exists('idJobDetail', $arrData)) {
+			$builder->where('E.fk_id_job_detail', $arrData['idJobDetail']);
+		}
+		$query = $builder->get();
+
+		return $query->getNumRows() > 0 ? $query->getResultArray() : false;
+	}
+
+	/**
+	 * Get job detail list
+	 * @since 2037/legacy
+	 * @review 05/05/2026 - new CI4 version
+	 */
+	public function get_job_detail($arrData)
+	{
+		$builder = $this->db->table('job_details D');
+		$builder->select('D.*, (SELECT ROUND(SUM(W.expense_value), 2)
+			FROM workorder_expense W
+			WHERE W.fk_id_job_detail = D.id_job_detail) AS expenses');
+
+		if (array_key_exists('idJobDetail', $arrData)) {
+			$builder->where('id_job_detail', $arrData['idJobDetail']);
+		}
+		if (array_key_exists('idJob', $arrData)) {
+			$builder->where('fk_id_job', $arrData['idJob']);
+		}
+		if (array_key_exists('chapterNumber', $arrData)) {
+			$builder->where('chapter_number', $arrData['chapterNumber']);
+		}
+		if (array_key_exists('status', $arrData)) {
+			$builder->where('status', $arrData['status']);
+		}
+		$builder->orderBy('id_job_detail', 'asc');
+		$query = $builder->get();
+
+		return $query->getNumRows() > 0 ? $query->getResultArray() : false;
+	}
+
+	/**
+	 * Get attachments by equipment
+	 * @since 28/6/2023 (legacy)
+	 * @review 05/05/2026 - new CI4 version
+	 */
+	public function get_attachments_by_equipment($arrDatos)
+	{
+		$builder = $this->db->table('param_attachments P');
+		$builder->select('id_attachment, attachment_number, attachment_description');
+		$builder->join('param_attachments_equipment A', 'A.fk_id_attachment = P.id_attachment', 'INNER');
+
+		if (array_key_exists('idEquipment', $arrDatos)) {
+			$builder->where('fk_id_equipment', $arrDatos['idEquipment']);
+		}
+		$builder->orderBy('attachment_number', 'asc');
+		$query = $builder->get();
+
+		return $query->getNumRows() > 0 ? $query->getResultArray() : false;
+	}
+
+	public function get_vehicle_info_for_planning(array $arrData = [])
+	{
+		$ids = $arrData['idValues'] ?? [];
+
+		// soporta "1,2,3" o array
+		if (!is_array($ids)) {
+			$ids = explode(',', $ids);
+		}
+
+		if (empty($ids)) {
+			return [];
+		}
+
+		$separator = !empty($arrData['forTextMessague']) ? " \n" : "<br>";
+
+		$builder = $this->db->table('param_vehicle');
+
+		$builder->select("
+			GROUP_CONCAT(CONCAT(unit_number, '-', description) SEPARATOR '{$separator}') AS unit_description
+		");
+
+		$builder->whereIn('id_vehicle', $ids);
+
+		$row = $builder->get()->getRowArray();
+
+		return $row ?? [];
+	}
+
 
 }
