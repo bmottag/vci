@@ -1,4 +1,4 @@
-<script type="text/javascript" src="<?php echo base_url('assets/js/validate/programming/programming.js?v=2.0.0'); ?>"></script>
+<script type="text/javascript" src="<?php echo base_url('assets/js/validate/programming/programming.js?v=4.0.0'); ?>"></script>
 
 <link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
 <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>

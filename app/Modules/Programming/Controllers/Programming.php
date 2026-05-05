@@ -815,7 +815,7 @@ class Programming extends BaseController
      * Clone Planning
      * @since 28/10/2023
      * @author BMOTTAG
-     * @review 01/05/2026 - new CI4 version
+     * @review 05/05/2026 - new CI4 version
      */
     public function clone_planning()
     {
@@ -828,7 +828,7 @@ class Programming extends BaseController
             $this->update_state($idProgrammingClone);
             $data['status'] = 'success';
         } else {
-            $data = ['status' => 'error'];
+            $data['status'] = 'error';
         }
 
         return $this->response->setJSON($data);
