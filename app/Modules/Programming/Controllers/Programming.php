@@ -430,7 +430,7 @@ class Programming extends BaseController
     /**
      * Actualiza estado de la programacion (2 = completa, 1 = incompleta)
      * @since 17/1/2019
-     * @review 01/05/2026 - new CI4 version
+     * @review 05/05/2026 - new CI4 version
      */
     protected function update_state($idProgramming)
     {
@@ -463,7 +463,7 @@ class Programming extends BaseController
     /**
      * CRON - Verificar inspecciones de maquinas pendientes
      * @since 17/1/2019
-     * @review 04/05/2026 - new CI4 version
+     * @review 01/05/2026 - new CI4 version
      */
     public function verificacion($idProgramming = 'x', $fecha = 'x')
     {
@@ -523,16 +523,6 @@ class Programming extends BaseController
     }
 
     /**
-     * Vista de calendario
-     * @review 01/05/2026 - new CI4 version
-     */
-    public function calendar()
-    {
-        $data['information'] = $this->generalModel->get_programming(['estado' => 'ACTIVAS']);
-        return $this->render('App\Modules\Programming\Views\calendar', $data);
-    }
-
-    /**
      * Save one worker
      * @review 05/05/2026 - new CI4 version
      */
@@ -553,7 +543,7 @@ class Programming extends BaseController
     /**
      * CRON - Verificar FLHA y JSO pendientes
      * @since 17/1/2019
-     * @review 04/05/2026 - new CI4 version
+     * @review 01/05/2026 - new CI4 version
      */
     public function verificacion_flha($idProgramming = 'x', $fecha = 'x')
     {
@@ -633,7 +623,7 @@ class Programming extends BaseController
     /**
      * CRON - Verificar TOOL BOX (IHSR) pendientes
      * @since 20/1/2019
-     * @review 04/05/2026 - new CI4 version
+     * @review 01/05/2026 - new CI4 version
      */
     public function verificacion_tool_box($idProgramming = 'x', $fecha = 'x')
     {
@@ -727,6 +717,7 @@ class Programming extends BaseController
                 // $this->send($idProgramming, true);
                 // $msj .= ' Message is sent to the worker.';
             }
+            $this->update_state($idProgramming);
             $data['status'] = 'success';
             $this->session->setFlashdata('retornoExito', $msj);
         } else {

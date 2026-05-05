@@ -21,8 +21,6 @@ $routes->group('programming', ['namespace' => 'App\Modules\Programming\Controlle
 
     $routes->get('send/(:num)', 'Programming::send/$1');
 
-    $routes->get('calendar', 'Programming::calendar');
-
     $routes->post('save_One_Worker_programming', 'Programming::save_One_Worker_programming');
 
     $routes->get('flash_planning',      'Programming::flash_planning');
