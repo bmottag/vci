@@ -17,13 +17,14 @@ $routes->group('dashboard', ['namespace' => 'App\Modules\Dashboard\Controllers']
     $routes->get('construction_equipment_inspection', 'Dashboard::construction_equipment_inspection');
     $routes->get('maintenance', 'Dashboard::maintenance');
     $routes->get('info', 'Dashboard::info');
-    $routes->get('info_by_day', 'Dashboard::info_by_day');
+    $routes->get('info_by_day/(:any)/(:any)', 'Dashboard::info_by_day/$1/$2');
     $routes->get('settings', 'Dashboard::settings');
     $routes->get('checkin', 'Dashboard::checkin');
     $routes->get('versions', 'Dashboard::versions');
     $routes->get('without_work_order', 'Dashboard::without_work_order');
 
     $routes->post('consulta', 'Dashboard::consulta');
+    $routes->post('confirmPlanning', 'Dashboard::confirmPlanning');
 
 
     

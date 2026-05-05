@@ -41,6 +41,45 @@ class Dashboard extends BaseController
 
 		$data['infoNextPlanning'] = $this->generalModel->get_programming_info($arrParam); //info planning
 
+		if (!empty($data['infoNextPlanning'])) {
+
+			$vehicleCache = [];
+
+			foreach ($data['infoNextPlanning'] as &$planning) {
+
+				$workers = $this->generalModel->get_programming_workers([
+					"idProgramming" => $planning['id_programming']
+				]);
+
+				foreach ($workers as &$worker) {
+
+					if (!empty($worker['fk_id_machine'])) {
+
+						$machines = json_decode($worker['fk_id_machine'], true);
+
+						if (is_array($machines) && !empty($machines)) {
+
+							$ids = implode(',', $machines);
+
+							if (!isset($vehicleCache[$ids])) {
+								$vehicleCache[$ids] = $this->generalModel->get_vehicle_info_for_planning([
+									"idValues" => $ids
+								]);
+							}
+
+							$worker['vehicles'] = $vehicleCache[$ids];
+						} else {
+							$worker['vehicles'] = [];
+						}
+					}
+				}
+
+				$planning['workers'] = $workers;
+			}
+
+			unset($planning, $worker);
+		}
+
 		$data['infoMaintenance'] = $this->generalModel->get_maintenance_check();
 		$data['infoTask'] = $this->generalModel->get_without_work_order();
 
@@ -699,29 +738,28 @@ class Dashboard extends BaseController
 	/**
 	 * Update planning confirmation
 	 * @since 15/1/2022
+	 * @review 05/05/2026 - new CI4 version
 	 */
 	public function confirmPlanning()
 	{
-		header('Content-Type: application/json');
+		$data["dashboardURL"] = session()->get("dashboardURL");
 
-		$data["dashboardURL"] = $this->session->get("dashboardURL");
-		$arrParam = array(
+		$arrParam = [
 			"table" => "programming_worker",
 			"primaryKey" => "id_programming_worker",
 			"id" => $this->request->getPost('identificador'),
 			"column" => "confirmation",
 			"value" => 1
-		);
+		];
 		if ($this->generalModel->updateRecord($arrParam)) {
-			$data["result"] = true;
-			$this->session->set_flashdata('retornoExito', 'You have updated the information');
+			$data["status"] = "success";
+			session()->setFlashdata('retornoExito', 'You have updated the information');
 		} else {
-			$data["result"] = "error";
-			$data["mensaje"] = "Error!!! Ask for help.";
-			$this->session->set_flashdata('retornoError', '<strong>Error!!!</strong> Ask for help');
+			$data["status"] = "error";
+			session()->setFlashdata('retornoError', '<strong>Error!!!</strong> Ask for help');
 		}
 
-		echo json_encode($data);
+		return $this->response->setJSON($data);
 	}
 
 	/**

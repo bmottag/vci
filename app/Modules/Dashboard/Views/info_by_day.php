@@ -45,8 +45,6 @@
     </div>
 
     <?php
-        $ci = &get_instance();
-        $ci->load->model("general_model");
         if (isset($planningInfo) && $planningInfo) {
     ?>
     <div class="row">
@@ -405,8 +403,8 @@
                                 echo "<td class='text-center'>" . convert_hours_minutes($workingHours) . "<br><br>" . $workingHoursHM . "<br><br>" . $textSameJob . "</td>";
 
                                 // Ahora recorremos todas las órdenes de trabajo y verificamos si el usuario tiene horas en esa WO
+                                $sumWorkorders = 0;
                                 if (isset($workOrderCheck) && $workOrderCheck) {
-                                    $sumWorkorders = 0;
                                     foreach ($workOrderCheck as $wo) {
                                         // Verificamos si el empleado tiene horas en esta W.O.
                                         $arrParamCheck = array("idWorkorder" => $wo['id_workorder'], "idUser" => $lista['fk_id_user']);

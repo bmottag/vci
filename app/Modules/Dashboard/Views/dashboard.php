@@ -18,10 +18,8 @@
 					cache: false,
 					success: function(data) {
 
-						if (data.result) //true
-						{
-							var url = base_url + data.dashboardURL;
-							$(location).attr("href", url);
+						if (data.status === "success") {
+								window.location.href = base_url + data.dashboardURL;
 						} else {
 							alert('Error. Reload the web page.');
 							$(".btn-confirm").removeAttr('disabled');
@@ -219,59 +217,49 @@
 							</thead>
 							<tbody>
 								<?php
-								foreach ($infoNextPlanning as $data) :
-									$idWorkorder = $data['fk_id_workorder'];
-									echo "<tr>";
-									echo "<td class='text-center' width='15%'>" . date('l, M j, Y', strtotime($data['date_programming'])) . "</td>";
-									echo "<td width='25%'>" . $data['job_description'] . "</td>";
-									echo "<td width='35%'>" . $data['observation'] . "</td>";
-									echo "<td width='25%'>";
+								foreach ($infoNextPlanning as $data): ?>
+									<tr>
+										<td class="text-center" width="15%">
+											<?= date('l, M j, Y', strtotime($data['date_programming'])) ?>
+										</td>
 
-									//Buscar lista de trabajadores para esta programacion
-									$ci = &get_instance();
-									$ci->load->model("general_model");
+										<td width="25%">
+											<?= esc($data['job_description']) ?>
+										</td>
 
-									$arrParam = array("idProgramming" => $data['id_programming']);
-									$informationWorker = $this->general_model->get_programming_workers($arrParam); //info trabajadores
+										<td width="35%">
+											<?= esc($data['observation']) ?>
+										</td>
 
-									$mensaje = "";
-									if ($informationWorker) {
-										foreach ($informationWorker as $worker) :
+										<td width="25%">
+											<?php
+											$mensaje = "";
 
-											if ($worker['fk_id_machine'] != NULL) {
-												$id_values = implode(',', json_decode($worker['fk_id_machine'], true));
-												$arrParam = array("idValues" => $id_values);
-												$informationEquipments = $this->general_model->get_vehicle_info_for_planning($arrParam);
-											}
+											if (!empty($data['workers'])) {
+												foreach ($data['workers'] as $worker):
 
-											switch ($worker['site']) {
-												case 1:
-													$mensaje .= "At the yard - ";
-													break;
-												case 2:
-													$mensaje .= "At the site - ";
-													break;
-												case 3:
-													$mensaje .= "At Terminal - ";
-													break;
-												case 4:
-													$mensaje .= "On-line training - ";
-													break;
-												case 5:
-													$mensaje .= "At training facility - ";
-													break;
-												case 6:
-													$mensaje .= "At client's office - ";
-													break;
-												default:
-													$mensaje .= "At the yard - ";
-													break;
-											}
-											$mensaje .= $worker['hora'];
+													switch ($worker['site']) {
+														case 1: $mensaje .= "At the yard - "; break;
+														case 2: $mensaje .= "At the site - "; break;
+														case 3: $mensaje .= "At Terminal - "; break;
+														case 4: $mensaje .= "On-line training - "; break;
+														case 5: $mensaje .= "At training facility - "; break;
+														case 6: $mensaje .= "At client's office - "; break;
+														default: $mensaje .= "At the yard - "; break;
+													}
 
-											$mensaje .= "<br><b>" . $worker['name'] . "</b>";
-											$mensaje .= $worker['description'] ? "<br>" . $worker['description'] : "";
-											$mensaje .= $worker['fk_id_machine'] != NULL ? "<br>" . $informationEquipments["unit_description"] : "";
+													$mensaje .= $worker['hora'];
+
+													$mensaje .= "<br><b>" . esc($worker['name']) . "</b>";
+
+													if (!empty($worker['description'])) {
+														$mensaje .= "<br>" . esc($worker['description']);
+													}
+
+													// 👇 ahora usas lo que ya viene del controlador
+													if (!empty($worker['vehicles']['unit_description'])) {
+														$mensaje .= "<br>" . $worker['vehicles']['unit_description'];
+													}
 
 											if ($worker['safety'] == 1) {
 												$mensaje .= "<br>FLHA has being assigned to you.";

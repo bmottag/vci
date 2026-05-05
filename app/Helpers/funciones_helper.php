@@ -66,3 +66,23 @@ if (!function_exists('formatear_fecha')) {
         return $date ? date_format($date, 'Y-m-d') : $fecha;
     }
 }
+
+/**
+ * convert_hours_minutes
+ * @author bmottag
+ * @param $horasDecimal
+ */
+if (!function_exists("convert_hours_minutes")) {
+    function convert_hours_minutes($horasDecimal) {
+        if (!is_numeric($horasDecimal) || $horasDecimal == 0) {
+            return "-";
+        }
+
+        $horasDecimal = (float)$horasDecimal;
+
+        $horas = floor($horasDecimal);
+        $minutos = round(($horasDecimal - $horas) * 60);
+
+        return sprintf("%d hrs %02d min", $horas, $minutos);
+    }
+}
