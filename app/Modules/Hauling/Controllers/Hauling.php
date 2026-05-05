@@ -180,6 +180,7 @@ class Hauling extends BaseController
 	 * Update hauling state
 	 * @since 6/2/2017
 	 * @author BMOTTAG
+	 * @review 05/05/2026 - new CI4 version
 	 */
 	public function update_hauling_state()
 	{

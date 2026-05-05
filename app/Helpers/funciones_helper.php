@@ -86,3 +86,37 @@ if (!function_exists("convert_hours_minutes")) {
         return sprintf("%d hrs %02d min", $horas, $minutos);
     }
 }
+
+if (!function_exists('working_hours_in_hours_format')) {
+    function working_hours_in_hours_format($dateStart, $dateFinish) {
+        // Calcular diferencia en minutos
+        $minutos = abs(strtotime($dateFinish) - strtotime($dateStart)) / 60;
+        $minutos = round($minutos);
+
+        // Convertir a horas decimales
+        $horas = $minutos / 60;
+        $horas = round($horas, 2);
+
+        // Separar parte entera y decimal
+        $justHours = intval($horas);
+        $decimals = $horas - $justHours;
+
+        // Redondeo personalizado a bloques de 15/30/45 min o 1 hora
+        if ($decimals < 0.12) {
+            $transformation = 0;
+        } elseif ($decimals >= 0.12 && $decimals < 0.37) {
+            $transformation = 0.25;
+        } elseif ($decimals >= 0.37 && $decimals < 0.62) {
+            $transformation = 0.5;
+        } elseif ($decimals >= 0.62 && $decimals < 0.87) {
+            $transformation = 0.75;
+        } else {
+            $transformation = 1;
+        }
+
+        // Resultado final ajustado
+        $workingHours = $justHours + $transformation;
+
+        return $workingHours . " hrs";
+    }
+}

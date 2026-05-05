@@ -123,7 +123,7 @@ class Payroll extends BaseController
 	/**
 	 * Cargo modal - formulario para editar las horas de los empleados
 	 * @since 2/2/2018
-	 * @review 30/04/2026 - new CI4 version
+	 * @review 05/05/2026 - new CI4 version
 	 */
 	public function cargarModalHours()
 	{
@@ -141,7 +141,7 @@ class Payroll extends BaseController
 	 * Save payroll hours - used when admin is updating employee hours
 	 * @since 2/2/2018
 	 * @author BMOTTAG
-	 * @review 30/04/2026 - new CI4 version
+	 * @review 05/05/2026 - new CI4 version
 	 */
 	public function savePayrollHour()
 	{
@@ -169,9 +169,9 @@ class Payroll extends BaseController
 				session()->setFlashdata('retornoError', '<strong>Error!!!</strong> bad at math.');
 			}
 
-			$data['result'] = true;
+			$data['status'] = 'success';
 		} else {
-			$data['result'] = 'error';
+			$data['status'] = 'error';
 			session()->setFlashdata('retornoError', '<strong>Error!!!</strong> Ask for help');
 		}
 
