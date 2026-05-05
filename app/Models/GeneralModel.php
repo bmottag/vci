@@ -2045,5 +2045,45 @@ class GeneralModel extends Model
 		return $row ?? [];
 	}
 
+	/**
+	 * Sumatoria de horas de personal for Calendar
+	 * @param $idWorkorder
+	 * @param $idUser
+	 * @author BMOTTAG
+	 * @since  24/02/2025
+	 * @review 05/05/2026 - new CI4 version
+	 */
+	public function countHoursPersonal($arrDatos)
+	{
+		$sql = "SELECT ROUND(SUM(hours),2) TOTAL";
+		$sql .= " FROM workorder_personal P";
+		$sql .= " WHERE P.fk_id_workorder =" . $arrDatos["idWorkorder"];
+		$sql .= " AND P.fk_id_user =" . $arrDatos["idUser"];
+
+		$query = $this->db->query($sql);
+		$row = $query->getRow();
+		return $row->TOTAL ?? 0;
+	}
+
+	/**
+	 * Sumatoria de horas de personal en los equipos for Calendar
+	 * @param $idWorkorder
+	 * @param $idUser
+	 * @author BMOTTAG
+	 * @since  24/02/2025
+	 * @review 05/05/2026 - new CI4 version
+	 */
+	public function countHoursEquipmentPersonal($arrDatos)
+	{
+		$sql = "SELECT ROUND(SUM(hours),2) TOTAL";
+		$sql .= " FROM workorder_equipment P";
+		$sql .= " WHERE P.fk_id_workorder =" . $arrDatos["idWorkorder"];
+		$sql .= " AND P.operatedby =" . $arrDatos["idUser"];
+
+		$query = $this->db->query($sql);
+		$row = $query->getRow();
+		return $row->TOTAL ?? 0;
+	}
+
 
 }

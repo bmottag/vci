@@ -644,6 +644,7 @@ class Dashboard extends BaseController
 	 * Consulta desde el calendario
 	 * @since 22/12/2020
 	 * @author BMOTTAG
+	 * @review 05/05/2026 - new CI4 version
 	 */
 	public function info_by_day($view, $infoDate)
 	{
@@ -670,15 +671,91 @@ class Dashboard extends BaseController
 			foreach ($viewsMapping as $key => $method) {
 				$data[$key] = $this->generalModel->$method($arrParam);
 			}
+
+			if (!empty($data["workOrderCheck"]) && !empty($data["planningInfo"])) {
+
+				foreach ($data["planningInfo"] as &$planning) {
+
+					$userId = $planning['fk_id_user'];
+
+					foreach ($data["workOrderCheck"] as &$wo) {
+
+						$arrParamCheck = [
+							"idWorkorder" => $wo['id_workorder'],
+							"idUser" => $userId
+						];
+
+						$hoursPersonal = (float)$this->generalModel->countHoursPersonal($arrParamCheck);
+						$hoursEquipment = (float)$this->generalModel->countHoursEquipmentPersonal($arrParamCheck);
+
+						$wo['hours_by_user'][$userId] = $hoursPersonal + $hoursEquipment;
+					}
+				}
+
+				unset($planning, $wo);
+			}
 		} elseif (isset($viewsMapping[$view])) {
 			// Si la vista es una específica, obtener solo esa
 			$method = $viewsMapping[$view];
 			$data[$view] = $this->generalModel->$method($arrParam);
-	
+
+			if ($view === "planningInfo") {
+				if (!empty($data['planningInfo'])) {
+
+					$vehicleCache = [];
+
+					foreach ($data['planningInfo'] as &$planning) {
+
+						$workers = $this->generalModel->get_programming_workers([
+							"idProgramming" => $planning['id_programming']
+						]);
+
+						foreach ($workers as &$worker) {
+
+							// Texto del site (mueve el switch aquí 👇)
+							switch ($worker['site']) {
+								case 1: $worker['site_text'] = "At the yard - "; break;
+								case 2: $worker['site_text'] = "At the site - "; break;
+								case 3: $worker['site_text'] = "At Terminal - "; break;
+								case 4: $worker['site_text'] = "On-line training - "; break;
+								case 5: $worker['site_text'] = "At training facility - "; break;
+								case 6: $worker['site_text'] = "At client's office - "; break;
+								default: $worker['site_text'] = "At the yard - "; break;
+							}
+
+							// Vehículos
+							if (!empty($worker['fk_id_machine']) && $worker['fk_id_machine'] != 0) {
+
+								$machines = json_decode($worker['fk_id_machine'], true);
+
+								if (!is_array($machines)) {
+									$machines = [$worker['fk_id_machine']];
+								}
+
+								$ids = implode(',', $machines);
+
+								if (!isset($vehicleCache[$ids])) {
+									$vehicleCache[$ids] = $this->generalModel->get_vehicle_info_for_planning([
+										"idValues" => $ids
+									]);
+								}
+
+								$worker['vehicles'] = $vehicleCache[$ids];
+							} else {
+								$worker['vehicles'] = [];
+							}
+						}
+
+						$planning['workers'] = $workers;
+					}
+
+					unset($planning, $worker);
+				}
+			}
+
 			// Si es payrollInfo, agregar la consulta específica
 			if ($view === "payrollInfo") {
 				$data["workOrderCheck"] = $this->generalModel->get_workorder_info($arrParam);
-				//$data["payrollDanger"] = $this->generalModel->get_task_in_danger($arrParam);
 			}
 		} else {
 			// Manejo de error si la vista no es válida

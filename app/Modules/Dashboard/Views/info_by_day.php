@@ -64,68 +64,37 @@
                             </tr>
                         </thead>
                         <tbody>
-                            <?php
-                            foreach ($planningInfo as $lista) :
-                                echo "<tr>";
-                                echo "<td>" . $lista['job_description'] . "</td>";
-                                echo "<td>" . $lista['observation'] . "</td>";
-                                echo "<td>";
 
-                                //Buscar lista de trabajadores para esta programacion
-                                $arrParam = array("idProgramming" => $lista['id_programming']);
-                                $informationWorker = $this->general_model->get_programming_workers($arrParam); //info trabajadores
-
+                        <?php foreach ($planningInfo as $lista): ?>
+                            <tr>
+                                <td><?= esc($lista['job_description']) ?></td>
+                                <td><?= esc($lista['observation']) ?></td>
+                                <td>
+                                <?php
                                 $mensaje = "";
-                                if ($informationWorker) {
-                                    foreach ($informationWorker as $data) :
 
-                                        if ($data['fk_id_machine'] != NULL && $data['fk_id_machine'] != 0) {
-                                            $parsed_data = json_decode($data['fk_id_machine'], true);
+                                if (!empty($lista['workers'])) {
+                                    foreach ($lista['workers'] as $worker) :
 
-                                            if ($parsed_data !== null && is_array($parsed_data)) {
-                                                $id_values = implode(',', $parsed_data);
-                                            } else {
-                                                $id_values = $data['fk_id_machine'];
-                                            }
-                                            $arrParam = array("idValues" => $id_values);
-                                            $informationEquipments = $this->general_model->get_vehicle_info_for_planning($arrParam);
+                                        $mensaje .= $worker['site_text'];
+                                        $mensaje .= esc($worker['hora']);
+
+                                        $mensaje .= "<br><b>" . esc($worker['name']) . "</b>";
+
+                                        if (!empty($worker['description'])) {
+                                            $mensaje .= "<br>" . esc($worker['description']);
                                         }
 
-                                        switch ($data['site']) {
-                                            case 1:
-                                                $mensaje .= "At the yard - ";
-                                                break;
-                                            case 2:
-                                                $mensaje .= "At the site - ";
-                                                break;
-                                            case 3:
-                                                $mensaje .= "At Terminal - ";
-                                                break;
-                                            case 4:
-                                                $mensaje .= "On-line training - ";
-                                                break;
-                                            case 5:
-                                                $mensaje .= "At training facility - ";
-                                                break;
-                                            case 6:
-                                                $mensaje .= "At client's office - ";
-                                                break;
-                                            default:
-                                                $mensaje .= "At the yard - ";
-                                                break;
-                                        }
-                                        $mensaje .= $data['hora'];
+                                        if (!empty($worker['vehicles']['unit_description'] ?? null)) {
+                                            $mensaje .= "<br>" . $worker['vehicles']['unit_description'];
+                                        }                                       
 
-                                        $mensaje .= "<br>" . $data['name'];
-                                        $mensaje .= $data['description'] ? "<br>" . $data['description'] : "";
-                                        $mensaje .= ($data['fk_id_machine'] != NULL && $data['fk_id_machine'] != 0) ? "<br>" . $informationEquipments["unit_description"] : "";
-
-                                        if ($data['safety'] == 1) {
+                                        if ($worker['safety'] == 1) {
                                             $mensaje .= "<br>Do FLHA";
-                                        } elseif ($data['safety'] == 2) {
+                                        } elseif ($worker['safety'] == 2) {
                                             $mensaje .= "<br>Do IHSR";
                                         }
-                                        $mensaje .= $data['confirmation'] == 1 ? "<p class='text-success'><b>Confirmed?</b> Yes</p>" : "<p class='text-danger'><b>Confirmed?</b> No</p>";
+                                        $mensaje .= $worker['confirmation'] == 1 ? "<p class='text-success'><b>Confirmed?</b> Yes</p>" : "<p class='text-danger'><b>Confirmed?</b> No</p>";
                                     endforeach;
                                 }
 
@@ -404,21 +373,21 @@
 
                                 // Ahora recorremos todas las órdenes de trabajo y verificamos si el usuario tiene horas en esa WO
                                 $sumWorkorders = 0;
-                                if (isset($workOrderCheck) && $workOrderCheck) {
-                                    foreach ($workOrderCheck as $wo) {
-                                        // Verificamos si el empleado tiene horas en esta W.O.
-                                        $arrParamCheck = array("idWorkorder" => $wo['id_workorder'], "idUser" => $lista['fk_id_user']);
-                                        $hoursPersonalWorked = $this->general_model->countHoursPersonal($arrParamCheck);
-                                        $hoursEquipmentWorked = $this->general_model->countHoursEquipmentPersonal($arrParamCheck);
+                                if (!empty($workOrderCheck)):
+                                    foreach ($workOrderCheck as $wo):
 
-                                        $hoursWorked = $hoursPersonalWorked + $hoursEquipmentWorked;
+                                        $hoursWorked = $wo['hours_by_user'][$lista['fk_id_user']] ?? 0;
+                                ?>
 
-                                        echo "<td class='text-center'>";
-                                        echo convert_hours_minutes($hoursWorked) ;
-                                        echo "</td>";
+                                        <td class="text-center">
+                                            <?= convert_hours_minutes($hoursWorked) ?>
+                                        </td>
+
+                                <?php
                                         $sumWorkorders += $hoursWorked;
-                                    }
-                                }
+
+                                    endforeach;
+                                endif;
                                 echo "<th class='text-center'>";
                                 
                                 echo "<p>" . convert_hours_minutes($sumWorkorders) . "</p>";
@@ -448,92 +417,6 @@
                 </div>
             </div>
 
-            <!--
-            <?php
-            if (isset($payrollDanger) && $payrollDanger) {
-                $countRows = 0;
-                foreach ($payrollDanger as $lista) {
-                    $sumHours = $lista['hours_start_project'] + $lista['hours_end_project'];
-                    if (($lista['wo_end_project'] == null || $lista['wo_start_project'] == null) || ($lista['working_hours'] != $sumHours && $sumHours > 0)) {
-                        $countRows++;
-                    }
-                }
-                
-                if ($countRows > 0) {
-            ?>
-            
-            <div class="panel panel-danger">
-                <div class="panel-heading">
-                    <i class="fa fa-book fa-fw"></i> <strong>PAYROLL ALERT</strong> - The following list contains items that are not associated with any Work Orders or need to check the sum of hours.
-                </div>
-                <div class="panel-body">
-                    <table width="100%" class="table table-striped table-bordered table-hover small" id="dataTables">
-                        <thead>
-                            <tr>
-                                <th width='6%'>Employee</th>
-                                <th width='8%' class="text-center">Working Hours</th>
-                                <th width='18%'>Job Code/Name - Start</th>
-                                <th width='8%' class="text-center">Hours Worked at Project Start</th>
-                                <th width='18%'>Job Code/Name - Finish</th>
-                                <th width='8%' class="text-center">Hours Worked at Project Finish</th>
-                                <th width='34%' > </th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php
-                            foreach ($payrollDanger as $lista) :
-                                $sumHours = $lista['hours_start_project'] + $lista['hours_end_project'];
-                                if (($lista['wo_end_project'] == null || $lista['wo_start_project'] == null) || ($lista['working_hours'] != $sumHours && $sumHours > 0)) {
-                                    $hoursStart = ($lista['finish'] == "0000-00-00 00:00:00" || $lista['hours_start_project'] == 0)?"":$lista['hours_start_project'] . " (Hours)";
-                                    $hoursFinish = ($lista['finish'] == "0000-00-00 00:00:00" || $lista['hours_end_project'] == 0)?"":$lista['hours_end_project'] . " (Hours)";
-    
-                                    $hidden_start = ($lista['wo_start_project'] != null || $lista['fk_id_job'] == $lista['fk_id_job_finish']) ? 'hidden' : ' ';
-                                    $hidden_finished = ($lista['wo_end_project'] != null || $lista['fk_id_job'] == $lista['fk_id_job_finish']) ? 'hidden' : ' ';
-                                    $hidden_total = (empty($lista['wo_start_project']) && empty($lista['wo_end_project']) && $lista['fk_id_job'] == $lista['fk_id_job_finish']) ? '' : 'hidden';
-                                    $hidden_edit = ($lista['fk_id_job'] == $lista['fk_id_job_finish']) ? 'hidden' : ' ';
-
-                                    $text_total = (empty($lista['wo_start_project']) && empty($lista['wo_end_project']) && $lista['fk_id_job'] == $lista['fk_id_job_finish']) ? "<p class='text-danger'><b>" . substr($lista['working_hours_new'], 0, -3) . " (HH:MM)</br>" . $lista['working_hours'] . " (Hours)</b></p>": substr($lista['working_hours_new'], 0, -3) . " (HH:MM)</br>" . $lista['working_hours'] . " (Hours)";
-                                    $text_start = ($lista['wo_start_project'] != null || $lista['fk_id_job'] == $lista['fk_id_job_finish']) ? "<p>" . $hoursStart . "</p>" : "<p class='text-danger'><b>" . $hoursStart . "</b></p>";
-                                    $text_finished = ($lista['wo_end_project'] != null || $lista['fk_id_job'] == $lista['fk_id_job_finish']) ? "<p>" . $hoursFinish . "</p>": "<p class='text-danger'><b>" . $hoursFinish . "</b></p>";
-
-                                    echo "<tr>";
-                                    echo "<td>" . $lista['first_name'] . " " . $lista['last_name'] . "</td>";
-                                    echo "<td class='text-center'>";
-                                    echo $text_total;
-                                    echo "</td>";
-                                    echo "<td>" . $lista['job_start'] . "</td>";
-                                    echo "<td class='text-center'>" . $text_start;
-                                    echo "<button type='button' class='btn btn-danger btn-sm " . $hidden_start . "'  data-toggle='modal' id='btnAssign_" . $lista["id_task"] . " ' time='start'>Assign to a W.O.</button>";
-                                    echo $lista["wo_start_project"]?"<a target='_blanck' href='" . base_url('workorders/add_workorder/' . $lista['wo_start_project']) . "'>(W.O. # " . $lista['wo_start_project'] . ")</a>":"";
-                                    echo  "</td>";
-                                    echo "<td>" . $lista['job_finish'] . "</td>";
-                                    echo "<td class='text-center'>" . $text_finished;
-                                    echo "<button type='button' class='btn btn-danger btn-sm " . $hidden_finished . "' data-toggle='modal' id='btnAssign_" . $lista["id_task"] . " ' time='end'>Assign to a W.O.</button>";
-                                    echo $lista["wo_end_project"]?"<a target='_blanck' href='" . base_url('workorders/add_workorder/' . $lista['wo_end_project']) . "'>(W.O. # " . $lista['wo_end_project'] . ")</a>":"";
-                                    echo  "</td>";
-                                    echo "<td>";
-                                    echo "<button type='button' class='btn btn-info btn-xs " . $hidden_edit . "' data-toggle='modal' data-target='#modal' id='" . $lista['id_task'] . "'>Edit <span class='glyphicon glyphicon-edit' aria-hidden='true'></button>";
-                                    echo "<button type='button' class='btn btn-danger btn-sm " . $hidden_total . "' data-toggle='modal' id='btnAssign_" . $lista["id_task"] . " ' time='total'>Assign to a W.O.</button>";
-                                    if ($lista['working_hours'] != $sumHours) {
-                                        echo "<br><br><p class='text-danger'><b>These hours were changed from the Work Order, but the sum is not equal to the Working Hours.</b></p>";
-                                    }
-                                    if ($lista['wo_start_project'] == null) {
-                                        echo "<br><br><p class='text-danger'><b>Hours worked at project start have not been assigned to a Work Order.</b></p>";
-                                    }
-                                    if ($lista['wo_end_project'] == null) {
-                                        echo "<br><br><p class='text-danger'><b>Hours worked at project finish have not been assigned to a Work Order.</b></p>";
-                                    }
-                                    echo "</td>";
-                                    echo "</tr>";                                    
-                                }
-                            endforeach;
-                            ?>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-                        -->
-            <?php   }   } ?>
         </div>
     </div>
     <?php   } ?>
