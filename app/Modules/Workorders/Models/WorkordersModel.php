@@ -415,7 +415,9 @@ class WorkordersModel extends Model
         $rate       = $post['rate'];
         $quantity   = $post['quantity'];
         $hours      = $post['hours'];
-        $checkPDF   = $post['check_pdf'] ? 1 : 2;
+        $checkPDF = array_key_exists('check_pdf', $post)
+                        ? ($post['check_pdf'] ? 1 : 2)
+                        : 2;
         $idWorkorder = $post['hddIdWorkOrder'];
 
         $value = $rate * $quantity * $hours;

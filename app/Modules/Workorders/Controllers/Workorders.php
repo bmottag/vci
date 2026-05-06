@@ -1046,7 +1046,7 @@ class Workorders extends BaseController
      * Load prices WO
      * @since 7/11/2020
      * @author BMOTTAG
-     * @review 05/05/2026 - new CI4 version
+     * @review 06/05/2026 - new CI4 version
      */
     public function load_prices_wo()
     {
