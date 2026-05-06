@@ -385,10 +385,11 @@ class WorkordersModel extends Model
         if (array_key_exists('idWorkOrderTo', $arrData) && $arrData['idWorkOrderTo'] != '' && $arrData['idWorkOrderTo'] != 0) {
             $builder->where('W.id_workorder <=', $arrData['idWorkOrderTo']);
         }
-        if (array_key_exists('from', $arrData) && $arrData['from'] != '') {
+        if (!empty($arrData['from'])) {
             $builder->where('W.date >=', $arrData['from']);
         }
-        if (array_key_exists('to', $arrData) && $arrData['to'] != '' && $arrData['from'] != '') {
+
+        if (!empty($arrData['to']) && !empty($arrData['from'])) {
             $builder->where('W.date <=', $arrData['to']);
         }
         if (array_key_exists('state', $arrData) && $arrData['state'] !== '') {

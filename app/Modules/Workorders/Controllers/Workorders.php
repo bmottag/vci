@@ -10,6 +10,7 @@ class Workorders extends BaseController
 {
     protected $workordersModel;
     protected $generalModel;
+    protected $helpers = ['form'];
 
     public function __construct()
     {
@@ -57,12 +58,7 @@ class Workorders extends BaseController
         $data['workorderMaterials'] = false;
         $data['deshabilitar']      = '';
 
-        $data['jobs'] = $this->generalModel->get_basic_search([
-            'table'  => 'param_jobs',
-            'order'  => 'job_description',
-            'column' => 'state',
-            'id'     => 1,
-        ]);
+        $data['jobs'] = $this->generalModel->get_job(['state' => 1]);
 
         if ($id !== 'x') {
             $arrParam = ['idWorkOrder' => $id];
@@ -149,7 +145,7 @@ class Workorders extends BaseController
             }
 
             $data["status"] = "success";
-            $data['mensaje']    = $msj;
+            $data['message']    = $msj;
             $data['idWorkorder'] = $idWorkorder;
             session()->setFlashdata('retornoExito', $msj);
         } else {
@@ -180,11 +176,11 @@ class Workorders extends BaseController
             'value'      => 2,
         ])) {
             $data["status"] = "success";
-            $data['mensaje'] = 'You have closed the Work Order.';
+            $data['message'] = 'You have closed the Work Order.';
             session()->setFlashdata('retornoExito', 'You have closed the Work Order');
         } else {
             $data['status']  = 'error';
-            $data['mensaje'] = 'Error!!! Ask for help.';
+            $data['message'] = 'Error!!! Ask for help.';
             session()->setFlashdata('retornoError', '<strong>Error!!!</strong> Ask for help');
         }
 
@@ -503,21 +499,38 @@ class Workorders extends BaseController
      * Search by JOB CODE
      * @since 21/02/2017
      * @author BMOTTAG
-     * @review 05/05/2026 - new CI4 version
+     * @review 06/05/2026 - new CI4 version
      */
     public function search($goBack = 'x')
     {
         $idUser = $this->session->get('id');
 
-        $data['jobList'] = $this->generalModel->get_basic_search([
-            'table'  => 'param_jobs',
-            'order'  => 'job_description',
-            'column' => 'state',
-            'id'     => 1,
-        ]);
+        $data['jobList'] = $this->generalModel->get_job(['state' => 1]);
 
         foreach ([0 => 'noOnfield', 1 => 'noProgress', 2 => 'noRevised', 3 => 'noSend', 4 => 'noClosed', 5 => 'noAccounting'] as $state => $key) {
             $data[$key] = $this->workordersModel->countWorkorders(['state' => $state]);
+        }
+
+        //resume by year and status
+        $data['yearsData'] = [];
+
+        for ($x = 1; $x <= 3; $x++) {
+            $year = date("Y") - $x;
+
+            $states = [0, 1, 2, 3, 4];
+            $counts = [];
+
+            foreach ($states as $state) {
+                $counts[$state] = $this->workordersModel->countWorkorders([
+                    'state' => $state,
+                    'year'  => $year
+                ]);
+            }
+
+            $data['yearsData'][] = [
+                'year'   => $year,
+                'counts' => $counts
+            ];
         }
 
         if ($goBack === 'y') {
@@ -729,7 +742,7 @@ class Workorders extends BaseController
 
         if ($idWorkorder = $this->workordersModel->add_workorder($post, $idUser)) {
             $data["status"] = "success";
-            $data['mensaje']    = 'You have update the Work Order and send an email to the contractor, continue uploading the information.';
+            $data['message']    = 'You have update the Work Order and send an email to the contractor, continue uploading the information.';
             $data['idWorkorder'] = $idWorkorder;
 
             // TODO: implementar envío de email en CI4
@@ -738,7 +751,7 @@ class Workorders extends BaseController
             session()->setFlashdata('retornoExito', 'You have updated the Work Order and send an email to the contractor, continue uploading the information.');
         } else {
             $data['status']     = 'error';
-            $data['mensaje']    = 'Error!!! Ask for help.';
+            $data['message']    = 'Error!!! Ask for help.';
             $data['idWorkorder'] = '';
             session()->setFlashdata('retornoError', '<strong>Error!!!</strong> Ask for help');
         }
@@ -810,11 +823,11 @@ class Workorders extends BaseController
             }
 
             $data["status"] = "success";
-            $data['mensaje'] = $msj;
+            $data['message'] = $msj;
             session()->setFlashdata('retornoExito', $msj);
         } else {
             $data['status']  = 'error';
-            $data['mensaje'] = 'Error!!! Ask for help.';
+            $data['message'] = 'Error!!! Ask for help.';
             session()->setFlashdata('retornoError', '<strong>Error!!!</strong> Ask for help');
         }
 
@@ -903,12 +916,7 @@ class Workorders extends BaseController
      */
     public function search_income()
     {
-        $data['jobList'] = $this->generalModel->get_basic_search([
-            'table'  => 'param_jobs',
-            'order'  => 'job_description',
-            'column' => 'state',
-            'id'     => 1,
-        ]);
+        $data['jobList'] = $this->generalModel->get_job(['state' => 1]);
 
         foreach ([0 => 'noOnfield', 1 => 'noProgress', 2 => 'noRevised', 3 => 'noSend', 4 => 'noClosed', 5 => 'noAccounting'] as $state => $key) {
             $data[$key] = $this->workordersModel->countWorkorders(['state' => $state]);
@@ -946,12 +954,7 @@ class Workorders extends BaseController
 
             $data['total'] = $data['incomePersonal'] + $data['incomeMaterial'] + $data['incomeEquipment'] + $data['incomeSubcontractor'] + $data['incomeReceipt'];
 
-            $data['jobListSearch'] = $this->generalModel->get_basic_search([
-                'table'  => 'param_jobs',
-                'order'  => 'job_description',
-                'column' => 'id_job',
-                'id'     => $data['idJob'],
-            ]);
+            $data['jobListSearch'] = $this->generalModel->get_job(['idJob' => $data['idJob']]);
         }
 
         return $this->render('App\Modules\Workorders\Views\form_search_income', $data);
@@ -1064,19 +1067,19 @@ class Workorders extends BaseController
 
         if ($workorderPersonalRate && !$this->workordersModel->update_wo_personal_rate($workorderPersonalRate)) {
             $data['status']  = 'error';
-            $data['mensaje'] = 'Error!!! Contactarse con el Administrador.';
+            $data['message'] = 'Error!!! Contactarse con el Administrador.';
             session()->setFlashdata('retornoError', '<strong>Error!!!</strong> Ask for help');
         }
 
         if ($workorderEquipmentRate && !$this->workordersModel->update_wo_equipment_rate($workorderEquipmentRate)) {
             $data['status']  = 'error';
-            $data['mensaje'] = 'Error!!! Contactarse con el Administrador.';
+            $data['message'] = 'Error!!! Contactarse con el Administrador.';
             session()->setFlashdata('retornoError', '<strong>Error!!!</strong> Ask for help');
         }
 
         if ($workorderMaterialRate && !$this->workordersModel->update_wo_material_rate($workorderMaterialRate)) {
             $data['status']  = 'error';
-            $data['mensaje'] = 'Error!!! Contactarse con el Administrador.';
+            $data['message'] = 'Error!!! Contactarse con el Administrador.';
             session()->setFlashdata('retornoError', '<strong>Error!!!</strong> Ask for help');
         }
 
@@ -1170,7 +1173,7 @@ class Workorders extends BaseController
      * Cambio de estado de las WO
      * @since 12/1/2021
      * @author BMOTTAG
-     * @review 05/05/2026 - new CI4 version
+     * @review 06/05/2026 - new CI4 version
      */
     public function update_wo_state()
     {
@@ -1188,7 +1191,7 @@ class Workorders extends BaseController
             }
         } else {
             $data['status']  = 'error';
-            $data['mensaje'] = ' You have to select a W.O.';
+            $data['message'] = ' You have to select a W.O.';
             session()->setFlashdata('retornoError', 'You have to select a W.O.');
         }
 
@@ -1316,18 +1319,8 @@ class Workorders extends BaseController
     {
         $idUser = $this->session->get('id');
 
-        $data['jobList'] = $this->generalModel->get_basic_search([
-            'table'  => 'param_jobs',
-            'order'  => 'job_description',
-            'column' => 'state',
-            'id'     => 1,
-        ]);
-        $data['user'] = $this->generalModel->get_basic_search([
-            'table'  => 'user',
-            'order'  => 'id_user',
-            'column' => 'id_user',
-            'id'     => 'x',
-        ]);
+        $data['jobList'] = $this->generalModel->get_job(['state' => 1]);
+        $data['user'] = $this->generalModel->get_user([]);
 
         foreach ([0 => 'noOnfield', 1 => 'noProgress', 2 => 'noRevised', 3 => 'noSend', 4 => 'noClosed'] as $state => $key) {
             $data[$key] = $this->workordersModel->countWorkorders(['state' => $state]);
