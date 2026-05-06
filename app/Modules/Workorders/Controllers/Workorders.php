@@ -846,7 +846,7 @@ class Workorders extends BaseController
      * @param int $idWorkOrder
      * @since 4/11/2018
      * @author BMOTTAG
-     * @review 05/05/2026 - new CI4 version
+     * @review 06/05/2026 - new CI4 version
      */
     public function generaWorkOrderPDF($idWorkOrder)
     {
