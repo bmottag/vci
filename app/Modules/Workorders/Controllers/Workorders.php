@@ -961,7 +961,7 @@ class Workorders extends BaseController
      * Foreman workorder view to sign
      * @since 4/6/2020
      * @author BMOTTAG
-     * @review 05/05/2026 - new CI4 version
+     * @review 06/05/2026 - new CI4 version
      */
     public function foreman_view($id)
     {
@@ -1382,7 +1382,7 @@ class Workorders extends BaseController
      * View workorder_expenses
      * @since 23/03/2024
      * @author BMOTTAG
-     * @review 05/05/2026 - new CI4 version
+     * @review 06/05/2026 - new CI4 version
      */
     public function workorder_expenses($idWorkOrder)
     {
