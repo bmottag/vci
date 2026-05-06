@@ -411,7 +411,7 @@ class WorkordersModel extends Model
         $hddId      = $post['hddId'];
         $formType   = $post['formType'];
         $description = $post['description'];
-        $unit       = $post['unit'];
+        $unit       = $post['unit'] ?? null;
         $rate       = $post['rate'];
         $quantity   = $post['quantity'];
         $hours      = $post['hours'];
@@ -849,12 +849,14 @@ class WorkordersModel extends Model
      * @since 4/1/2021
      * @review 05/05/2026 - new CI4 version
      */
-    public function saveReceipt($post, $idUser, $generalModel)
+    public function saveReceipt($post, $idUser)
     {
         $idWorkorder  = $post['hddidWorkorder'];
         $idWOReceipt  = $post['hddId'];
         $price        = $post['price'] ?: 0;
-        $checkPDF     = $post['check_pdf'] ? 1 : 2;
+        $checkPDF = array_key_exists('check_pdf', $post)
+                        ? ($post['check_pdf'] ? 1 : 2)
+                        : null;
 
         $data = [
             'place'       => $post['place'],

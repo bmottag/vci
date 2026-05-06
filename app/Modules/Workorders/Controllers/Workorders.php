@@ -194,7 +194,7 @@ class Workorders extends BaseController
     /**
      * Cargo modal- formulario de captura personal
      * @since 13/1/2017
-     * @review 05/05/2026 - new CI4 version
+     * @review 06/05/2026 - new CI4 version
      */
     public function cargarModalPersonal()
     {
@@ -216,7 +216,7 @@ class Workorders extends BaseController
      * @param varchar $modalToUse: indica que funcion del modelo se debe usar
      * @since 13/1/2017
      * @author BMOTTAG
-     * @review 05/05/2026 - new CI4 version
+     * @review 06/05/2026 - new CI4 version
      */
     public function save($modalToUse)
     {
@@ -225,8 +225,8 @@ class Workorders extends BaseController
         $idWorkOrder = $post['hddidWorkorder'];
         $data       = ['idRecord' => $idWorkOrder];
 
-        $methodsWithPost = ['savePersonal', 'saveMaterial', 'saveOcasional', 'saveHoldBack', 'saveEquipment', 'saveExpense'];
-        $methodsWithPostAndUser = ['savePersonal', 'saveMaterial', 'saveOcasional', 'saveEquipment'];
+        $methodsWithPost = ['savePersonal', 'saveMaterial', 'saveReceipt', 'saveOcasional', 'saveHoldBack', 'saveEquipment', 'saveExpense'];
+        $methodsWithPostAndUser = ['savePersonal', 'saveMaterial', 'saveReceipt', 'saveOcasional', 'saveEquipment'];
 
         if (in_array($modalToUse, $methodsWithPostAndUser)) {
             $result = $this->workordersModel->$modalToUse($post, $idUser);
@@ -268,7 +268,7 @@ class Workorders extends BaseController
      * @param varchar $tabla: nombre de la tabla de la cual se va a borrar
      * @param int $idValue: id que se va a borrar
      * @param int $idWorkorder: llave primaria de workorder
-     * @review 05/05/2026 - new CI4 version
+     * @review 06/05/2026 - new CI4 version
      */
     public function deleteRecord($tabla, $idValue, $idWorkOrder, $vista)
     {
@@ -348,7 +348,7 @@ class Workorders extends BaseController
     /**
      * Cargo modal- formulario de captura Material
      * @since 13/1/2017
-     * @review 05/05/2026 - new CI4 version
+     * @review 06/05/2026 - new CI4 version
      */
     public function cargarModalMaterials()
     {
@@ -369,7 +369,7 @@ class Workorders extends BaseController
     /**
      * Cargo modal- formulario de captura Equipment
      * @since 25/1/2017
-     * @review 05/05/2026 - new CI4 version
+     * @review 06/05/2026 - new CI4 version
      */
     public function cargarModalEquipment()
     {
@@ -394,7 +394,7 @@ class Workorders extends BaseController
      * Trucks list by company and type
      * @since 25/1/2017
      * @author BMOTTAG
-     * @review 05/05/2026 - new CI4 version
+     * @review 06/05/2026 - new CI4 version
      */
     public function truckList()
     {
@@ -461,7 +461,7 @@ class Workorders extends BaseController
     /**
      * Cargo modal- formulario de captura Ocasional
      * @since 20/2/2017
-     * @review 05/05/2026 - new CI4 version
+     * @review 06/05/2026 - new CI4 version
      */
     public function cargarModalOcasional()
     {
@@ -574,7 +574,7 @@ class Workorders extends BaseController
      * View info WOrk order to asign rate
      * @since 21/2/2017
      * @author BMOTTAG
-     * @review 05/05/2026 - new CI4 version
+     * @review 06/05/2026 - new CI4 version
      */
     public function view_workorder($id)
     {
@@ -621,7 +621,7 @@ class Workorders extends BaseController
             $data['deshabilitar'] = 'disabled';
         }
 
-        return $this->render('App\Modules\Workorders\Views\asign_rate_form_v2', $data);
+        return $this->render('App\Modules\Workorders\Views\asign_rate_form', $data);
     }
 
     /**
@@ -649,7 +649,7 @@ class Workorders extends BaseController
      * Save hour
      * @since 17/4/2017
      * @author BMOTTAG
-     * @review 05/05/2026 - new CI4 version
+     * @review 06/05/2026 - new CI4 version
      */
     public function save_hour()
     {
@@ -685,42 +685,6 @@ class Workorders extends BaseController
      * @author BMOTTAG
      * @review 06/05/2026 - new CI4 version
      */
-    public function add_signature($idWorkOrder)
-    {
-        if (empty($idWorkOrder)) {
-            throw new \CodeIgniter\Exceptions\PageNotFoundException('ERROR!!! - You are in the wrong place.');
-        }
-
-        if ($this->request->getPost()) {
-            $name     = 'images/signature/workorder/workorder_' . $idWorkOrder . '.png';
-            $data_uri = $this->request->getPost('image');
-
-            $encoded_image = explode(',', $data_uri)[1];
-            file_put_contents($name, base64_decode($encoded_image));
-
-            $data['linkBack'] = 'workorders/foreman_view/' . $idWorkOrder;
-            $data['titulo']   = "<i class='fa fa-life-saver fa-fw'></i>SIGNATURE";
-
-            if ($this->generalModel->updateRecord([
-                'table'      => 'workorder',
-                'primaryKey' => 'id_workorder',
-                'id'         => $idWorkOrder,
-                'column'     => 'signature_wo',
-                'value'      => $name,
-            ])) {
-                $data['clase'] = 'alert-success';
-                $data['msj']   = 'Good job, you have saved your signature.';
-            } else {
-                $data['clase'] = 'alert-danger';
-                $data['msj']   = 'Ask for help.';
-            }
-
-            return $this->render('App\Modules\Workorders\Views\template\answer', $data);
-        }
-
-        return view('template/make_signature');
-    }
-
 	public function save_signature()
 	{
 		$imageData = $this->request->getPost('image'); // o el hiddenName que uses
@@ -1126,7 +1090,7 @@ class Workorders extends BaseController
     /**
      * Cargo modal- formulario de captura Invoice
      * @since 4/1/2021
-     * @review 05/05/2026 - new CI4 version
+     * @review 06/05/2026 - new CI4 version
      */
     public function cargarModalReceipts()
     {
@@ -1143,7 +1107,7 @@ class Workorders extends BaseController
      * Actualizar info de invoice
      * @since 4/1/2021
      * @author BMOTTAG
-     * @review 05/05/2026 - new CI4 version
+     * @review 06/05/2026 - new CI4 version
      */
     public function update_receipt()
     {
@@ -1152,7 +1116,7 @@ class Workorders extends BaseController
         $idWorkorder = $post['hddidWorkorder'];
         $view        = $post['view'];
 
-        if ($this->workordersModel->saveReceipt($post, $idUser, $this->generalModel)) {
+        if ($this->workordersModel->saveReceipt($post, $idUser)) {
             session()->setFlashdata('retornoExito', 'You have updated the information!!');
         } else {
             session()->setFlashdata('retornoError', '<strong>Error!!!</strong> Ask for help');
@@ -1323,7 +1287,7 @@ class Workorders extends BaseController
      * Attachement List
      * @since 28/6/2023
      * @author BMOTTAG
-     * @review 05/05/2026 - new CI4 version
+     * @review 06/05/2026 - new CI4 version
      */
     public function attachmentList()
     {
