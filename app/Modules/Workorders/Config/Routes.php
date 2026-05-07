@@ -15,7 +15,6 @@ $routes->group('workorders', ['namespace' => 'App\Modules\Workorders\Controllers
     $routes->post('cargarModalMaterials',          'Workorders::cargarModalMaterials');
     $routes->post('cargarModalEquipment',          'Workorders::cargarModalEquipment');
     $routes->post('cargarModalOcasional',          'Workorders::cargarModalOcasional');
-    $routes->post('cargarModalHoldBack',           'Workorders::cargarModalHoldBack');
     $routes->post('cargarModalReceipts',           'Workorders::cargarModalReceipts');
     $routes->post('cargarModalExpense',            'Workorders::cargarModalExpense');
     $routes->post('truckList',                     'Workorders::truckList');

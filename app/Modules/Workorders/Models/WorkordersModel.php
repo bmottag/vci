@@ -216,22 +216,6 @@ class WorkordersModel extends Model
     }
 
     /**
-     * Add HOLD BACK
-     * @since 12/11/2018
-     * @review 05/05/2026 - new CI4 version
-     */
-    public function saveHoldBack($post)
-    {
-        $data = [
-            'fk_id_workorder' => $post['hddidWorkorder'],
-            'value'           => $post['value'],
-            'description'     => $post['description'],
-        ];
-
-        return $this->db->table('workorder_hold_back')->insert($data);
-    }
-
-    /**
      * Trucks list by type1 = rentals
      * @since 8/3/2017
      * @review 05/05/2026 - new CI4 version

@@ -195,21 +195,6 @@
 			});
 		});
 
-		$(".btn-purpura").click(function() {
-			var oID = $(this).attr("id");
-			$.ajax({
-				type: 'POST',
-				url: base_url + 'workorders/cargarModalHoldBack',
-				data: {
-					'idWorkorder': oID
-				},
-				cache: false,
-				success: function(data) {
-					$('#tablaDatosHoldBack').html(data);
-				}
-			});
-		});
-
 		$(".btn-violeta").click(function() {
 			var oID = $(this).attr("id");
 			$.ajax({
@@ -1023,93 +1008,6 @@
 			</div>
 		</div>
 
-
-		<!--FIN SUBCONTRACTOR -->
-
-
-		<!--INICIO HOLD BACK -->
-
-<!--
-		<div class="row">
-			<div class="col-lg-12">
-				<div class="panel panel-purpura">
-					<div class="panel-heading">
-						HOLD BACK
-					</div>
-					<div class="panel-body">
-						<div class="col-lg-12">
-
-							<?php if (!$deshabilitar) { ?>
-								<button type="button" class="btn btn-purpura btn-block" data-toggle="modal" data-target="#modalHoldBack" id="holdBack-<?php echo $information[0]["id_workorder"]; ?>">
-									<span class="glyphicon glyphicon-plus" aria-hidden="true"></span> Add Hold Back
-								</button><br>
-							<?php } ?>
-						</div>
-						<?php
-						if (!$workorderHoldBack) {
-							echo '<div class="col-lg-12">
-				<small>
-				<p class="text-danger"><span class="glyphicon glyphicon-alert" aria-hidden="true"></span> No data was found.</p>
-				</small>
-			</div>';
-						} else {
-						?>
-							<table class="table table-bordered table-striped table-hover table-condensed">
-								<tr class="warning">
-									<th class="text-center">Description</th>
-									<th class="text-center">Value</th>
-									<th class="text-center">Links</th>
-								</tr>
-								<?php
-								foreach ($workorderHoldBack as $data) :
-									echo "<tr>";
-
-									$idRecord = $data['id_workorder_hold_back'];
-								?>
-
-									<form name="hold_back_<?php echo $idRecord ?>" id="hold_back_<?php echo $idRecord ?>" method="post" action="<?php echo base_url("workorders/save_rate"); ?>">
-										<input type="hidden" id="formType" name="formType" value="hold_back" />
-										<input type="hidden" id="hddId" name="hddId" value="<?php echo $idRecord; ?>" />
-										<input type="hidden" id="hddIdWorkOrder" name="hddIdWorkOrder" value="<?php echo $data['fk_id_workorder']; ?>" />
-										<input type="hidden" id="hours" name="hours" value=1>
-										<input type="hidden" id="quantity" name="quantity" value=1>
-
-										<td>
-											<textarea id="description" name="description" class="form-control" rows="3" required><?php echo $data['description']; ?></textarea>
-										</td>
-
-										<td>
-											<input type="text" id="rate" name="rate" class="form-control" placeholder="Value" value="<?php echo $data['value']; ?>" required>
-										</td>
-
-										<td class='text-center'>
-											<input type="submit" id="btnSubmit" name="btnSubmit" value="Save" class="btn btn-primary" <?php echo $deshabilitar; ?> />
-									</form>
-
-									<br><br>
-									<?php if (!$deshabilitar) { ?>
-										<a class='btn btn-danger' href='<?php echo base_url('workorders/deleteRecord/hold_back/' . $data['id_workorder_hold_back'] . '/' . $data['fk_id_workorder'] . '/view_workorder') ?>' id="btn-delete">
-											<span class="glyphicon glyphicon-remove" aria-hidden="true"> </span> Delete
-										</a>
-									<?php } else {
-										echo "---";
-									} ?>
-									</td>
-									</tr>
-								<?php
-								endforeach;
-								?>
-							</table>
-						<?php } ?>
-					</div>
-				</div>
-			</div>
-		</div>
-
--->
-		<!--FIN HOLD BACK -->
-
-
 	<?php } ?>
 
 </div>
@@ -1158,16 +1056,6 @@
 <div class="modal fade text-center" id="modalOcasional" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
 	<div class="modal-dialog" role="document">
 		<div class="modal-content" id="tablaDatosOcasional">
-
-		</div>
-	</div>
-</div>
-<!--FIN Modal para OCASIONAL -->
-
-<!--INICIO Modal para OCASIONAL-->
-<div class="modal fade text-center" id="modalHoldBack" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
-	<div class="modal-dialog" role="document">
-		<div class="modal-content" id="tablaDatosHoldBack">
 
 		</div>
 	</div>

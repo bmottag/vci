@@ -226,12 +226,12 @@ class Workorders extends BaseController
         $idWorkOrder = $post['hddidWorkorder'];
         $data       = ['idRecord' => $idWorkOrder];
 
-        $methodsWithPost = ['savePersonal', 'saveMaterial', 'saveReceipt', 'saveOcasional', 'saveHoldBack', 'saveEquipment', 'saveExpense'];
+        $methodsWithPost = ['savePersonal', 'saveMaterial', 'saveReceipt', 'saveOcasional', 'saveEquipment', 'saveExpense'];
         $methodsWithPostAndUser = ['savePersonal', 'saveMaterial', 'saveReceipt', 'saveOcasional', 'saveEquipment'];
 
         if (in_array($modalToUse, $methodsWithPostAndUser)) {
             $result = $this->workordersModel->$modalToUse($post, $idUser);
-        } elseif ($modalToUse === 'saveHoldBack' || $modalToUse === 'saveExpense') {
+        } elseif ($modalToUse === 'saveExpense') {
             $result = $this->workordersModel->$modalToUse($post);
         } else {
             $result = false;
@@ -482,22 +482,6 @@ class Workorders extends BaseController
                 ->setContentType('text/html')
                 ->setBody(view('App\Modules\Workorders\Views\modal_ocasional', $data));
         }
-    }
-
-    /**
-     * Cargo modal- formulario de captura HOLD BACK
-     * @since 12/11/2018
-     * @review 05/05/2026 - new CI4 version
-     */
-    public function cargarModalHoldBack()
-    {
-        $idWorkorder = $this->request->getPost('idWorkorder');
-        $porciones   = explode('-', $idWorkorder);
-        $data['idWorkorder'] = $porciones[1];
-
-        return $this->response
-            ->setContentType('text/html')
-            ->setBody(view('App\Modules\Workorders\Views\modal_hold_back', $data));
     }
 
     /**
