@@ -53,4 +53,6 @@ $routes->group('workorders', ['namespace' => 'App\Modules\Workorders\Controllers
     $routes->get('add_invoice/(:any)',            'Workorders::add_invoice/$1');
     $routes->get('add_invoice',                   'Workorders::add_invoice');
     $routes->post('save_subcontractor_invoice',   'Workorders::save_subcontractor_invoice');
+    $routes->get('subcontractor_invoices/(:num)',            'Workorders::subcontractor_invoices/$1');
+    $routes->post('save_subcontractor_invoices',   'Workorders::save_subcontractor_invoices');
 });

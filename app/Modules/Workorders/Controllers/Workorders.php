@@ -471,12 +471,7 @@ class Workorders extends BaseController
 
         if (count($porciones) > 1) {
             $data['idWorkorder'] = $porciones[1];
-            $data['companyList'] = $this->generalModel->get_basic_search([
-                'table'  => 'param_company',
-                'order'  => 'company_name',
-                'column' => 'company_type',
-                'id'     => 2,
-            ]);
+            $data['companyList']  = $this->generalModel->get_company(['allSubcontractors' => true]);
 
             return $this->response
                 ->setContentType('text/html')
@@ -1780,7 +1775,7 @@ class Workorders extends BaseController
      * Subcontractors list
      * @since 13/02/2025
      * @author BMOTTAG
-     * @review 05/05/2026 - new CI4 version
+     * @review 06/05/2026 - new CI4 version
      */
     public function subcontractor_invoice()
     {
@@ -1792,7 +1787,7 @@ class Workorders extends BaseController
      * Form To add invoice
      * @since 12/02/2025
      * @author BMOTTAG
-     * @review 05/05/2026 - new CI4 version
+     * @review 06/05/2026 - new CI4 version
      */
     public function add_invoice($id = 'x')
     {
@@ -1814,7 +1809,7 @@ class Workorders extends BaseController
      * Save Subcontractor Invoice
      * @since 13/02/2025
      * @author BMOTTAG
-     * @review 05/05/2026 - new CI4 version
+     * @review 06/05/2026 - new CI4 version
      */
     public function save_subcontractor_invoice()
     {
@@ -1855,6 +1850,73 @@ class Workorders extends BaseController
         }
 
         return $this->response->setJSON($data);
+    }
+
+	/**
+	 * View Subcontractors to asocited with Invoices
+	 * @since 23/04/2025
+	 * @author BMOTTAG
+     * @review 06/05/2026 - new CI4 version
+	 */
+	public function subcontractor_invoices($id)
+	{
+		$data['information'] = $this->workordersModel->get_workorder_by_idJob(['idWorkOrder' => $id]); //info workorder
+		$data['workorderOcasional'] = $this->workordersModel->get_workorder_ocasional(['idWorkOrder' => $id]); //workorder ocasional list
+
+		$invoicesMap = [];
+		foreach ($data['workorderOcasional'] as $ocasional) {
+			$companyId = $ocasional['fk_id_company'];
+			if (!isset($invoicesMap[$companyId])) {
+				$invoicesMap[$companyId] = $this->workordersModel->get_subcontractors_invoice(['idCompany' => $companyId]);
+			}
+		}
+		$data['invoicesMap'] = $invoicesMap;
+
+		//DESHABILITAR WORK ORDER
+		$userRol = session()->get('rol');
+		$workorderState = $data['information'][0]['state'];
+		$data['deshabilitar'] = '';
+
+		//si esta cerrada deshabilito los botones
+		if ($workorderState == 4) {
+			$data['deshabilitar'] = 'disabled';
+			//If it is DIFERRENT THAN ON FILD and ROLE is SUPERVISOR OR BASIC OR Safety&Maintenance
+		} elseif ($workorderState != 0 && ($userRol == 4 || $userRol == 6 || $userRol == 7)) {
+			$data['deshabilitar'] = 'disabled';
+		} elseif (($workorderState == 2 || $workorderState == 3) && $userRol == 5) { //WORK ORDER  USER
+			$data['deshabilitar'] = 'disabled';
+		} elseif ($workorderState == 1 && ($userRol == 2 || $userRol == 3)) { //MANAGEMENT AND ACCOUNTING USER
+			$data['deshabilitar'] = 'disabled';
+		}
+
+        return $this->render('App\Modules\Workorders\Views\subcontractor_invoices', $data);
+	}
+
+	/**
+	 * Save subcontractor invoices
+	 * @since 23/04/2025
+	 * @author BMOTTAG
+     * @review 06/05/2026 - new CI4 version
+	 */
+    public function save_subcontractor_invoices()
+    {
+        $post        = $this->request->getPost();
+        $idWorkorder = $post['hddIdWorkOrder'];
+
+		$arrParam = [
+			"table" => "workorder_ocasional",
+			"primaryKey" => "id_workorder_ocasional",
+			"id" => $post['hddId'],
+			"column" => "fk_id_subcontractor_invoice",
+			"value" => $post['idInvoices']
+        ];
+        if ($this->generalModel->updateRecord($arrParam)) {
+            session()->setFlashdata('retornoExito', 'You have saved the information!!');
+        } else {
+            session()->setFlashdata('retornoError', '<strong>Error!!!</strong> Ask for help');
+        }
+
+        return redirect()->to(base_url('workorders/subcontractor_invoices/' . $idWorkorder));
     }
 
     /**
