@@ -121,6 +121,11 @@ if (file_exists(APPPATH.'Modules/Trailers/Config/Routes.php')) {
     require APPPATH.'Modules/Trailers/Config/Routes.php';
 }
 
+// Cargar rutas del módulo Template
+if (file_exists(APPPATH.'Modules/Template/Config/Routes.php')) {
+    require APPPATH.'Modules/Template/Config/Routes.php';
+}
+
 // Cargar rutas del módulo Workorders
 if (file_exists(APPPATH.'Modules/Workorders/Config/Routes.php')) {
     require APPPATH.'Modules/Workorders/Config/Routes.php';

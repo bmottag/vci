@@ -625,7 +625,7 @@ class Workorders extends BaseController
      * Save rate
      * @since 27/2/2017
      * @author BMOTTAG
-     * @review 05/05/2026 - new CI4 version
+     * @review 06/05/2026 - new CI4 version
      */
     public function save_rate()
     {
@@ -822,7 +822,7 @@ class Workorders extends BaseController
      * Lista de Workorders filtrado por estado
      * @since 22/2/2020
      * @author BMOTTAG
-     * @review 05/05/2026 - new CI4 version
+     * @review 06/05/2026 - new CI4 version
      */
     public function wo_by_state($state, $year = 'x')
     {
