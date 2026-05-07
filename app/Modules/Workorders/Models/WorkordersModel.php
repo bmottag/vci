@@ -1336,4 +1336,202 @@ class WorkordersModel extends Model
 
         return $query->getNumRows() > 0 ? $query->getResultArray() : false;
     }
+
+    public function getJobsDashboard($filters = [])
+    {
+        $whereWO  = "WHERE 1=1";
+        $whereSub = "WHERE 1=1";
+        $binds = [];
+
+        // =========================
+        // FILTRO FECHA DESDE
+        // =========================
+        if (!empty($filters['from'])) {
+            $whereWO  .= " AND W.date >= ?";
+            $whereSub .= " AND W.date >= ?";
+            $binds[] = $filters['from'];
+            $binds[] = $filters['from'];
+        }
+
+        // =========================
+        // FILTRO FECHA HASTA
+        // =========================
+        if (!empty($filters['to'])) {
+            $whereWO  .= " AND W.date <= ?";
+            $whereSub .= " AND W.date <= ?";
+            $binds[] = $filters['to'];
+            $binds[] = $filters['to'];
+        }
+
+        // =========================
+        // FILTRO ESTADO WORKORDER
+        // =========================
+        if (isset($filters['state']) && $filters['state'] !== '') {
+            $state = (int)$filters['state'];
+            $whereWO  .= " AND W.state = $state";
+            $whereSub .= " AND W.state = $state";
+        }
+
+        $sql = "
+            SELECT 
+                J.id_job,
+                J.job_description,
+
+                COUNT(DISTINCT W.id_workorder) as noWO,
+
+                COALESCE(HP.total_hours, 0) as hoursPersonal,
+
+                COALESCE(IP.total, 0) as incomePersonal,
+                COALESCE(IM.total, 0) as incomeMaterial,
+                COALESCE(IR.total, 0) as incomeReceipt,
+                COALESCE(IE.total, 0) as incomeEquipment,
+                COALESCE(ISUB.total, 0) as incomeSubcontractor
+
+            FROM param_jobs J
+
+            LEFT JOIN workorder W 
+                ON W.fk_id_job = J.id_job
+                $whereWO
+
+            LEFT JOIN (
+                SELECT W.fk_id_job, SUM(P.hours) as total_hours
+                FROM workorder_personal P
+                INNER JOIN workorder W ON W.id_workorder = P.fk_id_workorder
+                $whereSub
+                GROUP BY W.fk_id_job
+            ) HP ON HP.fk_id_job = J.id_job
+
+            LEFT JOIN (
+                SELECT W.fk_id_job, SUM(P.value) as total
+                FROM workorder_personal P
+                INNER JOIN workorder W ON W.id_workorder = P.fk_id_workorder
+                $whereSub
+                GROUP BY W.fk_id_job
+            ) IP ON IP.fk_id_job = J.id_job
+
+            LEFT JOIN (
+                SELECT W.fk_id_job, SUM(P.value) as total
+                FROM workorder_materials P
+                INNER JOIN workorder W ON W.id_workorder = P.fk_id_workorder
+                $whereSub
+                GROUP BY W.fk_id_job
+            ) IM ON IM.fk_id_job = J.id_job
+
+            LEFT JOIN (
+                SELECT W.fk_id_job, SUM(P.value) as total
+                FROM workorder_receipt P
+                INNER JOIN workorder W ON W.id_workorder = P.fk_id_workorder
+                $whereSub
+                GROUP BY W.fk_id_job
+            ) IR ON IR.fk_id_job = J.id_job
+
+            LEFT JOIN (
+                SELECT W.fk_id_job, SUM(P.value) as total
+                FROM workorder_equipment P
+                INNER JOIN workorder W ON W.id_workorder = P.fk_id_workorder
+                $whereSub
+                GROUP BY W.fk_id_job
+            ) IE ON IE.fk_id_job = J.id_job
+
+            LEFT JOIN (
+                SELECT W.fk_id_job, SUM(P.value) as total
+                FROM workorder_ocasional P
+                INNER JOIN workorder W ON W.id_workorder = P.fk_id_workorder
+                $whereSub
+                GROUP BY W.fk_id_job
+            ) ISUB ON ISUB.fk_id_job = J.id_job
+
+            WHERE J.state = 1
+
+            GROUP BY J.id_job
+            ORDER BY J.job_description ASC
+        ";
+
+        return $this->db->query($sql, $binds)->getResultArray();
+    }
+
+    public function getJobsIncomeDashboard()
+    {
+        $sql = "SELECT 
+                J.id_job,
+                J.job_description,
+
+                COUNT(DISTINCT W.id_workorder) AS noWO,
+
+                COALESCE(HP.total_hours, 0) AS hoursPersonal,
+
+                COALESCE(IP.total, 0) AS incomePersonal,
+                COALESCE(IM.total, 0) AS incomeMaterial,
+                COALESCE(IR.total, 0) AS incomeReceipt,
+                COALESCE(IE.total, 0) AS incomeEquipment,
+                COALESCE(ISUB.total, 0) AS incomeSubcontractor,
+
+                (
+                    COALESCE(IP.total, 0) +
+                    COALESCE(IM.total, 0) +
+                    COALESCE(IR.total, 0) +
+                    COALESCE(IE.total, 0) +
+                    COALESCE(ISUB.total, 0)
+                ) AS totalIncome
+
+            FROM param_jobs J
+
+            LEFT JOIN workorder W 
+                ON W.fk_id_job = J.id_job
+
+            /* HORAS PERSONAL */
+            LEFT JOIN (
+                SELECT W.fk_id_job, SUM(P.hours) AS total_hours
+                FROM workorder_personal P
+                INNER JOIN workorder W ON W.id_workorder = P.fk_id_workorder
+                GROUP BY W.fk_id_job
+            ) HP ON HP.fk_id_job = J.id_job
+
+            /* INGRESOS PERSONAL */
+            LEFT JOIN (
+                SELECT W.fk_id_job, SUM(P.value) AS total
+                FROM workorder_personal P
+                INNER JOIN workorder W ON W.id_workorder = P.fk_id_workorder
+                GROUP BY W.fk_id_job
+            ) IP ON IP.fk_id_job = J.id_job
+
+            /* MATERIALES */
+            LEFT JOIN (
+                SELECT W.fk_id_job, SUM(P.value) AS total
+                FROM workorder_materials P
+                INNER JOIN workorder W ON W.id_workorder = P.fk_id_workorder
+                GROUP BY W.fk_id_job
+            ) IM ON IM.fk_id_job = J.id_job
+
+            /* RECIBOS */
+            LEFT JOIN (
+                SELECT W.fk_id_job, SUM(P.value) AS total
+                FROM workorder_receipt P
+                INNER JOIN workorder W ON W.id_workorder = P.fk_id_workorder
+                GROUP BY W.fk_id_job
+            ) IR ON IR.fk_id_job = J.id_job
+
+            /* EQUIPO */
+            LEFT JOIN (
+                SELECT W.fk_id_job, SUM(P.value) AS total
+                FROM workorder_equipment P
+                INNER JOIN workorder W ON W.id_workorder = P.fk_id_workorder
+                GROUP BY W.fk_id_job
+            ) IE ON IE.fk_id_job = J.id_job
+
+            /* SUBCONTRATOS */
+            LEFT JOIN (
+                SELECT W.fk_id_job, SUM(P.value) AS total
+                FROM workorder_ocasional P
+                INNER JOIN workorder W ON W.id_workorder = P.fk_id_workorder
+                GROUP BY W.fk_id_job
+            ) ISUB ON ISUB.fk_id_job = J.id_job
+
+            WHERE J.state = 1
+
+            GROUP BY J.id_job
+            ORDER BY J.job_description ASC;";
+
+        return $this->db->query($sql)->getResultArray();
+    }
 }

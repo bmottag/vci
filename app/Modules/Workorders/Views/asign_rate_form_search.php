@@ -135,6 +135,12 @@ return date;
 								</span>
 							</p>
 						</a>
+						<a href="<?php echo base_url("workorders/wo_by_state/5/" . date("Y")); ?>" class="list-group-item">
+							<p class="text-warning"><i class="fa fa-list-alt fa-fw"></i><strong> Accounting</strong>
+								<span class="pull-right text-muted small"><em><?php echo $noAccounting; ?></em>
+								</span>
+							</p>
+						</a>
 						<a href="<?php echo base_url("workorders/wo_by_state/3/" . date("Y")); ?>" class="list-group-item">
 							<p class="text-success"><i class="fa fa-envelope-o  fa-fw"></i><strong> Send to the Client</strong>
 								<span class="pull-right text-muted small"><em><?php echo $noSend; ?></em>

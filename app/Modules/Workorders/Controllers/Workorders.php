@@ -5,6 +5,11 @@ use App\Controllers\BaseController;
 use App\Modules\Workorders\Models\WorkordersModel;
 use App\Models\GeneralModel;
 use App\Libraries\PdfBuilder;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use PhpOffice\PhpSpreadsheet\Style\Alignment;
+use PhpOffice\PhpSpreadsheet\Style\Fill;
+use PhpOffice\PhpSpreadsheet\Style\Color;
 
 class Workorders extends BaseController
 {
@@ -895,28 +900,378 @@ class Workorders extends BaseController
     }
 
     /**
-     * Generate Payroll Report in XLS
+     * Generate Work Order Report in XLS
      * @param int $jobId
      * @since 10/02/2020
      * @author BMOTTAG
-     * @review 05/05/2026 - new CI4 version — XLS generation pending implementation
+     * @review 06/05/2026 - new CI4 version
      */
     public function generaWorkOrderXLS($jobId, $from = '', $to = '')
     {
-        // XLS generation not implemented — uses PhpSpreadsheet
-        session()->setFlashdata('retornoError', 'XLS generation is not available in this version.');
-        return redirect()->to(base_url('workorders/search'));
+        $arrParam = ['jobId' => $jobId, 'from' => $from, 'to' => $to];
+        $info     = $this->workordersModel->get_workorder_by_idJob($arrParam);
+
+        if (!$info) {
+            throw new \CodeIgniter\Exceptions\PageNotFoundException('No data found for the selected parameters.');
+        }
+
+        $jobCode     = $info[0]['job_description'];
+        $spreadsheet = new Spreadsheet();
+        $spreadsheet->getActiveSheet()->setTitle('Work Order Report');
+
+        $this->_xlsSetHeaders($spreadsheet->getActiveSheet(0));
+
+        $j     = 2;
+        $total = 0;
+        foreach ($info as $row) {
+            $woId        = $row['id_workorder'];
+            $woParam     = ['idWorkOrder' => $woId];
+            $observation = $row['observation'] ?? '';
+
+            $workorderPersonal  = $this->workordersModel->get_workorder_personal($woParam);
+            $workorderMaterials = $this->workordersModel->get_workorder_materials($woParam);
+            $workorderReceipts  = $this->workordersModel->get_workorder_receipt($woParam);
+            $workorderEquipment = $this->workordersModel->get_workorder_equipment($woParam);
+            $workorderOcasional = $this->workordersModel->get_workorder_ocasional($woParam);
+
+            if ($workorderPersonal) {
+                foreach ($workorderPersonal as $p) {
+                    $total += $p['value'];
+                    $spreadsheet->getActiveSheet()
+                        ->setCellValue('A' . $j, $woId)
+                        ->setCellValue('B' . $j, $row['name'])
+                        ->setCellValue('C' . $j, $row['date_issue'])
+                        ->setCellValue('D' . $j, $row['date'])
+                        ->setCellValue('E' . $j, $row['job_description'])
+                        ->setCellValue('F' . $j, $observation)
+                        ->setCellValue('G' . $j, $p['description'])
+                        ->setCellValue('H' . $j, $p['name'])
+                        ->setCellValue('I' . $j, $p['employee_type'])
+                        ->setCellValue('L' . $j, $p['hours'])
+                        ->setCellValue('N' . $j, 'Hours')
+                        ->setCellValue('O' . $j, $p['rate'])
+                        ->setCellValue('Q' . $j, $p['value']);
+                    $j++;
+                }
+            }
+
+            if ($workorderMaterials) {
+                foreach ($workorderMaterials as $m) {
+                    $total += $m['value'];
+                    $spreadsheet->getActiveSheet()
+                        ->setCellValue('A' . $j, $woId)
+                        ->setCellValue('B' . $j, $row['name'])
+                        ->setCellValue('C' . $j, $row['date_issue'])
+                        ->setCellValue('D' . $j, $row['date'])
+                        ->setCellValue('E' . $j, $row['job_description'])
+                        ->setCellValue('F' . $j, $observation)
+                        ->setCellValue('G' . $j, $m['description'])
+                        ->setCellValue('J' . $j, $m['material'])
+                        ->setCellValue('M' . $j, $m['quantity'])
+                        ->setCellValue('N' . $j, $m['unit'])
+                        ->setCellValue('O' . $j, $m['rate'])
+                        ->setCellValue('Q' . $j, $m['value']);
+                    $j++;
+                }
+            }
+
+            if ($workorderReceipts) {
+                foreach ($workorderReceipts as $r) {
+                    $total += $r['value'];
+                    $desc = $r['description'] . ' - ' . $r['place'];
+                    if ($r['markup'] > 0) {
+                        $desc .= ' - Plus M.U.';
+                    }
+                    $spreadsheet->getActiveSheet()
+                        ->setCellValue('A' . $j, $woId)
+                        ->setCellValue('B' . $j, $row['name'])
+                        ->setCellValue('C' . $j, $row['date_issue'])
+                        ->setCellValue('D' . $j, $row['date'])
+                        ->setCellValue('E' . $j, $row['job_description'])
+                        ->setCellValue('F' . $j, $observation)
+                        ->setCellValue('G' . $j, $desc)
+                        ->setCellValue('Q' . $j, $r['value']);
+                    $j++;
+                }
+            }
+
+            if ($workorderEquipment) {
+                foreach ($workorderEquipment as $e) {
+                    $total += $e['value'];
+                    $equipment = $e['fk_id_type_2'] == 8
+                        ? $e['miscellaneous'] . ' - ' . $e['other']
+                        : $e['type_2'] . ' - ' . $e['unit_number'] . ' - ' . $e['v_description'];
+                    $quantity = $e['quantity'] == 0 ? 1 : $e['quantity'];
+
+                    $spreadsheet->getActiveSheet()
+                        ->setCellValue('A' . $j, $woId)
+                        ->setCellValue('B' . $j, $row['name'])
+                        ->setCellValue('C' . $j, $row['date_issue'])
+                        ->setCellValue('D' . $j, $row['date'])
+                        ->setCellValue('E' . $j, $row['job_description'])
+                        ->setCellValue('F' . $j, $observation)
+                        ->setCellValue('G' . $j, $e['description'])
+                        ->setCellValue('K' . $j, $equipment)
+                        ->setCellValue('L' . $j, $e['hours'])
+                        ->setCellValue('M' . $j, $quantity)
+                        ->setCellValue('N' . $j, 'Hours')
+                        ->setCellValue('O' . $j, $e['rate'])
+                        ->setCellValue('P' . $j, $e['operatedby'])
+                        ->setCellValue('Q' . $j, $e['value']);
+                    $j++;
+                }
+            }
+
+            if ($workorderOcasional) {
+                foreach ($workorderOcasional as $o) {
+                    $total += $o['value'];
+                    $equipment = $o['company_name'] . '-' . $o['equipment'];
+                    $hours     = $o['hours'] == 0 ? 1 : $o['hours'];
+
+                    $spreadsheet->getActiveSheet()
+                        ->setCellValue('A' . $j, $woId)
+                        ->setCellValue('B' . $j, $row['name'])
+                        ->setCellValue('C' . $j, $row['date_issue'])
+                        ->setCellValue('D' . $j, $row['date'])
+                        ->setCellValue('E' . $j, $row['job_description'])
+                        ->setCellValue('F' . $j, $observation)
+                        ->setCellValue('G' . $j, $o['description'])
+                        ->setCellValue('K' . $j, $equipment)
+                        ->setCellValue('L' . $j, $hours)
+                        ->setCellValue('M' . $j, $o['quantity'])
+                        ->setCellValue('N' . $j, $o['unit'])
+                        ->setCellValue('O' . $j, $o['rate'])
+                        ->setCellValue('Q' . $j, $o['value']);
+                    $j++;
+                }
+            }
+        }
+
+        $spreadsheet->getActiveSheet()->setCellValue('P' . $j, 'Total Income');
+        $spreadsheet->getActiveSheet()->setCellValue('Q' . $j, '$ ' . number_format($total, 2));
+        $spreadsheet->getActiveSheet()->getStyle('P' . $j . ':Q' . $j)->getFont()->setBold(true);
+        $this->_xlsApplySheetStyles($spreadsheet);
+
+        // Sheet 1 — Personal Income
+        $spreadsheet->createSheet();
+        $spreadsheet->setActiveSheetIndex(1);
+        $spreadsheet->getActiveSheet()->setTitle('Personal Income');
+        $this->_xlsSetHeaders($spreadsheet->getActiveSheet());
+
+        $totalP = 0;
+        $j      = 2;
+        foreach ($info as $row) {
+            $woParam     = ['idWorkOrder' => $row['id_workorder']];
+            $observation = $row['observation'] ?? '';
+            $personal    = $this->workordersModel->get_workorder_personal($woParam);
+            if ($personal) {
+                foreach ($personal as $p) {
+                    $totalP += $p['value'];
+                    $spreadsheet->getActiveSheet()
+                        ->setCellValue('A' . $j, $row['id_workorder'])
+                        ->setCellValue('B' . $j, $row['name'])
+                        ->setCellValue('C' . $j, $row['date_issue'])
+                        ->setCellValue('D' . $j, $row['date'])
+                        ->setCellValue('E' . $j, $row['job_description'])
+                        ->setCellValue('F' . $j, $observation)
+                        ->setCellValue('G' . $j, $p['description'])
+                        ->setCellValue('H' . $j, $p['name'])
+                        ->setCellValue('I' . $j, $p['employee_type'])
+                        ->setCellValue('L' . $j, $p['hours'])
+                        ->setCellValue('N' . $j, 'Hours')
+                        ->setCellValue('O' . $j, $p['rate'])
+                        ->setCellValue('Q' . $j, $p['value']);
+                    $j++;
+                }
+            }
+        }
+        $spreadsheet->getActiveSheet()->setCellValue('P' . $j, 'Total Income');
+        $spreadsheet->getActiveSheet()->setCellValue('Q' . $j, '$ ' . number_format($totalP, 2));
+        $spreadsheet->getActiveSheet()->getStyle('P' . $j . ':Q' . $j)->getFont()->setBold(true);
+        $this->_xlsApplySheetStyles($spreadsheet);
+
+        // Sheet 2 — Material Income
+        $spreadsheet->createSheet();
+        $spreadsheet->setActiveSheetIndex(2);
+        $spreadsheet->getActiveSheet()->setTitle('Material Income');
+        $this->_xlsSetHeaders($spreadsheet->getActiveSheet());
+
+        $totalM = 0;
+        $j      = 2;
+        foreach ($info as $row) {
+            $woParam     = ['idWorkOrder' => $row['id_workorder']];
+            $observation = $row['observation'] ?? '';
+            $materials   = $this->workordersModel->get_workorder_materials($woParam);
+            if ($materials) {
+                foreach ($materials as $m) {
+                    $totalM += $m['value'];
+                    $spreadsheet->getActiveSheet()
+                        ->setCellValue('A' . $j, $row['id_workorder'])
+                        ->setCellValue('B' . $j, $row['name'])
+                        ->setCellValue('C' . $j, $row['date_issue'])
+                        ->setCellValue('D' . $j, $row['date'])
+                        ->setCellValue('E' . $j, $row['job_description'])
+                        ->setCellValue('F' . $j, $observation)
+                        ->setCellValue('G' . $j, $m['description'])
+                        ->setCellValue('J' . $j, $m['material'])
+                        ->setCellValue('M' . $j, $m['quantity'])
+                        ->setCellValue('N' . $j, $m['unit'])
+                        ->setCellValue('O' . $j, $m['rate'])
+                        ->setCellValue('Q' . $j, $m['value']);
+                    $j++;
+                }
+            }
+        }
+        $spreadsheet->getActiveSheet()->setCellValue('P' . $j, 'Total Income');
+        $spreadsheet->getActiveSheet()->setCellValue('Q' . $j, '$ ' . number_format($totalM, 2));
+        $spreadsheet->getActiveSheet()->getStyle('P' . $j . ':Q' . $j)->getFont()->setBold(true);
+        $this->_xlsApplySheetStyles($spreadsheet);
+
+        // Sheet 3 — Receipt Income
+        $spreadsheet->createSheet();
+        $spreadsheet->setActiveSheetIndex(3);
+        $spreadsheet->getActiveSheet()->setTitle('Receipt Income');
+        $this->_xlsSetHeaders($spreadsheet->getActiveSheet());
+
+        $totalR = 0;
+        $j      = 2;
+        foreach ($info as $row) {
+            $woParam     = ['idWorkOrder' => $row['id_workorder']];
+            $observation = $row['observation'] ?? '';
+            $receipts    = $this->workordersModel->get_workorder_receipt($woParam);
+            if ($receipts) {
+                foreach ($receipts as $r) {
+                    $totalR += $r['value'];
+                    $desc = $r['description'] . ' - ' . $r['place'];
+                    if ($r['markup'] > 0) {
+                        $desc .= ' - Plus M.U.';
+                    }
+                    $spreadsheet->getActiveSheet()
+                        ->setCellValue('A' . $j, $row['id_workorder'])
+                        ->setCellValue('B' . $j, $row['name'])
+                        ->setCellValue('C' . $j, $row['date_issue'])
+                        ->setCellValue('D' . $j, $row['date'])
+                        ->setCellValue('E' . $j, $row['job_description'])
+                        ->setCellValue('F' . $j, $observation)
+                        ->setCellValue('G' . $j, $desc)
+                        ->setCellValue('Q' . $j, $r['value']);
+                    $j++;
+                }
+            }
+        }
+        $spreadsheet->getActiveSheet()->setCellValue('P' . $j, 'Total Income');
+        $spreadsheet->getActiveSheet()->setCellValue('Q' . $j, '$ ' . number_format($totalR, 2));
+        $spreadsheet->getActiveSheet()->getStyle('P' . $j . ':Q' . $j)->getFont()->setBold(true);
+        $this->_xlsApplySheetStyles($spreadsheet);
+
+        // Sheet 4 — Equipment Income
+        $spreadsheet->createSheet();
+        $spreadsheet->setActiveSheetIndex(4);
+        $spreadsheet->getActiveSheet()->setTitle('Equipment Income');
+        $this->_xlsSetHeaders($spreadsheet->getActiveSheet());
+
+        $totalE = 0;
+        $j      = 2;
+        foreach ($info as $row) {
+            $woParam     = ['idWorkOrder' => $row['id_workorder']];
+            $observation = $row['observation'] ?? '';
+            $equipment   = $this->workordersModel->get_workorder_equipment($woParam);
+            if ($equipment) {
+                foreach ($equipment as $e) {
+                    $totalE += $e['value'];
+                    $eq = $e['fk_id_type_2'] == 8
+                        ? $e['miscellaneous'] . ' - ' . $e['other']
+                        : $e['type_2'] . ' - ' . $e['unit_number'] . ' - ' . $e['v_description'];
+                    $qty = $e['quantity'] == 0 ? 1 : $e['quantity'];
+
+                    $spreadsheet->getActiveSheet()
+                        ->setCellValue('A' . $j, $row['id_workorder'])
+                        ->setCellValue('B' . $j, $row['name'])
+                        ->setCellValue('C' . $j, $row['date_issue'])
+                        ->setCellValue('D' . $j, $row['date'])
+                        ->setCellValue('E' . $j, $row['job_description'])
+                        ->setCellValue('F' . $j, $observation)
+                        ->setCellValue('G' . $j, $e['description'])
+                        ->setCellValue('K' . $j, $eq)
+                        ->setCellValue('L' . $j, $e['hours'])
+                        ->setCellValue('M' . $j, $qty)
+                        ->setCellValue('N' . $j, 'Hours')
+                        ->setCellValue('O' . $j, $e['rate'])
+                        ->setCellValue('P' . $j, $e['operatedby'])
+                        ->setCellValue('Q' . $j, $e['value']);
+                    $j++;
+                }
+            }
+        }
+        $spreadsheet->getActiveSheet()->setCellValue('P' . $j, 'Total Income');
+        $spreadsheet->getActiveSheet()->setCellValue('Q' . $j, '$ ' . number_format($totalE, 2));
+        $spreadsheet->getActiveSheet()->getStyle('P' . $j . ':Q' . $j)->getFont()->setBold(true);
+        $this->_xlsApplySheetStyles($spreadsheet);
+
+        // Sheet 5 — Subcontractor Income
+        $spreadsheet->createSheet();
+        $spreadsheet->setActiveSheetIndex(5);
+        $spreadsheet->getActiveSheet()->setTitle('Subcontractor Income');
+        $this->_xlsSetHeaders($spreadsheet->getActiveSheet());
+
+        $totalS = 0;
+        $j      = 2;
+        foreach ($info as $row) {
+            $woParam     = ['idWorkOrder' => $row['id_workorder']];
+            $observation = $row['observation'] ?? '';
+            $ocasional   = $this->workordersModel->get_workorder_ocasional($woParam);
+            if ($ocasional) {
+                foreach ($ocasional as $o) {
+                    $totalS    += $o['value'];
+                    $eq         = $o['company_name'] . '-' . $o['equipment'];
+                    $hours      = $o['hours'] == 0 ? 1 : $o['hours'];
+
+                    $spreadsheet->getActiveSheet()
+                        ->setCellValue('A' . $j, $row['id_workorder'])
+                        ->setCellValue('B' . $j, $row['name'])
+                        ->setCellValue('C' . $j, $row['date_issue'])
+                        ->setCellValue('D' . $j, $row['date'])
+                        ->setCellValue('E' . $j, $row['job_description'])
+                        ->setCellValue('F' . $j, $observation)
+                        ->setCellValue('G' . $j, $o['description'])
+                        ->setCellValue('K' . $j, $eq)
+                        ->setCellValue('L' . $j, $hours)
+                        ->setCellValue('M' . $j, $o['quantity'])
+                        ->setCellValue('N' . $j, $o['unit'])
+                        ->setCellValue('O' . $j, $o['rate'])
+                        ->setCellValue('Q' . $j, $o['value']);
+                    $j++;
+                }
+            }
+        }
+        $spreadsheet->getActiveSheet()->setCellValue('P' . $j, 'Total Income');
+        $spreadsheet->getActiveSheet()->setCellValue('Q' . $j, '$ ' . number_format($totalS, 2));
+        $spreadsheet->getActiveSheet()->getStyle('P' . $j . ':Q' . $j)->getFont()->setBold(true);
+        $this->_xlsApplySheetStyles($spreadsheet);
+
+        $spreadsheet->setActiveSheetIndex(0);
+
+        ob_start();
+        $writer = new Xlsx($spreadsheet);
+        $writer->save('php://output');
+        $content = ob_get_clean();
+
+        return $this->response
+            ->setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+            ->setHeader('Content-Disposition', 'attachment;filename=workorder_' . $jobCode . '.xlsx')
+            ->setHeader('Cache-Control', 'max-age=0')
+            ->setBody($content);
     }
 
     /**
      * Search by JOB CODE
      * @since 16/03/2020
      * @author BMOTTAG
-     * @review 05/05/2026 - new CI4 version
+     * @review 06/05/2026 - new CI4 version
      */
     public function search_income()
     {
-        $data['jobList'] = $this->generalModel->get_job(['state' => 1]);
+        $data['jobList'] = $this->workordersModel->getJobsIncomeDashboard();
 
         foreach ([0 => 'noOnfield', 1 => 'noProgress', 2 => 'noRevised', 3 => 'noSend', 4 => 'noClosed', 5 => 'noAccounting'] as $state => $key) {
             $data[$key] = $this->workordersModel->countWorkorders(['state' => $state]);
@@ -1515,5 +1870,44 @@ class Workorders extends BaseController
         }
 
         return $this->response->setJSON($data);
+    }
+
+    private function _xlsSetHeaders(\PhpOffice\PhpSpreadsheet\Worksheet\Worksheet $sheet): void
+    {
+        $sheet->setCellValue('A1', 'Work Order #')
+            ->setCellValue('B1', 'Supervisor')
+            ->setCellValue('C1', 'Date of Issue')
+            ->setCellValue('D1', 'Work Order Date')
+            ->setCellValue('E1', 'Job Code/Name')
+            ->setCellValue('F1', 'Work Done')
+            ->setCellValue('G1', 'Description')
+            ->setCellValue('H1', 'Employee Name')
+            ->setCellValue('I1', 'Employee Type')
+            ->setCellValue('J1', 'Material')
+            ->setCellValue('K1', 'Equipment')
+            ->setCellValue('L1', 'Hours')
+            ->setCellValue('M1', 'Quantity')
+            ->setCellValue('N1', 'Unit')
+            ->setCellValue('O1', 'Unit price')
+            ->setCellValue('P1', 'Operated by')
+            ->setCellValue('Q1', 'Line Total');
+    }
+
+    private function _xlsApplySheetStyles(Spreadsheet $spreadsheet): void
+    {
+        $sheet = $spreadsheet->getActiveSheet();
+
+        $colWidths = ['A' => 15, 'B' => 22, 'C' => 22, 'D' => 20, 'E' => 50, 'F' => 60, 'G' => 60, 'H' => 20, 'I' => 20, 'J' => 15, 'K' => 50, 'L' => 15, 'M' => 15, 'N' => 15, 'O' => 15, 'P' => 15, 'Q' => 15];
+        foreach ($colWidths as $col => $width) {
+            $sheet->getColumnDimension($col)->setWidth($width);
+        }
+
+        $style = $sheet->getStyle('A1:Q1');
+        $style->getFont()->setSize(11)->setBold(true);
+        $style->getFont()->getColor()->setARGB(Color::COLOR_WHITE);
+        $style->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB('236e09');
+        $style->getAlignment()
+            ->setHorizontal(Alignment::HORIZONTAL_CENTER)
+            ->setVertical(Alignment::VERTICAL_CENTER);
     }
 }
