@@ -1652,7 +1652,7 @@ class Workorders extends BaseController
      * LOG Workorders
      * @since 20/02/2024
      * @author FOROZCO
-     * @review 05/05/2026 - new CI4 version
+     * @review 06/05/2026 - new CI4 version
      */
     public function log($goBack = 'x')
     {
@@ -1703,7 +1703,8 @@ class Workorders extends BaseController
                 'to'          => $to,
             ];
 
-            $data['workOrderInfo'] = $this->workordersModel->get_workorder_log($arrParam);
+            $rawLog = $this->workordersModel->get_workorder_log($arrParam);
+            $data['workOrderInfo'] = $this->_buildLogRows($rawLog);
             return $this->renderTopOnly('App\Modules\Workorders\Views\log_list', $data);
         }
 
@@ -1854,6 +1855,138 @@ class Workorders extends BaseController
         }
 
         return $this->response->setJSON($data);
+    }
+
+    /**
+     * Process raw log rows into display-ready text pairs
+     * @since 06/05/2026
+     */
+    private function _buildLogRows(array $rows): array
+    {
+        $result = [];
+
+        foreach ($rows as $lista) {
+            $textOld = '';
+            $textNew = '';
+
+            $comment = json_decode($lista['comment'], true);
+
+            $oldData = $comment['old'][0] ?? $comment['old'] ?? null;
+            $newData = $comment['new'][0] ?? $comment['new'] ?? null;
+
+            $old = json_encode($oldData);
+            $new = json_encode($newData);
+
+
+            if ($lista['token'] === 'update') {
+                $oldRaw = $comment['old'] ?? null;
+                $newRaw = $comment['new'] ?? null;
+
+                if (is_string($oldRaw)) {
+                    $oldRaw = json_decode($oldRaw, true);
+                }
+                if (is_string($newRaw)) {
+                    $newRaw = json_decode($newRaw, true);
+                }
+
+                $oldDecode = (is_array($oldRaw) && isset($oldRaw[0]) && is_array($oldRaw[0])) ? $oldRaw[0] : ($oldRaw ?? []);
+                $newDecode = (is_array($newRaw) && isset($newRaw[0]) && is_array($newRaw[0])) ? $newRaw[0] : ($newRaw ?? []);
+
+                switch ($lista['type']) {
+                    case 'workorder':
+                        $textOld = 'date: ' . $oldDecode['date'] . ', observation: ' . $oldDecode['observation'] . ', foreman_name_wo: ' . $oldDecode['foreman_name_wo'] . ', foreman_movil_number_wo: ' . $oldDecode['foreman_movil_number_wo'] . ', foreman_email_wo: ' . $oldDecode['foreman_email_wo'];
+                        $textNew = 'date: ' . $newDecode['date'] . ', observation: ' . $newDecode['observation'] . ', foreman_name_wo: ' . $newDecode['foreman_name_wo'] . ', foreman_movil_number_wo: ' . $newDecode['foreman_movil_number_wo'] . ', foreman_email_wo: ' . $newDecode['foreman_email_wo'];
+                        break;
+
+                    case 'workorder_personal':
+                        $user = $this->generalModel->get_basic_search(['table' => 'user', 'order' => 'id_user', 'column' => 'id_user', 'id' => $oldDecode['fk_id_user']]);
+                        $oldEmpType = $this->generalModel->get_basic_search(['table' => 'param_employee_type', 'order' => 'employee_type', 'column' => 'id_employee_type', 'id' => $oldDecode['fk_id_employee_type']]);
+                        $textOld = 'user: ' . $user[0]['first_name'] . ' ' . $user[0]['last_name'] . ', Employee_type: ' . $oldEmpType[0]['employee_type'] . ', hours: ' . $oldDecode['hours'] . ', description: ' . $oldDecode['description'];
+
+                        if (isset($newDecode['fk_id_employee_type'])) {
+                            $newEmpType = $this->generalModel->get_basic_search(['table' => 'param_employee_type', 'order' => 'employee_type', 'column' => 'id_employee_type', 'id' => $newDecode['fk_id_employee_type']]);
+                            $textNew = 'user: ' . $user[0]['first_name'] . ' ' . $user[0]['last_name'] . ', Employee_type: ' . $newEmpType[0]['employee_type'] . ', hours: ' . $newDecode['hours'] . ', description: ' . $newDecode['description'];
+                        } else {
+                            $textNew = 'user: ' . $user[0]['first_name'] . ' ' . $user[0]['last_name'] . ', Change: ' . $comment['new'];
+                        }
+                        break;
+
+                    case 'workorder_materials':
+                        $material = $this->generalModel->get_basic_search(['table' => 'param_material_type', 'order' => 'material', 'column' => 'id_material', 'id' => $oldDecode['fk_id_material']]);
+                        $textOld  = 'material: ' . $material[0]['material'] . ', quantity: ' . $oldDecode['quantity'] . ', unit: ' . $oldDecode['unit'] . ', description: ' . $oldDecode['description'];
+                        $textNew  = 'material: ' . $material[0]['material'] . ', quantity: ' . $newDecode['quantity'] . ', unit: ' . $newDecode['unit'] . ', description: ' . $newDecode['description'];
+                        break;
+
+                    case 'workorder_receipt':
+                        $textOld = 'place: ' . $oldDecode['place'] . ', price: ' . $oldDecode['price'] . ', description: ' . $oldDecode['description'];
+                        $textNew = 'place: ' . $newDecode['place'] . ', price: ' . $newDecode['price'] . ', description: ' . $newDecode['description'];
+                        break;
+
+                    case 'workorder_equipment':
+                        $textOld = 'fk_id_vehicle: ' . $oldDecode['fk_id_vehicle'] . ', description: ' . $oldDecode['description'] . ', hours: ' . $oldDecode['hours'] . ', quantity: ' . $oldDecode['quantity'];
+                        $textNew = 'fk_id_vehicle: ' . $oldDecode['fk_id_vehicle'] . ', description: ' . $newDecode['description'] . ', hours: ' . $newDecode['hours'] . ', quantity: ' . $newDecode['quantity'];
+                        break;
+
+                    case 'workorder_ocasional':
+                        $company = $this->generalModel->get_basic_search(['table' => 'param_company', 'order' => 'id_company', 'column' => 'id_company', 'id' => $oldDecode['fk_id_company']]);
+                        $textOld = 'company: ' . $company[0]['company_name'] . ', equipment: ' . $oldDecode['equipment'] . ', quantity: ' . $oldDecode['quantity'] . ', unit: ' . $oldDecode['unit'] . ', hours: ' . $oldDecode['hours'] . ' description: ' . $oldDecode['description'];
+                        $textNew = 'company: ' . $company[0]['company_name'] . ', equipment: ' . $oldDecode['equipment'] . ', quantity: ' . $newDecode['quantity'] . ', unit: ' . $newDecode['unit'] . ', hours: ' . $newDecode['hours'] . ' description: ' . $newDecode['description'];
+                        break;
+
+                    default:
+                        $textOld = $old;
+                        $textNew = $new;
+                }
+
+            } elseif ($lista['token'] === 'insert') {
+                $textOld   = $old;
+                $newDecode = json_decode($comment['new']);
+
+                switch ($lista['type']) {
+                    case 'workorder_state':
+                        $stateLabels = [0 => 'On Field', 1 => 'In Progress', 2 => 'Revised', 3 => 'Send to the Client', 4 => 'Closed', 5 => 'Accounting'];
+                        $stateText   = $stateLabels[$newDecode->state] ?? '';
+                        $textNew     = 'date_issue: ' . $newDecode->date_issue . ', observation: ' . $newDecode->observation . ', state: ' . $stateText;
+                        break;
+
+                    case 'workorder_personal':
+                        $user       = $this->generalModel->get_basic_search(['table' => 'user', 'order' => 'id_user', 'column' => 'id_user', 'id' => $newDecode->fk_id_user]);
+                        $newEmpType = $this->generalModel->get_basic_search(['table' => 'param_employee_type', 'order' => 'employee_type', 'column' => 'id_employee_type', 'id' => $newDecode->fk_id_employee_type]);
+                        $textNew    = 'user: ' . $user[0]['first_name'] . ' ' . $user[0]['last_name'] . ', Employee_type: ' . $newEmpType[0]['employee_type'] . ', hours: ' . $newDecode->hours . ', description: ' . $newDecode->description;
+                        break;
+
+                    case 'workorder_materials':
+                        $material = $this->generalModel->get_basic_search(['table' => 'param_material_type', 'order' => 'material', 'column' => 'id_material', 'id' => $newDecode->fk_id_material]);
+                        $textNew  = 'material: ' . $material[0]['material'] . ', quantity: ' . $newDecode->quantity . ', unit: ' . $newDecode->unit . ', description: ' . $newDecode->description;
+                        break;
+
+                    case 'workorder_equipment':
+                        $textNew = 'fk_id_vehicle: ' . $newDecode->fk_id_vehicle . ', description: ' . $newDecode->description . ', hours: ' . $newDecode->hours . ', quantity: ' . $newDecode->quantity;
+                        break;
+
+                    case 'workorder_ocasional':
+                        $company = $this->generalModel->get_basic_search(['table' => 'param_company', 'order' => 'id_company', 'column' => 'id_company', 'id' => $newDecode->fk_id_company]);
+                        $textNew = 'company: ' . $company[0]['company_name'] . ', equipment: ' . $newDecode->equipment . ', quantity: ' . $newDecode->quantity . ', unit: ' . $newDecode->unit . ', hours: ' . $newDecode->hours . ' description: ' . $newDecode->description;
+                        break;
+
+                    default:
+                        $textNew = $new;
+                }
+            }
+
+            $result[] = [
+                'type_id'         => $lista['type_id'],
+                'job_description' => $lista['job_description'],
+                'name'            => $lista['name'],
+                'created_on'      => $lista['created_on'],
+                'token'           => $lista['token'],
+                'type'            => $lista['type'],
+                'textOld'         => $textOld,
+                'textNew'         => $textNew,
+            ];
+        }
+
+        return $result;
     }
 
     private function _xlsSetHeaders(\PhpOffice\PhpSpreadsheet\Worksheet\Worksheet $sheet): void
