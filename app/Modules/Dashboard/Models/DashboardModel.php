@@ -213,6 +213,82 @@ class DashboardModel extends Model
             return $number;
     }
 
+    public function get_trailers()
+    {
+        $builder = $this->db->table('inspection_daily');
+        $builder->select('id_inspection_daily, date_issue, fk_id_trailer, trailer_lights, trailer_tires, trailer_slings, trailer_clean, trailer_chains, trailer_ratchet, trailer_comments, param_vehicle.description');
+        $builder->join('param_vehicle', 'inspection_daily.fk_id_trailer = param_vehicle.id_vehicle', 'INNER');
+        $builder->where('(fk_id_trailer, date_issue) IN (SELECT fk_id_trailer, MAX(date_issue) FROM inspection_daily GROUP BY fk_id_trailer)');
+        $builder->where('type_level_2', 5);
+        $builder->orderBy('id_inspection_daily', 'desc');
+
+        $query = $builder->get();
+
+        if ($query->getNumRows() > 0) {
+            return $query->getResultArray();
+        }
+        return false;
+    }
+
+    public function get_not_inspection($month)
+    {
+        $sub = '-' . $month . ' months';
+        $date = date("Y-m-d", strtotime($sub));
+
+        $builder = $this->db->table('inspection_daily');
+        $builder->select('fk_id_trailer');
+        $builder->join('param_vehicle', 'inspection_daily.fk_id_trailer = param_vehicle.id_vehicle', 'INNER');
+        $builder->where('(fk_id_trailer, date_issue) IN (SELECT fk_id_trailer, MAX(date_issue) FROM inspection_daily GROUP BY fk_id_trailer)');
+        $builder->where('type_level_2', 5);
+        $builder->where('date_issue <', $date);
+        $builder->where('param_vehicle.state', 1);
+        $builder->orderBy('fk_id_trailer', 'asc');
+
+        $trailersMonthsInspect = $builder->get();
+
+        $clean = [];
+        if ($trailersMonthsInspect->getNumRows() > 0) {
+            foreach ($trailersMonthsInspect->getResultArray() as $value) {
+                $clean[] = $value['fk_id_trailer'];
+            }
+        }
+
+        $builder2 = $this->db->table('param_vehicle');
+        $builder2->select('id_vehicle');
+        $builder2->where('type_level_2', 5);
+        $builder2->where('param_vehicle.id_vehicle NOT IN (
+            SELECT fk_id_trailer
+            FROM inspection_daily
+            JOIN param_vehicle ON inspection_daily.fk_id_trailer = param_vehicle.id_vehicle
+            WHERE (fk_id_trailer, date_issue) IN (SELECT fk_id_trailer, MAX(date_issue) FROM inspection_daily GROUP BY fk_id_trailer)
+            AND type_level_2 = 5
+            AND param_vehicle.state = 1
+            ORDER BY id_inspection_daily DESC
+        )');
+        $builder2->where('state', 1);
+
+        $trailersNotInspect = $builder2->get();
+
+        if ($trailersNotInspect->getNumRows() > 0) {
+            foreach ($trailersNotInspect->getResultArray() as $value) {
+                $clean[] = $value['id_vehicle'];
+            }
+        }
+
+        if (empty($clean)) {
+            return [];
+        }
+
+        $cleanStr = implode(",", $clean);
+
+        $sql = "SELECT description, state
+        FROM param_vehicle
+        WHERE type_level_2 = 5 AND id_vehicle IN ($cleanStr) AND param_vehicle.state = 1";
+
+        return $this->db->query($sql)->getResultArray();
+    }
+
+
     
     
     

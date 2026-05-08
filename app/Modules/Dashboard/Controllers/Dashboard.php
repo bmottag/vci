@@ -979,5 +979,21 @@ class Dashboard extends BaseController
 		echo json_encode($data);
 	}
 
+    /**
+     * Trailers List
+     * @since 06/01/2024
+     * @author FOROZCO
+	 * @review 08/05/2026 - new CI4 version
+     */
+    public function trailers()
+    {
+        $month = 2;
+        $data['trailer_not_inspect'] = $this->dashboardModel->get_not_inspection($month);
+        $data['trailer_inspect'] = $this->dashboardModel->get_trailers();
+
+        $data['dashboardURL'] = session()->get("dashboardURL");
+		return $this->render('App\Modules\Dashboard\Views\trailers', $data);
+    }
+
 
 }

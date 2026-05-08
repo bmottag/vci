@@ -23,6 +23,8 @@ $routes->group('dashboard', ['namespace' => 'App\Modules\Dashboard\Controllers']
     $routes->get('versions', 'Dashboard::versions');
     $routes->get('without_work_order', 'Dashboard::without_work_order');
 
+    $routes->get('trailers', 'Dashboard::trailers');
+
     $routes->post('consulta', 'Dashboard::consulta');
     $routes->post('confirmPlanning', 'Dashboard::confirmPlanning');
 
