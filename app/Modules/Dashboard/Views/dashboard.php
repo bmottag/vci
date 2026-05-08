@@ -183,13 +183,6 @@
 		</div>
 
 		<div class="col-lg-3 col-md-6">
-			<a class="btn btn-block btn-social btn-primary" href="<?php echo base_url('dashboard/checkin'); ?>">
-				<i class="fa fa-search"></i> <b> View Sign-In Form Registers </b>
-			</a>
-			<br>
-		</div>
-
-		<div class="col-lg-3 col-md-6">
 			<a class="btn btn-block btn-social btn-warning" href="<?php echo base_url('dashboard/trailers'); ?>">
 				<i class="fa fa-car"></i> <b> Trailers Inspections </b>
 			</a>
