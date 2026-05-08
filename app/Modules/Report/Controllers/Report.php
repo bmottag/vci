@@ -1075,109 +1075,6 @@ class Report extends BaseController
     }
 
     /**
-     * Generate Work Order Report in PDF
-     * @since 26/01/2017
-     * @author BMOTTAG
-     * @review 01/05/2026 - new CI4 version
-     */
-    public function generaWorkOrderPDF($idWorkOrder)
-    {
-        $arrParam           = ['idWorkOrder' => $idWorkOrder];
-        $workOrder          = $this->reportModel->get_workorder($arrParam);
-        $workorderPersonal  = $this->reportModel->get_workorder_personal($idWorkOrder);
-        $workorderMaterials = $this->reportModel->get_workorder_materials($idWorkOrder);
-
-        $builder = new PdfBuilder();
-        $pdf     = $builder->create('Work Order Report');
-        $pdf->SetFont('dejavusans', '', 8);
-        $pdf->AddPage();
-
-        $html = '<h1 style="color:#337ab7;">WORK ORDER</h1><p></p>
-                <style>
-                table { font-family: arial, sans-serif; border-collapse: collapse; width: 100%; }
-                td, th { border: 1px solid #dddddd; text-align: left; padding: 8px; }
-                </style>
-                <table cellspacing="0" cellpadding="5">
-                    <tr>
-                        <th bgcolor="#dddddd"><strong>Work Order #: </strong></th>
-                        <th>' . $workOrder[0]['id_workorder'] . '</th>
-                        <th bgcolor="#dddddd"><strong>Date work order: </strong></th>
-                        <th>' . $workOrder[0]['date'] . '</th>
-                    </tr>
-                    <tr>
-                        <th bgcolor="#dddddd"><strong>Supervisor: </strong></th>
-                        <th>' . $workOrder[0]['name'] . '</th>
-                        <th bgcolor="#dddddd"><strong>Date of Issue: </strong></th>
-                        <th>' . $workOrder[0]['date_issue'] . '</th>
-                    </tr>
-                    <tr>
-                        <th bgcolor="#dddddd"><strong>Observation: </strong></th>
-                        <th colspan="3">' . $workOrder[0]['observation'] . '</th>
-                    </tr>
-                </table>';
-
-        $html .= '<table border="1" cellspacing="0" cellpadding="5">
-                    <tr><th colspan="5"><strong>PERSONNEL</strong></th></tr>
-                    <tr bgcolor="#dddddd">
-                        <th width="5%" align="center"><strong>#</strong></th>
-                        <th width="40%" align="center"><strong>Employee Name</strong></th>
-                        <th width="15%" align="center"><strong>Employee Type</strong></th>
-                        <th width="10%" align="center"><strong>Hours</strong></th>
-                        <th width="20%" align="center"><strong>Description</strong></th>
-                    </tr>';
-        if (!$workorderPersonal) {
-            $html .= '<tr><th colspan="5" align="center"> ---- No data was found for Personal -----</th></tr>';
-        } else {
-            $i = 0;
-            foreach ($workorderPersonal as $row) {
-                $i++;
-                $html .= '<tr>
-                            <th align="center">' . $i . '</th>
-                            <th>' . $row['name'] . '</th>
-                            <th align="center">' . $row['type'] . '</th>
-                            <th align="center">' . $row['hours'] . '</th>
-                            <th>' . $row['description'] . '</th>
-                          </tr>';
-            }
-        }
-        $html .= '</table><br><br>';
-
-        $html .= '<table border="1" cellspacing="0" cellpadding="5">
-                    <tr><th colspan="4"><strong>MATERIALS</strong></th></tr>
-                    <tr bgcolor="#dddddd">
-                        <th width="5%" align="center"><strong>#</strong></th>
-                        <th width="25%" align="center"><strong>Material</strong></th>
-                        <th width="15%" align="center"><strong>Quantity</strong></th>
-                        <th width="35%" align="center"><strong>Description</strong></th>
-                    </tr>';
-        if (!$workorderMaterials) {
-            $html .= '<tr><th colspan="5" align="center"> ---- No data was found for Materials -----</th></tr>';
-        } else {
-            $i = 0;
-            foreach ($workorderMaterials as $row) {
-                $i++;
-                $html .= '<tr>
-                            <th align="center">' . $i . '</th>
-                            <th>' . $row['material'] . '</th>
-                            <th>' . $row['quantity'] . '</th>
-                            <th>' . $row['description'] . '</th>
-                          </tr>';
-            }
-        }
-        $html .= '</table><br><br>';
-
-        $pdf->writeHTML($html, true, false, true, false, '');
-        $pdf->lastPage();
-
-        if (ob_get_length()) {
-            ob_end_clean();
-        }
-        return $this->response
-            ->setHeader('Content-Type', 'application/pdf')
-            ->setBody($pdf->Output('work_order.pdf', 'I'));
-    }
-
-    /**
      * Generate Check-In Report in PDF
      * @since 5/06/2022
      * @author BMOTTAG
@@ -1356,7 +1253,7 @@ class Report extends BaseController
      * Generate Work Order Report in XLS
      * @since 30/01/2017
      * @author BMOTTAG
-     * @review 01/05/2026 - new CI4 version
+     * @review 04/05/2026 - new CI4 version
      */
     public function generaWorkOrderXLS($jobId, $from, $to)
     {

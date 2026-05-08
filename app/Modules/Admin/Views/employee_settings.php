@@ -147,10 +147,7 @@ if($count == 10){
 						<?php
 								if($lista["bank_time"] == 1){
 						?>		
-								<br><br>
-								<a class="btn btn-warning btn-xs" href="<?php echo base_url('admin/employeBankTime/' . $lista['id_user']); ?> ">
-									View Bank Time Info <span class="glyphicon glyphicon-eye-open" aria-hidden="true"></span>
-								</a>
+
 						<?php
 								}
 								echo "</td>";
