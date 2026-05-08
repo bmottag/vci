@@ -175,7 +175,7 @@ class External extends BaseController
      * Add an employee
      * @since 31/1/2022
      * @author BMOTTAG
-     * @review 05/05/2026 - new CI4 version
+     * @review 08/05/2026 - new CI4 version
      */
     public function newEmployee($key)
     {
@@ -191,7 +191,7 @@ class External extends BaseController
      * Save new employee
      * @since 31/01/2022
      * @author BMOTTAG
-     * @review 05/05/2026 - new CI4 version
+     * @review 08/05/2026 - new CI4 version
      */
     public function saveEmployee()
     {
@@ -223,28 +223,26 @@ class External extends BaseController
                 $msj .= '<br><br><strong>User name: </strong>' . esc($logUser);
                 $msj .= '<br><strong>Password: </strong>' . esc($passwd);
 
-                // TODO: Email sending — implement when mail integration is ready
-                /*
-                $subjet   = 'Welcome to VCI';
-                $to       = $email;
+                $subject  = 'Welcome to VCI';
                 $link     = base_url();
-                $emailmsj = "<strong>APP Link: </strong><a href='{$link}'>VCI APP</a>";
-                $emailmsj .= '<br><strong>User name: </strong>' . $logUser;
-                $emailmsj .= '<br><strong>Password: </strong>' . $passwd;
+                $emailBody  = "<strong>APP Link: </strong><a href='{$link}'>VCI APP</a>";
+                $emailBody .= '<br><strong>User name: </strong>' . esc($logUser);
+                $emailBody .= '<br><strong>Password: </strong>' . esc($passwd);
 
-                $mensaje = "<html><head><title>{$subjet}</title></head><body>
+                $emailMessage = "<html><head><title>{$subject}</title></head><body>
                     <p>Dear {$firstName}:</p>
                     <p>Thank you for registering, the following employees information is the access data to the system:</p>
-                    <p>{$emailmsj}</p>
+                    <p>{$emailBody}</p>
                     <p>Cordially,</p>
                     <p><strong>V-CONTRACTING INC</strong></p>
                 </body></html>";
 
-                $cabeceras  = 'MIME-Version: 1.0' . "\r\n";
-                $cabeceras .= 'Content-type: text/html; charset=iso-8859-1' . "\r\n";
-                $cabeceras .= 'From: VCI APP <info@v-contracting.ca>' . "\r\n";
-                mail($to, $subjet, $mensaje, $cabeceras);
-                */
+                $emailService = \Config\Services::email();
+                $emailService->setFrom('info@v-contracting.ca', 'VCI APP');
+                $emailService->setTo($email);
+                $emailService->setSubject($subject);
+                $emailService->setMessage($emailMessage);
+                $emailService->send();
 
                 $data['status'] = 'success';
                 $this->session->setFlashdata('retornoExito', $msj);
