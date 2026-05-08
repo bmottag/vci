@@ -1214,13 +1214,164 @@ Y.movil phone_emer_1, CONCAT(Y.first_name, " " , Y.last_name) emer_1, Z.movil ph
 		return $builder->insert($data);
 	}
 
+	/**
+	 * Get workorder expenses grouped by workorder for a given job detail
+	 * @since 6/1/2023
+	 * @author BMOTTAG
+	 * @review 08/05/2026 - new CI4 version
+	 */
+	public function countExpenses(array $arrParam)
+	{
+		$builder = $this->db->table('workorder_expense E');
+		$builder->select('W.id_workorder, W.date, W.observation, ROUND(SUM(E.expense_value), 2) AS total_expenses');
+		$builder->join('workorder W', 'W.id_workorder = E.fk_id_workorder', 'INNER');
+		$builder->where('E.fk_id_job_detail', $arrParam['idJobDetail']);
+		$builder->groupBy('W.id_workorder');
+		$query = $builder->get();
 
+		return $query->getNumRows() > 0 ? $query->getResultArray() : false;
+	}
 
+	/**
+	 * Insert a job detail record from CSV upload
+	 * @since 20/06/2022
+	 * @author BMOTTAG
+	 * @review 08/05/2026 - new CI4 version
+	 */
+	public function upload_file_detail(array $data): bool
+	{
+		return $this->db->table('job_details')->insert($data);
+	}
 
+	/**
+	 * Sum extended_amount for all job details of a job
+	 * @since 13/1/2023
+	 * @author BMOTTAG
+	 * @review 08/05/2026 - new CI4 version
+	 */
+	public function sumExtendedAmount(array $arrParam)
+	{
+		$builder = $this->db->table('job_details J');
+		$builder->selectSum('extended_amount', 'TOTAL');
+		$builder->where('J.fk_id_job', $arrParam['idJob']);
+		$row = $builder->get()->getRowArray();
 
+		return $row['TOTAL'] ?? 0;
+	}
 
+	/**
+	 * Update percentage field on each job detail based on its proportion of total
+	 * @since 13/1/2023
+	 * @author BMOTTAG
+	 * @review 08/05/2026 - new CI4 version
+	 */
+	public function updateJobDetail(array $jobDetails, $totalExtendedAmount): bool
+	{
+		$result = true;
 
+		foreach ($jobDetails as $detail) {
+			$percentage = $totalExtendedAmount != 0
+				? number_format($detail['extended_amount'] * 100 / $totalExtendedAmount, 2)
+				: 0.00;
 
+			$ok = $this->db->table('job_details')
+				->where('id_job_detail', $detail['id_job_detail'])
+				->update(['percentage' => $percentage]);
+
+			if (!$ok) {
+				$result = false;
+			}
+		}
+
+		return $result;
+	}
+
+	/**
+	 * Delete workorder expenses linked to all job details of a job
+	 * @since 20/06/2022
+	 * @author BMOTTAG
+	 * @review 08/05/2026 - new CI4 version
+	 */
+	public function deleteWOExpenses(array $arrParam): bool
+	{
+		$ids = $this->db->table('job_details')
+			->select('id_job_detail')
+			->where('fk_id_job', $arrParam['idJob'])
+			->get()
+			->getResultArray();
+
+		if (empty($ids)) {
+			return true;
+		}
+
+		return $this->db->table('workorder_expense')
+			->whereIn('fk_id_job_detail', array_column($ids, 'id_job_detail'))
+			->delete();
+	}
+
+	/**
+	 * Update Flags Param Job
+	 * @since 31/1/2024
+	 * @author BMOTTAG
+	 * @review 08/05/2026 - new CI4 version
+	 */
+	public function resetFlagsParamJob(array $arrParam): bool
+	{
+		return $this->db->table('param_jobs')
+			->where('id_job', $arrParam['idJob'])
+			->update(['flag_expenses' => 0, 'flag_upload_details' => 0]);
+	}
+
+	/**
+	 * Update flag expenses in WO SUBMODULES
+	 * @since 30/03/2024
+	 * @author BMOTTAG
+	 * @review 08/05/2026 - new CI4 version
+	 */
+	public function updateWOSubmoduleFlag(array $arrData): bool
+	{
+		$sql = "UPDATE {$arrData['table']} X
+					INNER JOIN workorder W ON W.id_workorder = X.fk_id_workorder
+					SET X.flag_expenses = 0
+					WHERE W.fk_id_job = ?";
+
+		return $this->db->query($sql, [(int) $arrData['idJob']]);
+	}
+
+	/**
+	 * Add/Edit JOB DETAIL
+	 * @since 6/1/2023
+	 * @review 08/05/2026 - new CI4 version
+	 */
+	public function saveJobDetail(array $post): bool
+	{
+		$idJobDetail = $post['hddId'] ?? '';
+
+		$data = [
+			'description'     => $post['description']  ?? null,
+			'unit'            => $post['unit']          ?? null,
+			'quantity'        => $post['quantity']      ?? 0,
+			'unit_price'      => $post['unit_price']    ?? 0,
+			'extended_amount' => ($post['quantity'] ?? 0) * ($post['unit_price'] ?? 0),
+		];
+
+		if ($idJobDetail == '') {
+			$data['fk_id_user']     = session()->get('id');
+			$data['fk_id_job']      = $post['hddIdJob']       ?? null;
+			$data['chapter_number'] = $post['chapter_number'] ?? null;
+			$data['chapter_name']   = $post['chapter']        ?? null;
+			$data['item']           = $post['item']           ?? null;
+			$data['status']         = 1;
+
+			return $this->db->table('job_details')->insert($data);
+		}
+
+		$data['status'] = $post['status'] ?? null;
+
+		return $this->db->table('job_details')
+			->where('id_job_detail', $idJobDetail)
+			->update($data);
+	}
 
 
 

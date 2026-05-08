@@ -49,6 +49,7 @@ $routes->group('workorders', ['namespace' => 'App\Modules\Workorders\Controllers
     $routes->get('log',                           'Workorders::log');
     $routes->get('workorder_expenses/(:num)',     'Workorders::workorder_expenses/$1');
     $routes->post('save_wo_expenses',             'Workorders::save_wo_expenses');
+    $routes->get('deleteRecordExpenses/(:any)/(:any)/(:any)/(:any)', 'Workorders::deleteRecordExpenses/$1/$2/$3/$4');
     $routes->get('subcontractor_invoice',         'Workorders::subcontractor_invoice');
     $routes->get('add_invoice/(:any)',            'Workorders::add_invoice/$1');
     $routes->get('add_invoice',                   'Workorders::add_invoice');

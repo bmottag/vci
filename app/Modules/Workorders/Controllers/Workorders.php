@@ -1533,27 +1533,6 @@ class Workorders extends BaseController
     }
 
     /**
-     * Cargo modal- formulario de captura Expense
-     * @since 13/1/2022
-     * @review 05/05/2026 - new CI4 version
-     */
-    public function cargarModalExpense()
-    {
-        $data['idWorkorder'] = $this->request->getPost('idWorkorder');
-
-        $arrParam = ['idWorkOrder' => $data['idWorkorder']];
-        $data['information'] = $this->workordersModel->get_workorder_by_idJob($arrParam);
-        $data['idJob']       = $data['information'][0]['fk_id_job'];
-
-        $data['chapterList']    = $this->generalModel->get_chapter_list(['idJob' => $data['idJob']]);
-        $data['sumPercentage']  = $this->generalModel->sumPercentageByJob(['idJob' => $data['idJob']]);
-
-        return $this->response
-            ->setContentType('text/html')
-            ->setBody(view('App\Modules\Workorders\Views\modal_expense', $data));
-    }
-
-    /**
      * Update WO Expenses Values
      * @since 21/1/2023
      * @author BMOTTAG
@@ -1765,6 +1744,43 @@ class Workorders extends BaseController
             session()->setFlashdata('retornoExito', 'You have updated the W.O. Expenses!!');
         } else {
             $data['status'] = 'error';
+            session()->setFlashdata('retornoError', '<strong>Error!!!</strong> Ask for help');
+        }
+
+        return redirect()->to(base_url('workorders/workorder_expenses/' . $idWorkOrder));
+    }
+
+    /**
+     * Delete Expenses
+     * @param int $idValue: id que se va a borrar
+     * @param int $idWorkorder: llave primaria de workorder
+     * @review 08/05/2026 - new CI4 version
+     */
+    public function deleteRecordExpenses($subModule, $idWorkorderExpenses, $idSubmodule, $idWorkOrder)
+    {
+        if (empty($subModule) || empty($idWorkorderExpenses) || empty($idWorkOrder)) {
+            throw new \CodeIgniter\Exceptions\PageNotFoundException('ERROR!!! - You are in the wrong place.');
+        }
+
+        if ($this->generalModel->deleteRecord([
+            'table'      => 'workorder_expense',
+            'primaryKey' => 'id_workorder_expense',
+            'id'         => $idWorkorderExpenses,
+        ])) {
+            $infoWO = $this->workordersModel->get_workorder_by_idJob(['idWorkOrder' => $idWorkOrder]);
+            $idJob  = $infoWO[0]['fk_id_job'];
+            $this->update_wo_expenses_values($idWorkOrder, $idJob);
+
+            $this->generalModel->updateRecord([
+                'table'      => 'workorder_' . $subModule,
+                'primaryKey' => 'id_workorder_' . $subModule,
+                'id'         => $idSubmodule,
+                'column'     => 'flag_expenses',
+                'value'      => 0,
+            ]);
+
+            session()->setFlashdata('retornoExito', 'You have deleted one record.');
+        } else {
             session()->setFlashdata('retornoError', '<strong>Error!!!</strong> Ask for help');
         }
 

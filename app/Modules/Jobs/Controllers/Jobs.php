@@ -2300,18 +2300,355 @@ class Jobs extends BaseController
 			->setBody($pdf->Output($filename, 'I'));
 	}
 
+	/**
+	 * Job Detail List
+	 * @since 6/1/2023
+	 * @author BMOTTAG
+	 * @review 08/05/2026 - new CI4 version
+	 */
+	public function job_detail($idJob)
+	{
+		$data['jobInfo']     = $this->generalModel->get_job(['idJob' => $idJob]);
+		$data['chapterList'] = $this->generalModel->get_chapter_list(['idJob' => $idJob]);
+		$data['isJobDetail'] = true;
 
+		$chapterDetails  = [];
+		$expensesByDetail = [];
 
+		if ($data['chapterList']) {
+			foreach ($data['chapterList'] as $chapter) {
+				$arrParam = ['idJob' => $idJob, 'chapterNumber' => $chapter['chapter_number'], 'status' => 1];
+				$details  = $this->generalModel->get_job_detail($arrParam);
+				$chapterDetails[$chapter['chapter_number']] = $details;
 
+				if ($details) {
+					foreach ($details as $detail) {
+						$expensesByDetail[$detail['id_job_detail']] = $this->jobsModel->countExpenses(['idJobDetail' => $detail['id_job_detail']]);
+					}
+				}
+			}
+		}
 
+		$data['chapterDetails']   = $chapterDetails;
+		$data['expensesByDetail'] = $expensesByDetail;
 
+		return $this->renderTopOnly('App\Modules\Jobs\Views\job', $data);
+	}
 
+	/**
+	 *Cargue de archivo
+	 * @since 20/06/2022
+	 * @review 08/05/2026 - new CI4 version
+	 */
+	public function do_upload_job_info()
+	{
+		$idJob = $this->request->getPost('hddIdJob');
+		$file  = $this->request->getFile('userfile');
 
+		if (!$file || !$file->isValid()) {
+			$msg = $file ? $file->getErrorString() : 'No file uploaded.';
+			session()->setFlashdata('retornoError', $msg);
+			return redirect()->to(base_url('jobs/job_detail/' . $idJob));
+		}
 
+		// VALIDAR CSV
+		if ($file->getExtension() !== 'csv') {
+			session()->setFlashdata(
+				'retornoError',
+				'Only CSV files are allowed.'
+			);
+			return redirect()->to(base_url('jobs/job_detail/' . $idJob));
+		}
 
+		$flagExpenses      = $this->request->getPost('hddFlagExpenses');
+		$flagUploadDetails = $this->request->getPost('hddFlagUploadDetails');
 
+		if ($flagUploadDetails == 1) {
+			$this->generalModel->deleteRecord([
+				'table'      => 'job_details',
+				'primaryKey' => 'fk_id_job',
+				'id'         => $idJob,
+			]);
+		}
 
+		if ($flagExpenses == 1) {
+			$this->jobsModel->deleteWOExpenses(['idJob' => $idJob]);
 
+			$this->generalModel->updateRecord([
+				'table'      => 'param_jobs',
+				'primaryKey' => 'id_job',
+				'id'         => $idJob,
+				'column'     => 'flag_expenses',
+				'value'      => 0,
+			]);
+		}
 
+		$path = WRITEPATH . 'uploads/';
+
+        if (!is_dir($path)) {
+            mkdir($path, 0775, true);
+        }
+
+        $file->move($path, 'job_detail.csv', true);
+
+		$records = [];
+		if (($handle = fopen(WRITEPATH . 'uploads/job_detail.csv', 'r')) !== false) {
+			$idUser     = $this->session->get('id');
+			$fieldNames = fgetcsv($handle, 0, ';');
+			$numFields  = count($fieldNames);
+
+			while (($row = fgetcsv($handle, 0, ';')) !== false) {
+				$record = [
+					'fk_id_user' => $idUser,
+					'fk_id_job'  => $idJob,
+				];
+				for ($i = 0; $i < $numFields; $i++) {
+					$record[$fieldNames[$i]] = $row[$i];
+				}
+				$record['extended_amount'] = floatval($record['quantity']) * floatval($record['unit_price']);
+				$records[] = $record;
+			}
+			fclose($handle);
+		}
+
+		$errorRows = [];
+		foreach ($records as $index => $record) {
+			if (!$this->jobsModel->upload_file_detail($record)) {
+				$errorRows[] = $index + 1;
+			}
+		}
+
+		$this->generalModel->updateRecord([
+			'table'      => 'param_jobs',
+			'primaryKey' => 'id_job',
+			'id'         => $idJob,
+			'column'     => 'flag_upload_details',
+			'value'      => 1,
+		]);
+
+		if (!empty($errorRows)) {
+			session()->setFlashdata('retornoError', 'El archivo se cargó pero hay errores en los registros: ' . implode(', ', $errorRows));
+		} else {
+			session()->setFlashdata('retornoExito', 'The file was uploaded successfully.');
+		}
+
+		$this->update_job_detail($idJob);
+
+		return redirect()->to(base_url('jobs/job_detail/' . $idJob));
+	}
+
+	/**
+	 * Update Job Details Percentage
+	 * @since 11/1/2023
+	 * @author BMOTTAG
+	 * @review 08/05/2026 - new CI4 version
+	 */
+	public function update_job_detail($idJob)
+	{
+		$arrParam   = ['idJob' => $idJob];
+		$jobDetails = $this->generalModel->get_job_detail($arrParam);
+		$total      = $this->jobsModel->sumExtendedAmount($arrParam);
+
+		$this->jobsModel->updateJobDetail($jobDetails ?: [], $total);
+	}
+
+	/**
+	 * Cargo modal - Job Detail
+	 * @since 6/1/2023
+	 * @author BMOTTAG
+	 * @review 08/05/2026 - new CI4 version
+	 */
+	public function cargarModalJobDetail()
+	{
+		$data = [];
+		$data['information'] = null;
+		$data['claimPercentage'] = null;
+		$identification = $this->request->getPost("identification");
+		$data["idJob"] = "";
+		if($identification != ""){
+			$porciones = explode("-", $identification);
+			$data["idJob"] = $porciones[0];
+			$data["chapterNumber"] = $porciones[1];
+			$data["chapterName"] = $porciones[2];
+		}
+
+		$idJobDetail = $this->request->getPost("idJobDetail");
+		$data["idJobDetail"] = $idJobDetail;
+
+		if (!empty($idJobDetail) && $idJobDetail !== 'x') {
+			$arrParam = ["idJobDetail" => $data["idJobDetail"]];
+			$data['information'] = $this->generalModel->get_job_detail($arrParam);
+
+			//calcuate %
+			$claimCost = $this->generalModel->get_total_cost_by_job_detail($arrParam);
+			$totalAmount = $data['information'][0]['extended_amount'];
+
+			if ($totalAmount > 0) {
+				$data['claimPercentage'] = $percentage = round(($claimCost / $totalAmount) * 100, 2);
+			} else {
+				$data['claimPercentage'] = 0;
+			}
+			$data["idJob"] = $data['information'][0]['fk_id_job'];
+		}
+
+		return $this->response
+					->setContentType('text/html')
+					->setBody(view('App\Modules\Jobs\Views\job_detail_modal', $data));
+	}
+	
+	/**
+	 * Update Job Detail
+	 * @since 6/1/2023
+	 * @author BMOTTAG
+	 * @review 08/05/2026 - new CI4 version
+	 */
+	public function save_job_detail()
+	{
+		$post = $this->request->getPost();
+
+		$id = $post['hddId'] ?? null;
+		
+		$msj = $id 
+			? "You have updated a Register!!" 
+			: "You have added a new Register!!";
+
+		$data = [];
+		$data["idRecord"] = $post['hddIdJob'] ?? null;
+
+		if ($this->jobsModel->saveJobDetail($post)) {
+			$this->update_job_detail($data["idRecord"]);
+			$data["status"] = "success";
+			session()->setFlashdata('retornoExito', $msj);
+		} else {
+			$data["status"] = "error";
+			session()->setFlashdata('retornoError', '<strong>Error!!!</strong> Ask for help');
+		}
+
+		return $this->response->setJSON($data);
+	}
+
+	/**
+	 * Job Details View
+	 * @since 16/05/2025
+	 * @author BMOTTAG
+	 * @review 08/05/2026 - new CI4 version
+	 */
+	public function load_claims_view()
+	{
+		$data['claims'] = $this->generalModel->get_claims_by_id_job_detail([
+			'idJobDetail' => $this->request->getPost('idJobDetail'),
+		]);
+
+		return $this->response
+			->setContentType('text/html')
+			->setBody(view('App\Modules\Jobs\Views\claims_view', $data));
+	}
+
+	/**
+	 * Delete All Deteails Info
+	 * @since 31/1/2024
+	 * @author BMOTTAG
+	 * @review 08/05/2026 - new CI4 version
+	 */
+	public function delete_job_detail_info()
+	{
+		$idJob = $this->request->getPost('hddIdJob');
+		$result = true;
+		//DELETE PREVIOS INFORMATION
+		$arrParam = array(
+			"table" => "job_details",
+			"primaryKey" => "fk_id_job ",
+			"id" => $idJob
+		);
+		if(!$this->generalModel->deleteRecord($arrParam)){
+			$result = false;
+		}
+
+		//DELETE expenses
+		$arrParam = array(
+			"idJob" => $idJob
+		);
+		if(!$this->jobsModel->deleteWOExpenses($arrParam)){
+			$result = false;
+		}
+
+		//update FLAGS in table param_job
+		if(!$this->jobsModel->resetFlagsParamJob($arrParam)){
+			$result = false;
+		}
+
+		//update WO expenses flag in table workorders
+		$arrParam = array(
+			"table" => "workorder",
+			"primaryKey" => "fk_id_job",
+			"id" => $idJob,
+			"column" => "expenses_flag",
+			"value" => 2
+		);
+		if(!$this->generalModel->updateRecord($arrParam)){
+			$result = false;
+		}
+
+		//update submodule flag for that job
+		$arrParam = array(
+			"idJob" => $idJob,
+			"table" => "workorder_personal"
+		);
+		if(!$this->jobsModel->updateWOSubmoduleFlag($arrParam)){
+			$result = false;
+		}
+		$arrParam['table'] = "workorder_materials";
+		if(!$this->jobsModel->updateWOSubmoduleFlag($arrParam)){
+			$result = false;
+		}
+		$arrParam['table'] = "workorder_equipment";
+		if(!$this->jobsModel->updateWOSubmoduleFlag($arrParam)){
+			$result = false;
+		}
+		$arrParam['table'] = "workorder_ocasional";
+		if(!$this->jobsModel->updateWOSubmoduleFlag($arrParam)){
+			$result = false;
+		}
+		$arrParam['table'] = "workorder_receipt";
+		if(!$this->jobsModel->updateWOSubmoduleFlag($arrParam)){
+			$result = false;
+		}
+
+		if ($result) {
+			session()->setFlashdata('retornoExito', "All information has been reset.");
+		} else {
+			session()->setFlashdata('retornoError', '<strong>Error!!!</strong> Error occurred. Please contact support');
+		}
+
+		return redirect()->to(base_url('jobs/job_detail/' . $idJob));
+	}
+
+	/**
+	 * Job Detail List
+	 * @since 12/05/2025
+	 * @author BMOTTAG
+	 * @review 08/05/2026 - new CI4 version
+	 */
+	public function charged_lic($idJob, $status)
+	{
+		$data['jobInfo']     = $this->generalModel->get_job(['idJob' => $idJob]);
+		$data['status']      = $status;
+
+		$chapterList = $this->generalModel->get_chapter_list(['idJob' => $idJob]);
+
+		if ($chapterList) {
+			foreach ($chapterList as &$chapter) {
+				$chapter['jobDetails'] = $this->generalModel->get_job_detail([
+					'idJob'         => $idJob,
+					'chapterNumber' => $chapter['chapter_number'],
+					'status'        => $status,
+				]);
+			}
+		}
+
+		$data['chapterList'] = $chapterList;
+
+		return $this->renderTopOnly('App\Modules\Jobs\Views\job_lic_charged', $data);
+	}
 
 }

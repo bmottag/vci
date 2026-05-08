@@ -2066,6 +2066,23 @@ class GeneralModel extends Model
 	}
 
 	/**
+	 * Sumatoria total de costos para un job_detail
+	 * @param $idJobDetail
+	 * @author BMOTTAG
+	 * @since  15/05/2025
+	 * @review 08/05/2026 - new CI4 version
+	 */
+	public function get_total_cost_by_job_detail($arrData)
+	{
+		$builder = $this->db->table('claim_apus');
+		$builder->selectSum('cost');
+		$builder->where('fk_id_job_detail', $arrData['idJobDetail']);
+		$row = $builder->get()->getRow();
+
+		return $row->cost ?? 0;
+	}
+
+	/**
 	 * Sumatoria de horas de personal en los equipos for Calendar
 	 * @param $idWorkorder
 	 * @param $idUser
@@ -2083,6 +2100,27 @@ class GeneralModel extends Model
 		$query = $this->db->query($sql);
 		$row = $query->getRow();
 		return $row->TOTAL ?? 0;
+	}
+
+	/**
+	 * Get get_claims_by_id_job_detail
+	 * @since 16/05/2025
+	 * @review 08/05/2026 - new CI4 version
+	 */
+	public function get_claims_by_id_job_detail($arrData)
+	{
+		$builder = $this->db->table('claim_apus A');
+		$builder->select('C.claim_number, A.quantity, A.cost');
+		$builder->join('claim C', 'C.id_claim = A.fk_id_claim', 'INNER');
+
+		if (array_key_exists('idJobDetail', $arrData)) {
+			$builder->where('A.fk_id_job_detail', $arrData['idJobDetail']);
+		}
+
+		$query = $builder->get();
+		$result = $query->getResultArray();
+
+		return $result ?: false;
 	}
 
 

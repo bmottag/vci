@@ -50,6 +50,7 @@ $routes->group('jobs', ['namespace' => 'App\Modules\Jobs\Controllers'], function
     $routes->get('fire_watch_checkin/(:num)/(:num)', 'Jobs::fire_watch_checkin/$1/$2');
     $routes->get('fire_watch_checkin/(:num)', 'Jobs::fire_watch_checkin/$1');
     $routes->get('generaFIREWATCHPDF/(:num)', 'Jobs::generaFIREWATCHPDF/$1');
+    $routes->get('job_detail/(:num)', 'Jobs::job_detail/$1');
 
     $routes->post('save_safety_hazards', 'Jobs::save_safety_hazards');
     $routes->post('save_tool_box', 'Jobs::save_tool_box');
@@ -89,4 +90,10 @@ $routes->group('jobs', ['namespace' => 'App\Modules\Jobs\Controllers'], function
     $routes->post('cargarModalFireWatch', 'Jobs::cargarModalFireWatch');
     $routes->post('save_fire_watch', 'Jobs::save_fire_watch');
     $routes->post('save_fire_watch_checkin', 'Jobs::save_fire_watch_checkin');
+    $routes->post('do_upload_job_info', 'Jobs::do_upload_job_info');
+    $routes->post('cargarModalJobDetail', 'Jobs::cargarModalJobDetail');
+    $routes->post('save_job_detail', 'Jobs::save_job_detail');
+    $routes->post('delete_job_detail_info', 'Jobs::delete_job_detail_info');
+    $routes->post('delete_job_detail_info', 'Jobs::delete_job_detail_info');
+    $routes->get('charged_lic/(:num)/(:any)', 'Jobs::charged_lic/$1/$2');
 });
