@@ -40,8 +40,10 @@ abstract class BaseController extends Controller
 
         $this->session = session();
 
-        // 🔥 CARGAR MENÚ UNA SOLA VEZ
-        $this->menu = $this->prepareMenu();
+        // 🔥 CARGAR MENÚ UNA SOLA VEZ	
+		if ($this->session->get('rol')) {
+			$this->menu = $this->prepareMenu();
+		}
     }
 
     /**
@@ -151,7 +153,7 @@ abstract class BaseController extends Controller
 
     protected function renderTopOnly($view, $data = [])
     {
-        $data['topMenu']  = $this->menu['topMenu'];
+		$data['topMenu'] = $this->menu['topMenu'] ?? [];
         $data['view']     = $view;
 
         return view('layout_top_only', $data);

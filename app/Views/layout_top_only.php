@@ -47,7 +47,11 @@
 
 	<div id="wrapper">
 
-        <?php echo view('template/menu', ['topMenu' => $topMenu]); ?>
+        <?php 
+			if (session()->get('rol')) {
+				echo view('template/menu', ['topMenu' => $topMenu]); 
+			}
+		?>
 
 		<!-- Start of content -->
 		<?php

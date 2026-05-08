@@ -78,7 +78,8 @@ class Filters extends BaseFilters
                 'except' => [
                     '/',
                     'login',
-                    'login/*'
+                    'login/*',
+                    'external/*'
                 ]
             ]
         ],
