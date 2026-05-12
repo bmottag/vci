@@ -79,7 +79,11 @@ class Filters extends BaseFilters
                     '/',
                     'login',
                     'login/*',
-                    'external/*'
+                    'external/*',
+                    'jobs/review_excavation/*',
+                    'jobs/add_signature_excavation',
+                    'safety/review_flha/*',
+                    'safety/save_signature',
                 ]
             ]
         ],

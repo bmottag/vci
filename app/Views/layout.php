@@ -48,8 +48,11 @@
 	<div id="loader"></div>
 	<div id="wrapper">
 
-
-        <?php echo view('template/menu', ['leftMenu' => $leftMenu, 'topMenu' => $topMenu]); ?>
+        <?php 
+			if (session()->get('rol')) {
+				echo view('template/menu', ['leftMenu' => $leftMenu, 'topMenu' => $topMenu]);
+			}
+		?>
 
 		<!-- Start of content -->
 		<?php

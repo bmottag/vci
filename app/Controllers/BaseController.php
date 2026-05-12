@@ -144,8 +144,8 @@ abstract class BaseController extends Controller
     // 🔥 Helper para renderizar vistas
     protected function render($view, $data = [])
     {
-        $data['leftMenu'] = $this->menu['leftMenu'];
-        $data['topMenu']  = $this->menu['topMenu'];
+		$data['leftMenu'] = $this->menu['leftMenu'] ?? [];
+		$data['topMenu'] = $this->menu['topMenu'] ?? [];
         $data['view']     = $view;
 
         return view('layout', $data);
