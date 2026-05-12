@@ -84,6 +84,31 @@ class Jobs extends BaseController
 	}
 
 	/**
+	 * Save hazards
+	 * @since 27/11/2017
+	 * @author BMOTTAG
+	 * @review 13/04/2026 - new CI4 version
+	 */
+	public function save_safety_hazards()
+	{
+		$post = $this->request->getPost();
+
+		$data = [];
+		$data["idJob"] = $id = $post['hddId'] ?? null;
+
+		if ($this->jobsModel->add_safety_hazard($post)) {
+			$this->jobsModel->add_hazard_log($post);
+			$data["status"] = "success";
+			session()->setFlashdata('retornoExito', 'You have added Hazards.');
+		} else {
+			$data["status"] = "error";
+			session()->setFlashdata('retornoError', '<strong>Error!!!</strong> Ask for help');
+		}
+
+		return $this->response->setJSON($data);
+	}
+
+	/**
 	 * Delete Job hazard
 	 * @review 14/04/2026 - new CI4 version
 	 */

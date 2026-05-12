@@ -17,52 +17,6 @@ class External extends BaseController
     }
 
     /**
-     * Envio de mensaje
-     * @since 26/11/2020
-     * @author BMOTTAG
-     * @review 05/05/2026 - new CI4 version
-     */
-    public function sendSMSWorker($idJob, $idTaskControl)
-    {
-        // TODO: SMS sending — implement when Twilio integration is ready
-        /*
-        $parametric = $this->generalModel->get_basic_search([
-            'table' => 'parametric',
-            'order' => 'id_parametric',
-            'id'    => 'x',
-        ]);
-        $dato1 = decrypt($parametric[3]['value']);
-        $dato2 = decrypt($parametric[4]['value']);
-
-        $client = new \Twilio\Rest\Client($dato1, $dato2);
-
-        $taskInfo = $this->externalModel->get_task_control(['idTaskControl' => $idTaskControl]);
-        $jobInfo  = $this->generalModel->get_basic_search([
-            'table'  => 'param_jobs',
-            'order'  => 'job_description',
-            'column' => 'id_job',
-            'id'     => $idJob,
-        ]);
-
-        $mensaje  = "\n" . $jobInfo[0]['job_description'];
-        $mensaje .= "\nClick the following link to fill the COVID FORM.";
-        $mensaje .= "\n\n" . base_url('external/addTaskControl/' . $idJob . '/' . $idTaskControl);
-
-        $client->messages->create(
-            '+1' . $taskInfo[0]['contact_phone_number'],
-            ['from' => '587 600 8948', 'body' => $mensaje]
-        );
-        */
-
-        $data['linkBack'] = 'more/task_control/' . $idJob;
-        $data['titulo']   = "<i class='fa fa-list'></i> COVID-19";
-        $data['clase']    = 'alert-info';
-        $data['msj']      = 'We have send the SMS to the Worker to fill the COVID form.';
-
-        return $this->render('App\Views\template\answer', $data);
-    }
-
-    /**
      * Envio de mensaje para firmar FLHA
      * @since 14/4/2021
      * @author BMOTTAG
@@ -70,50 +24,38 @@ class External extends BaseController
      */
     public function sendSMSFLHAWorker($idSafety, $idSafetySubcontractor = 'x')
     {
-        // TODO: SMS sending — implement when Twilio integration is ready
-        /*
-        $parametric = $this->generalModel->get_basic_search([
-            'table' => 'parametric',
-            'order' => 'id_parametric',
-            'id'    => 'x',
-        ]);
-        $dato1 = decrypt($parametric[3]['value']);
-        $dato2 = decrypt($parametric[4]['value']);
+        $smsService   = new \App\Libraries\SmsService();
 
-        $client = new \Twilio\Rest\Client($dato1, $dato2);
+        // 🔹 Safety info
+        $infoSafety = $this->generalModel->get_safety(['idSafety' => $idSafety]);
 
-        $infoSafety = $this->generalModel->get_safety([
-            'idSafety'              => $idSafety,
-            'movilNumber'           => true,
-            'idSafetySubcontractor' => $idSafetySubcontractor,
-        ]);
         $workers = $this->generalModel->get_safety_subcontractors_workers([
-            'idSafety'              => $idSafety,
-            'movilNumber'           => true,
-            'idSafetySubcontractor' => $idSafetySubcontractor,
+            'idSafety' => $idSafety,
+            'movilNumber' => true,
+            'idSafetySubcontractor' => $idSafetySubcontractor
         ]);
 
-        $mensaje  = 'VCI FLHA - ' . date('F j, Y', strtotime($infoSafety[0]['date']));
+        if (empty($workers)) {
+            session()->setFlashdata('retornoError', 'No workers found');
+            return redirect()->to(base_url('safety/review_flha/' . $idSafety));
+        }
+
+        // 🔹 Mensaje
+        $mensaje  = "VCI FLHA - " . date('F j, Y', strtotime($infoSafety[0]['date']));
         $mensaje .= "\n" . $infoSafety[0]['job_description'];
         $mensaje .= "\nFollow the link, read the FLHA and sign.";
-        $mensaje .= "\n\n" . base_url('safety/review_flha/' . $idSafety);
+        $mensaje .= "\n\n" . base_url("safety/review_flha/" . $idSafety);
 
-        if ($workers) {
-            foreach ($workers as $worker) {
-                $client->messages->create(
-                    '+1' . $worker['worker_movil_number'],
-                    ['from' => '587 600 8948', 'body' => $mensaje]
-                );
-            }
-        }
-        */
+        // 🔹 Números
+        $numbers = array_map(function ($w) {
+            return '+1' . $w['worker_movil_number'];
+        }, $workers);
 
-        $data['linkBack'] = 'safety/review_flha/' . $idSafety;
-        $data['titulo']   = "<i class='fa fa-list'></i>FLHA - SMS";
-        $data['clase']    = 'alert-info';
-        $data['msj']      = 'You have send the SMS to Subcontractors';
+        // 🔹 Enviar SMS
+        $smsService->sendBulk($numbers, $mensaje);
 
-        return $this->render('App\Views\template\answer', $data);
+        session()->setFlashdata('retornoExito', 'You have send the SMS to Subcontractors.');
+		return redirect()->to(base_url('safety/review_flha/' . $idSafety));
     }
 
     /**
@@ -223,26 +165,24 @@ class External extends BaseController
                 $msj .= '<br><br><strong>User name: </strong>' . esc($logUser);
                 $msj .= '<br><strong>Password: </strong>' . esc($passwd);
 
-                $subject  = 'Welcome to VCI';
-                $link     = base_url();
-                $emailBody  = "<strong>APP Link: </strong><a href='{$link}'>VCI APP</a>";
-                $emailBody .= '<br><strong>User name: </strong>' . esc($logUser);
-                $emailBody .= '<br><strong>Password: </strong>' . esc($passwd);
+                //Email sending
+                $emailService = new \App\Libraries\EmailService();
 
-                $emailMessage = "<html><head><title>{$subject}</title></head><body>
-                    <p>Dear {$firstName}:</p>
-                    <p>Thank you for registering, the following employees information is the access data to the system:</p>
-                    <p>{$emailBody}</p>
-                    <p>Cordially,</p>
-                    <p><strong>V-CONTRACTING INC</strong></p>
-                </body></html>";
+                $result = $emailService->sendTemplate(
+                    $email,
+                    'Welcome to VCI',
+                    'emails/welcome',
+                    [
+                        'name' => $firstName,
+                        'link' => base_url(),
+                        'logUser' => $logUser,
+                        'password' => $passwd
+                    ]
+                );
 
-                $emailService = \Config\Services::email();
-                $emailService->setFrom('info@v-contracting.ca', 'VCI APP');
-                $emailService->setTo($email);
-                $emailService->setSubject($subject);
-                $emailService->setMessage($emailMessage);
-                $emailService->send();
+                if ($result !== true) {
+                    log_message('error', $result);
+                }
 
                 $data['status'] = 'success';
                 $this->session->setFlashdata('retornoExito', $msj);

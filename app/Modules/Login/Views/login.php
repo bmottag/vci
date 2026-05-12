@@ -57,8 +57,8 @@
 						<form  name="form" id="form" role="form" method="post" action="<?php echo site_url("login/validateUser"); ?>" >
                             <input type="hidden" id="hddId" name="hddId" value="<?php echo $idVehicle?$idVehicle:"x"; ?>"/>
                             <input type="hidden" id="hddInpectionType" name="hddInpectionType" value="<?php echo $inspectionType?$inspectionType:"x"; ?>"/>
-                            <input type="hidden" id="hddModuleURL" name="hddModuleURL" value="<?php echo $moduleInfo; ?>"/>
-                            <input type="hidden" id="hddModuleId" name="hddModuleId" value="<?php echo $idModule; ?>"/>
+                            <input type="hidden" id="hddModuleURL" name="hddModuleURL" value="<?= esc($moduleInfo ?? '') ?>"/>
+                            <input type="hidden" id="hddModuleId" name="hddModuleId" value="<?= esc($idModule ?? '') ?>"/>
 
                             <fieldset>
                                 <div class="form-group">

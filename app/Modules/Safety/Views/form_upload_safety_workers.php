@@ -106,7 +106,7 @@
 				<?php 
 					if($safetySubcontractorsWorkers){
 				?>
-<a href="<?php echo base_url("external/sendSMSFLHAWorker/" . $information[0]["id_safety"]); ?>" class="btn btn-default btn-xs"> 
+<a href="<?php echo base_url("external/send_sms_flha/" . $information[0]["id_safety"]); ?>" class="btn btn-default btn-xs"> 
 	<span class="glyphicon glyphicon-edit" aria-hidden="true"></span> Send SMS to All Subcontractor Workers
 </a>
 						<table class="table table-hover">
@@ -126,7 +126,7 @@
 							echo "<td class='text-center'>" . $data['worker_movil_number'];
 							if($data['worker_movil_number']){
 ?>
-	<a href='<?php echo base_url("external/sendSMSFLHAWorker/" . $information[0]["id_safety"] . '/' . $data['id_safety_subcontractor']); ?>' class='btn btn-info btn-xs' title="Send SMS"><i class='glyphicon glyphicon-send'></i></a>
+	<a href='<?php echo base_url("external/send_sms_flha/" . $information[0]["id_safety"] . '/' . $data['id_safety_subcontractor']); ?>' class='btn btn-info btn-xs' title="Send SMS"><i class='glyphicon glyphicon-send'></i></a>
 <?php
 							}
 							echo "</td>";
