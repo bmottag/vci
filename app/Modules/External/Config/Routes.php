@@ -10,7 +10,8 @@ $routes->group('external', ['namespace' => 'App\Modules\External\Controllers'], 
     $routes->get('send_sms_worker/(:num)/(:num)',           'External::sendSMSWorker/$1/$2');
     $routes->get('send_sms_flha/(:num)/(:any)',             'External::sendSMSFLHAWorker/$1/$2');
     $routes->get('send_sms_flha/(:num)',                    'External::sendSMSFLHAWorker/$1');
-    $routes->get('send_sms_excavation/(:num)/(:any)',       'External::sendSMSExcavationWorker/$1/$2');
+    $routes->get('send_sms_excavation/(:num)/(:num)',       'External::sendSMSExcavationWorker/$1/$2');
+    $routes->get('send_sms_excavation/(:num)',              'External::sendSMSExcavationWorker/$1');
 
     // Employee
     $routes->get('new_employee/(:any)',  'External::newEmployee/$1');

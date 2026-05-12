@@ -62,55 +62,41 @@ class External extends BaseController
      * Envio de mensaje para firmar - Excavation and Trenching Plan
      * @since 14/4/2021
      * @author BMOTTAG
-     * @review 05/05/2026 - new CI4 version
+     * @review 08/05/2026 - new CI4 version
      */
     public function sendSMSExcavationWorker($idExcavation, $idSubcontractor = 'x')
     {
-        // TODO: SMS sending — implement when Twilio integration is ready
-        /*
-        $parametric = $this->generalModel->get_basic_search([
-            'table' => 'parametric',
-            'order' => 'id_parametric',
-            'id'    => 'x',
-        ]);
-        $dato1 = decrypt($parametric[3]['value']);
-        $dato2 = decrypt($parametric[4]['value']);
-        $phone = $parametric[5]['value'];
+        $smsService   = new \App\Libraries\SmsService();
 
-        $client = new \Twilio\Rest\Client($dato1, $dato2);
+        $information = $this->generalModel->get_excavation(['idExcavation'  => $idExcavation]);
 
-        $information = $this->generalModel->get_excavation([
-            'idExcavation'  => $idExcavation,
-            'movilNumber'   => true,
-            'idSubcontractor' => $idSubcontractor,
-        ]);
         $workers = $this->generalModel->get_excavation_subcontractors([
             'idExcavation'  => $idExcavation,
             'movilNumber'   => true,
             'idSubcontractor' => $idSubcontractor,
         ]);
 
+        if (empty($workers)) {
+            session()->setFlashdata('retornoError', 'No workers found');
+            return redirect()->to(base_url('jobs/review_excavation/' . $idExcavation));
+        }
+
+        // 🔹 Mensaje
         $mensaje  = 'VCI Excavation and Trenching Plan - ' . date('F j, Y', strtotime($information[0]['date_excavation']));
         $mensaje .= "\n" . $information[0]['job_description'];
         $mensaje .= "\nFollow the link, read the Excavation and Trenching Plan and sign.";
         $mensaje .= "\n\n" . base_url('jobs/review_excavation/' . $idExcavation);
 
-        if ($workers) {
-            foreach ($workers as $worker) {
-                $client->messages->create(
-                    '+1' . $worker['worker_movil_number'],
-                    ['from' => $phone, 'body' => $mensaje]
-                );
-            }
-        }
-        */
+        // 🔹 Números
+        $numbers = array_map(function ($w) {
+            return '+1' . $w['worker_movil_number'];
+        }, $workers);
 
-        $data['linkBack'] = 'jobs/review_excavation/' . $idExcavation;
-        $data['titulo']   = "<i class='fa fa-pied-piper-alt'></i>Excavation and Trenching Plan - SMS";
-        $data['clase']    = 'alert-info';
-        $data['msj']      = 'You have send the SMS to Subcontractors';
+        // 🔹 Enviar SMS
+        $smsService->sendBulk($numbers, $mensaje);
 
-        return $this->render('App\Views\template\answer', $data);
+        session()->setFlashdata('retornoExito', 'You have send the SMS to Subcontractors.');
+		return redirect()->to(base_url('jobs/review_excavation/' . $idExcavation));
     }
 
     /**
