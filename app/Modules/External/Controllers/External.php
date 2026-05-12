@@ -198,7 +198,7 @@ class External extends BaseController
      * Form Checkin
      * @since 30/5/2022
      * @author BMOTTAG
-     * @review 05/05/2026 - new CI4 version
+     * @review 08/05/2026 - new CI4 version
      */
     public function checkin($idProject, $idCheckin = 'x')
     {
@@ -235,7 +235,7 @@ class External extends BaseController
      * Save Checkin
      * @since 1/6/2022
      * @author BMOTTAG
-     * @review 05/05/2026 - new CI4 version
+     * @review 08/05/2026 - new CI4 version
      */
     public function saveCheckin()
     {
@@ -247,28 +247,25 @@ class External extends BaseController
 
         if ($loginBefore == 1) {
             if ($idCheckin = $this->externalModel->saveCheckin((int) $idWorker, $post)) {
-                $data['result']   = true;
+                $data['status']   = 'success';
                 $data['idCheckin'] = $idJob . '/' . $idCheckin;
                 $this->session->setFlashdata('retornoExito', 'Welcome, work safe!');
             } else {
-                $data['result']  = 'error';
-                $data['mensaje'] = 'Error!!! Ask for help.';
+                $data['status']  = 'error';
                 $this->session->setFlashdata('retornoError', '<strong>Error!!!</strong> Ask for help');
             }
         } else {
             if ($idWorker = $this->externalModel->saveNewWorker($post)) {
                 if ($idCheckin = $this->externalModel->saveCheckin($idWorker, $post)) {
-                    $data['result']   = true;
+                    $data['status']   = 'success';
                     $data['idCheckin'] = $idJob . '/' . $idCheckin;
                     $this->session->setFlashdata('retornoExito', 'Welcome, work safe!');
                 } else {
-                    $data['result']  = 'error';
-                    $data['mensaje'] = 'Error!!! Ask for help.';
+                    $data['status']  = 'error';
                     $this->session->setFlashdata('retornoError', '<strong>Error!!!</strong> Ask for help');
                 }
             } else {
-                $data['result']  = 'error';
-                $data['mensaje'] = 'Error!!! Ask for help.';
+                $data['status']  = 'error';
                 $this->session->setFlashdata('retornoError', '<strong>Error!!!</strong> Ask for help');
             }
         }
@@ -279,7 +276,7 @@ class External extends BaseController
     /**
      * Cargo modal - formulario checkout
      * @since 4/06/2022
-     * @review 05/05/2026 - new CI4 version
+     * @review 08/05/2026 - new CI4 version
      */
     public function cargarModalCheckout()
     {
@@ -299,7 +296,7 @@ class External extends BaseController
      * Update checkin - checkout
      * @since 4/06/2022
      * @author BMOTTAG
-     * @review 05/05/2026 - new CI4 version
+     * @review 08/05/2026 - new CI4 version
      */
     public function saveCheckout()
     {
@@ -309,10 +306,10 @@ class External extends BaseController
         $data    = ['idCheckin' => $idJob . '/' . $idCheckin];
 
         if ($this->externalModel->saveCheckout($post)) {
-            $data['result'] = true;
+            $data['status']   = 'success';
             $this->session->setFlashdata('retornoExito', 'Thanks for coming, have a good day!');
         } else {
-            $data['result'] = 'error';
+            $data['status'] = 'error';
             $this->session->setFlashdata('retornoError', '<strong>Error!!!</strong> Ask for help');
         }
 
@@ -350,10 +347,10 @@ class External extends BaseController
         $data   = ['return' => ($post['hddIdDayOff'] ?? '') . '/' . ($post['hddIdUser'] ?? '')];
 
         if ($this->externalModel->update_dayoff($post)) {
-            $data['result'] = true;
+            $data['status'] = true;
             $this->session->setFlashdata('retornoExito', 'Information saved successfully!!');
         } else {
-            $data['result'] = 'error';
+            $data['status'] = 'error';
             $this->session->setFlashdata('retornoError', '<strong>Error!!!</strong> Ask for help');
         }
 
