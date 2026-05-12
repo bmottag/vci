@@ -20,7 +20,7 @@ class External extends BaseController
      * Envio de mensaje para firmar FLHA
      * @since 14/4/2021
      * @author BMOTTAG
-     * @review 05/05/2026 - new CI4 version
+     * @review 08/05/2026 - new CI4 version
      */
     public function sendSMSFLHAWorker($idSafety, $idSafetySubcontractor = 'x')
     {
@@ -320,7 +320,7 @@ class External extends BaseController
      * List Day Off, for ADMIN
      * @since 27/12/2022
      * @author BMOTTAG
-     * @review 05/05/2026 - new CI4 version
+     * @review 08/05/2026 - new CI4 version
      */
     public function aproveDayOff($idDayoff, $idUser)
     {
@@ -339,7 +339,7 @@ class External extends BaseController
      * Update dayoff status
      * @since 27/12/2022
      * @author BMOTTAG
-     * @review 05/05/2026 - new CI4 version
+     * @review 08/05/2026 - new CI4 version
      */
     public function updateDayoffStatus()
     {
@@ -347,7 +347,7 @@ class External extends BaseController
         $data   = ['return' => ($post['hddIdDayOff'] ?? '') . '/' . ($post['hddIdUser'] ?? '')];
 
         if ($this->externalModel->update_dayoff($post)) {
-            $data['status'] = true;
+            $data['status'] = 'success';
             $this->session->setFlashdata('retornoExito', 'Information saved successfully!!');
         } else {
             $data['status'] = 'error';
