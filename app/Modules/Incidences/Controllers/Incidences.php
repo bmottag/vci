@@ -103,7 +103,7 @@ class Incidences extends BaseController
 		if ($idNearmiss = $this->incidencesModel->add_near_miss($post)) {
 			$data["idNearmiss"] = $idNearmiss;
 			if ($idReport == '') {
-				//$this->email_to($idNearmiss, 1);//si es un reporte nuevo envio correo
+				$this->email_to($idNearmiss, 1);//si es un reporte nuevo envio correo
 			}	
 			$data["status"] = "success";
 			session()->setFlashdata('retornoExito', "You have saved the Near Miss Report, continue uploading the information.");
@@ -329,7 +329,7 @@ class Incidences extends BaseController
 		if ($idRecord = $this->incidencesModel->add_incident($post)) {
 			$data["idRecord"] = $idRecord;
 			if ($idReport == '') {
-				//$this->email_to($idNearmiss, 2);//si es un reporte nuevo envio correo
+				$this->email_to($idRecord, 2);//si es un reporte nuevo envio correo
 			}	
 			$data["status"] = "success";
 			session()->setFlashdata('retornoExito', 'You have saved the Incident Report, continue uploading the information!!');
@@ -493,6 +493,47 @@ class Incidences extends BaseController
 		$data['personsInvolved'] = $this->incidencesModel->get_persons_involved($arrParam);
 
 		return $this->renderTopOnly('App\Modules\Incidences\Views\review_incident', $data);
+	}
+
+	/**
+	 * Evio de correo
+     * @since 15/5/2017
+     * @author BMOTTAG
+	 * @review 13/04/2026 - new CI4 version
+	 */
+	public function email_to($idIncidence, $incidencesType)
+	{
+		switch($incidencesType){
+			case 1: //near miss report
+				$model = "get_near_miss_by_idUser";
+				$subjet = "Near Miss Report";
+				$arrParam = array('idNearMiss' => $idIncidence);
+				break;
+			case 2: //incident report
+				$model = "get_incident_by";
+				$subjet = "Incident Report";
+				$arrParam = array('idIncident' => $idIncidence);
+				break;
+		}
+		$infoIncident = $this->incidencesModel->$model($arrParam);
+
+		$configuracionAlertas = $this->generalModel->get_notifications_access(['idNotification' => ID_NOTIFICATION_INCIDENT]);
+
+		if ($configuracionAlertas) {
+			$emailBody  = "<p>It is a new " . $subjet . ":</p>";
+			$emailBody .= "<strong>Report by: </strong>" . esc($infoIncident[0]["name"]);
+
+			$smsMessage  = "APP VCI - Incident Notification";
+			$smsMessage .= "\nIt is a new " . $subjet . ":";
+			$smsMessage .= "\nReport by: " . $infoIncident[0]["name"];
+			if ($incidencesType == 3) {
+				$smsMessage .= "\nBrief explanation: " . $infoIncident[0]["brief_explanation"];
+			} else {
+				$smsMessage .= "\nWhat happened: " . $infoIncident[0]["what_happened"];
+			}
+
+			send_notification($configuracionAlertas, $subjet, $emailBody, $smsMessage);
+		}
 	}
 
 
