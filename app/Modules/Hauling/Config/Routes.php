@@ -6,6 +6,7 @@
 $routes->group('hauling', ['namespace' => 'App\Modules\Hauling\Controllers'], function($routes){
     $routes->get('add_hauling/(:num)', 'Hauling::add_hauling/$1');
     $routes->get('add_hauling', 'Hauling::add_hauling');
+    $routes->get('email/(:num)', 'Hauling::email/$1');
 
     $routes->post('save_hauling', 'Hauling::save_hauling');
     $routes->post('companyList', 'Hauling::companyList');
