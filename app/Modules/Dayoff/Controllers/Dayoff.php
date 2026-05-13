@@ -104,7 +104,7 @@ class Dayoff extends BaseController
 			if ($configuracionAlertas) {
 				$dayoffInfo = $this->generalModel->get_day_off(["idDayoff" => $idDayoff]);
 
-				$tipo = match ($dayoffInfo[0]['id_type_dayoff']) {
+				$tipo = match ((int)$dayoffInfo[0]['id_type_dayoff']) {
 					1 => 'Family/medical appointment',
 					2 => 'Regular',
 					default => 'Unknown',
@@ -128,7 +128,7 @@ class Dayoff extends BaseController
 				$smsMessage .= "\nObservation: " . $dayoffInfo[0]["observation"];
 				$smsMessage .= "\nFollow the link to review: ";
 
-				send_notification($configuracionAlertas, $subject, $emailBody, $smsMessage, 'external/aproveDayOff', $idDayoff);
+				send_notification($configuracionAlertas, $subject, $emailBody, $smsMessage, 'external/aprove_day_off', $idDayoff);
 			}
 
 			$data["status"] = "success";
