@@ -159,7 +159,7 @@ if (!function_exists("send_notification")) {
                 }
             }
 
-            if (!empty($envioAlerta['movil'])) {
+            if (!empty($envioAlerta['movil']) && !empty($smsMessage)) {
                 $smsFinal = $smsMessage;
                 if ($approvalBaseUrl && $recordId) {
                     $smsFinal .= base_url($approvalBaseUrl . '/' . $recordId . '/' . $envioAlerta['id_user_sms']);
