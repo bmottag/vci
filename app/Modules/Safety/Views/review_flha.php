@@ -50,10 +50,6 @@ $(function(){
 						</li>
 						<li><a href="<?php echo base_url('safety/upload_info_safety/' . $information[0]['id_safety']); ?>">Hazards</a>
 						</li>
-						<!--
-						<li><a href="<?php echo base_url('safety/upload_covid/' . $information[0]['id_safety']); ?>">COVID Form</a>
-						</li>
-						-->
 						<li><a href="<?php echo base_url('safety/upload_workers/' . $information[0]['id_safety']); ?>">Workers</a>
 						</li>						
 						<li class='active'><a href="<?php echo base_url("admin/vehicle/1/x/2"); ?>">Review and Sign</a>

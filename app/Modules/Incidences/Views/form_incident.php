@@ -101,11 +101,9 @@
 										<?php 
 											if($personsInvolved){
 										?>
-											<!--
 											<a href="<?php echo base_url('incidences/sendSMSIncidencesPersons/' . $information[0]["id_incident"] . '/2'); ?>" class="btn btn-default btn-xs"> 
 												<span class="glyphicon glyphicon-edit" aria-hidden="true"></span> Send SMS to All Subcontractor Workers
 											</a>
-															-->
 											<table class="table table-hover">
 												<thead>
 													<tr>

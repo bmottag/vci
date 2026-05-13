@@ -85,6 +85,8 @@ class Filters extends BaseFilters
                     'safety/review_flha/*',
                     'safety/save_signature',
                     'admin/certifications_check',
+                    'incidences/review_incident/*',
+                    'incidences/save_signature_person_involved',
                 ]
             ]
         ],

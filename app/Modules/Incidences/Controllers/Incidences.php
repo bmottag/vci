@@ -418,5 +418,82 @@ class Incidences extends BaseController
 			->setBody($pdf->Output($filename, 'I'));
 	}
 
+	/**
+	 * Envio de mensaje para firmar INCIDENCES
+	 * param $idFormulario: id del formulario
+	 * param $incidencesType: 1:Near Miss / 2: Incident
+     * @since 25/4/2021
+     * @author BMOTTAG
+	 * @review 13/04/2026 - new CI4 version
+	 */
+	public function sendSMSIncidencesPersons($idFormulario, $incidencesType)
+	{
+		$smsService = new \App\Libraries\SmsService();
+
+		switch ($incidencesType) {
+			case 1:
+				$data['info'] = $this->incidencesModel->get_near_miss_by_idUser(["idNearMiss" => $idFormulario]);
+				break;
+			case 2:
+				$data['info'] = $this->incidencesModel->get_incident_by(["idIncident" => $idFormulario]);
+				break;
+		}
+
+		$data['infoPersonsInvolved'] = $this->incidencesModel->get_persons_involved([
+			'idIncident'  => $idFormulario,
+			'form'        => $incidencesType,
+			'movilNumber' => true,
+		]);
+
+		if (empty($data['infoPersonsInvolved'])) {
+			session()->setFlashdata('retornoError', 'No persons found');
+			$path = $incidencesType == 1
+				? 'incidences/add_near_miss/' . $idFormulario
+				: 'incidences/add_incident/' . $idFormulario;
+			return redirect()->to(base_url($path));
+		}
+
+		$mensaje  = "VCI INCIDENCES - " . date('F j, Y', strtotime($data['info'][0]['date_issue']));
+		$mensaje .= "\n" . $data['info'][0]['job_description'];
+		$mensaje .= "\nFollow the link, read and sign.";
+		$mensaje .= "\n\n";
+		$mensaje .= $incidencesType == 1
+			? base_url("incidences/review_near_miss/" . $idFormulario)
+			: base_url("incidences/review_incident/" . $idFormulario);
+
+		$numbers = array_map(function ($p) {
+			return '+1' . $p['person_movil_number'];
+		}, $data['infoPersonsInvolved']);
+
+		$smsService->sendBulk($numbers, $mensaje);
+
+		$path = $incidencesType == 1
+			? 'incidences/add_near_miss/' . $idFormulario . '/' . $incidencesType
+			: 'incidences/add_incident/' . $idFormulario . '/' . $incidencesType;
+
+        session()->setFlashdata('retornoExito', 'You have send the SMS to Persons Involved.');
+		return redirect()->to(base_url($path));
+	}
+
+	/**
+	 * Subcontractors view to sign
+     * @since 15/4/2021
+     * @author BMOTTAG
+	 * @review 13/04/2026 - new CI4 version
+	 */
+	public function review_incident($idFormulario)
+	{			
+		$data['information'] = $this->incidencesModel->get_incident_by(['idIncident' => $idFormulario]);
+
+		//busco lista de personal involucrado, para el formulario de INCIDENT (2)
+		$arrParam = array(
+			'idIncident' => $idFormulario,
+			'form' => 2
+		);
+		$data['personsInvolved'] = $this->incidencesModel->get_persons_involved($arrParam);
+
+		return $this->renderTopOnly('App\Modules\Incidences\Views\review_incident', $data);
+	}
+
 
 }
