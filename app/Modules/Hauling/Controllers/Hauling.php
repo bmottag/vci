@@ -86,14 +86,11 @@ class Hauling extends BaseController
 	{
 		$CompanyType = $this->request->getPost('CompanyType');
 
-		//company list
-		$arrParam = array(
-			"table" => "param_company",
-			"order" => "company_name",
-			"column" => "company_type",
-			"id" => $CompanyType
-		);
-		$lista = $this->generalModel->get_basic_search($arrParam); //company list
+		if($CompanyType == 1){
+			$lista = $this->generalModel->get_company(["company_type" => $CompanyType]);
+		}else{
+			$lista = $this->generalModel->get_company(["isHauling" => true]);
+		}
 
 		echo "<option value=''>Select...</option>";
 		if ($lista) {
@@ -287,7 +284,8 @@ class Hauling extends BaseController
 			. $emailBody
 			. "<p>Cordially,</p><p><strong>V-CONTRACTING INC</strong></p>"
 			. "</body></html>";
-
+pr($infoHauling);
+pr($fullEmail); exit;
 		$emailService = new \App\Libraries\EmailService();
 		$emailService->sendRaw($to, $subject, $fullEmail);
 
