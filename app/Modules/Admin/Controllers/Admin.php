@@ -981,54 +981,6 @@ class Admin extends BaseController
 	}
 
 	/**
-	 * Next Oil change
-	 * @param int $idVehicle
-	 * @since 17/1/2017
-	 */
-	public function nextOilChange($idVehicle)
-	{
-		if (empty($idVehicle)) {
-			show_error('ERROR!!! - You are in the wrong place.');
-		}
-
-		//busco datos del vehiculo
-		$arrParam['idVehicle'] = $idVehicle;
-		$data['vehicleInfo'] = $this->generalModel->get_vehicle_by($arrParam);
-
-		$data['info'] = false;
-		if($data['vehicleInfo'][0]['table_inspection']){
-			$data['info'] = $this->generalModel->get_vehicle_oil_change($data['vehicleInfo']); //vehicle oil change history
-		}
-
-		$data['idVehicle'] = $idVehicle;
-		$data["view"] = 'vehicle_inspections';
-		$this->load->view("layout", $data);
-	}
-
-	/**
-	 * Add vehicle oil change
-	 * @since 17/1/2017
-	 * @author BMOTTAG
-	 */
-	public function save_vehicle_oil_change()
-	{
-		header('Content-Type: application/json');
-		$data = array();
-
-		$data["idRecord"] = $this->request->getPost('hddId');
-		$state = 2; //next oil change
-
-		if ($this->adminModel->saveVehicleNextOilChange($data["idRecord"], $state)) {
-			$data["result"] = true;
-			$this->session->set_flashdata('retornoExito', "You have added the Next Oil Change");
-		} else {
-			$data["result"] = "error";
-			$this->session->set_flashdata('retornoError', '<strong>Error!!!</strong> Ask for help');
-		}
-		echo json_encode($data);
-	}
-
-	/**
 	 * Employee Type List
 	 * @since 4/2/2017
 	 * @author BMOTTAG

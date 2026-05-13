@@ -171,25 +171,6 @@ if($companyType == 2){ //si es subcontractor
 									echo "<td class='text-center'><p class='text-danger'><strong>" . $lista['unit_number'] . "</strong></p></td>";
 									echo "<td class='text-center'><p class='text-danger'><strong>" . $lista['vin_number'] . "</strong></p></td>";									
 									echo "<td class='text-right'><p><strong>" . number_format($lista["hours"]) . "</strong>";
-									/*
-						?>
-									<div class="btn-group">
-										<?php 
-										if($lista["inspection_type"] != 99 ){
-										?>
-									
-										<a href="<?php echo base_url("admin/nextOilChange/" . $lista['id_vehicle']); ?>" class="btn btn-primary btn-xs">Inspections</a>
-										<?php }?>
-										
-										
-										<?php
-											if(!$deshabilitar){
-										?>
-										<a href="<?php echo base_url("maintenance/entrance/" . $lista['id_vehicle']); ?>" class="btn btn-purpura btn-xs">Maintenance</a>
-										<?php }?>
-									</div>									
-						<?php	
-									*/
 									echo "</p></td>";
 
 									echo "<td class='text-center'>" . $lista['manufacturer_date'] . "</td>";
