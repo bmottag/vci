@@ -120,3 +120,53 @@ if (!function_exists('working_hours_in_hours_format')) {
         return $workingHours . " hrs";
     }
 }
+
+/**
+ * Send email and/or SMS notification to a list of recipients.
+ * @author bmottag
+ * @review 13/05/2026 - new CI4 version
+ * @param array  $configuracionAlertas  Result of get_notifications_access()
+ * @param string $subject               Email subject
+ * @param string $emailBody             HTML content body (without outer wrapper)
+ * @param string $smsMessage            SMS text
+ * @param string $approvalBaseUrl       Base URL path for per-recipient approval link (optional)
+ * @param int    $recordId              Record ID appended to approval URL (optional)
+ */
+if (!function_exists("send_notification")) {
+
+    function send_notification(array $configuracionAlertas, string $subject, string $emailBody, string $smsMessage, string $approvalBaseUrl = '', int $recordId = 0): void
+    {
+        $emailService = new \App\Libraries\EmailService();
+        $smsService   = new \App\Libraries\SmsService();
+
+        foreach ($configuracionAlertas as $envioAlerta) {
+            if (!empty($envioAlerta['email'])) {
+                $emailFinal = $emailBody;
+                if ($approvalBaseUrl && $recordId) {
+                    $emailFinal .= base_url($approvalBaseUrl . '/' . $recordId . '/' . $envioAlerta['id_user_email']);
+                }
+
+                $userName  = $envioAlerta['name_email'] ?? '';
+                $fullEmail = "<html><head><title>{$subject}</title></head><body>"
+                    . "<p>Dear {$userName}:<br/></p>"
+                    . $emailFinal
+                    . "<p>Cordially,</p><p><strong>V-CONTRACTING INC</strong></p>"
+                    . "</body></html>";
+
+                $result = $emailService->sendRaw($envioAlerta['email'], $subject, $fullEmail);
+                if ($result !== true) {
+                    log_message('error', 'send_notification email error: ' . print_r($result, true));
+                }
+            }
+
+            if (!empty($envioAlerta['movil'])) {
+                $smsFinal = $smsMessage;
+                if ($approvalBaseUrl && $recordId) {
+                    $smsFinal .= base_url($approvalBaseUrl . '/' . $recordId . '/' . $envioAlerta['id_user_sms']);
+                }
+                $smsService->send('+1' . $envioAlerta['movil'], $smsFinal);
+            }
+        }
+    }
+
+}
