@@ -437,24 +437,9 @@ if ($information && $information["fk_id_workorder"] != null) {
 											Save <span class="glyphicon glyphicon-floppy-disk" aria-hidden="true">
 										</button>
 
-
-										<button type="button" id="btnEmail" name="btnEmail" class="btn btn-danger">
-											Save & Send Email <span class="glyphicon glyphicon-send" aria-hidden="true">
-										</button>
-
 									</div>
 								</div>
 							</div>
-
-							<div class="col-lg-12">
-								<div class="alert alert-danger ">
-									<span class="glyphicon glyphicon-exclamation-sign" aria-hidden="true"></span>
-									If you use the SAVE button you just save the Hauling Report.<br>
-									<span class="glyphicon glyphicon-exclamation-sign" aria-hidden="true"></span>
-									If you use the SAVE & SEND EMAIL button you save the Hauling Report and sent the email to the subcontractor and to <strong>info@v-contracting.ca</strong>.
-								</div>
-							</div>
-
 
 							<div class="form-group">
 								<div class="row" align="center">

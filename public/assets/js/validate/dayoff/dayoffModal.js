@@ -67,7 +67,7 @@ $( document ).ready( function () {
 						}
 
 						if (data.status === "success") {
-							window.location.href = base_url + "/dayoff";
+							window.location.href = base_url + "dayoff";
 						} else {
 							alert('Error. Reload the web page.');
 							$("#div_error").show();

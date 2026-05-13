@@ -246,5 +246,61 @@ class Hauling extends BaseController
 		}
 	}
 
+	/**
+	 * Evio de correo a la empresa
+	 * @since 23/1/2017
+	 * @author BMOTTAG
+	 * @review 13/05/2026 - new CI4 version
+	 */
+	public function email($id)
+	{
+		$infoHauling = $this->haulingModel->get_hauling_byId($id);
+
+		$subject = "Hauling Information";
+		$user    = $infoHauling["contact"];
+		$to      = $infoHauling["email"];
+
+		$emailBody  = "<p>The following is the Hauling Information:</p>";
+		$emailBody .= "<strong>Haul report number: </strong>" . esc($infoHauling["id_hauling"]);
+		$emailBody .= "<br><strong>Company: </strong>" . esc($infoHauling["company_name"]);
+		$emailBody .= "<br><strong>Truck: </strong>" . esc($infoHauling["unit_number"]);
+		$emailBody .= "<br><strong>Truck Type: </strong>" . esc($infoHauling["truck_type"]);
+		$emailBody .= "<br><strong>Material Type: </strong>" . esc($infoHauling["material"]);
+		$emailBody .= "<br><strong>Job Code/Name: </strong>" . esc($infoHauling["from"]);
+		$emailBody .= "<br><strong>To Site: </strong>" . esc($infoHauling["to"]);
+		$emailBody .= "<br><strong>Time In: </strong>" . esc($infoHauling["time_in"]);
+		$emailBody .= "<br><strong>Time Out: </strong>" . esc($infoHauling["time_out"]);
+		$emailBody .= "<br><strong>Payment: </strong>" . esc($infoHauling["payment"]);
+		$emailBody .= "<br><strong>Comments: </strong>" . esc($infoHauling["comments"]);
+		$emailBody .= "<br><br><a href='" . base_url('report/generaHaulingPDF/x/x/x/x/' . $infoHauling['id_hauling']) . "' target='_blank'>Download Report</a>";
+
+		if ($infoHauling["contractor_signature"]) {
+			$emailBody .= "<br><br><strong><a href='" . base_url($infoHauling["contractor_signature"]) . "'>View Subcontractor Signature</a></strong><br>";
+		}
+
+		if ($infoHauling["vci_signature"]) {
+			$emailBody .= "<br><br><strong><a href='" . base_url($infoHauling["vci_signature"]) . "'>View V-Contracting Signature</a></strong><br>";
+		}
+
+		$fullEmail = "<html><head><title>{$subject}</title></head><body>"
+			. "<p>Dear {$user}:</p>"
+			. $emailBody
+			. "<p>Cordially,</p><p><strong>V-CONTRACTING INC</strong></p>"
+			. "</body></html>";
+
+		$emailService = new \App\Libraries\EmailService();
+		$emailService->sendRaw($to, $subject, $fullEmail);
+
+		$configuracionAlertas = $this->generalModel->get_notifications_access(['idNotification' => ID_NOTIFICATION_HAULING]);
+		if ($configuracionAlertas) {
+			send_notification($configuracionAlertas, $subject, $emailBody, '');
+		}
+
+		$nota = 'You have send an email to <strong>' . esc($infoHauling["company_name"]) . '</strong> with the information.';
+
+		session()->setFlashdata('retornoExito', $nota);
+		return redirect()->to(base_url('hauling/add_hauling/' . $id));
+	}
+
 
 }
