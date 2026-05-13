@@ -933,6 +933,66 @@ class GeneralModel extends Model
 		return !empty($result) ? true : false;
 	}
 
+	/**
+	 * Get NOTIFICATION ACCESS
+	 * @since 22/12/2022
+	 * @review 12/05/2026 - new CI4 version
+	 */
+	public function get_notifications_access(array $arrData): array|false
+	{
+		$builder = $this->db->table('notifications_access A');
+		$builder->select("
+			A.*,
+			N.notification,
+			N.description,
+			CONCAT(U.first_name, ' ', U.last_name) AS name_email,
+			U.email,
+			U.id_user AS id_user_email,
+			CONCAT(X.first_name, ' ', X.last_name) AS name_sms,
+			X.movil,
+			X.id_user AS id_user_sms
+		");
+		$builder->join('notifications N', 'N.id_notification = A.fk_id_notification', 'INNER');
+		$builder->join('user U', 'JSON_CONTAINS(A.fk_id_user_email, JSON_QUOTE(CAST(U.id_user AS CHAR)))', 'LEFT');
+		$builder->join('user X', 'JSON_CONTAINS(A.fk_id_user_sms, JSON_QUOTE(CAST(X.id_user AS CHAR)))', 'LEFT');
+
+		if (array_key_exists('idNotificationAccess', $arrData)) {
+			$builder->where('A.id_notification_access', $arrData['idNotificationAccess']);
+		}
+
+		if (array_key_exists('idNotification', $arrData)) {
+			$builder->where('A.fk_id_notification', $arrData['idNotification']);
+		}
+
+		$builder->orderBy('N.notification', 'ASC');
+		$results = $builder->get()->getResultArray();
+
+		if (empty($results)) {
+			return false;
+		}
+
+		$uniqueEmails   = [];
+		$uniqueMoviles  = [];
+
+		foreach ($results as &$item) {
+			if (in_array($item['email'], $uniqueEmails)) {
+				$item['email']      = '';
+				$item['name_email'] = '';
+			} else {
+				$uniqueEmails[] = $item['email'];
+			}
+
+			if (in_array($item['movil'], $uniqueMoviles)) {
+				$item['movil']    = '';
+				$item['name_sms'] = '';
+			} else {
+				$uniqueMoviles[] = $item['movil'];
+			}
+		}
+
+		return $results;
+	}
+
 	public function get_notifications_access_view(array $arrData = []): array
 	{
 		$builder = $this->db->table('notifications_access A');

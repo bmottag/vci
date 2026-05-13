@@ -459,14 +459,7 @@ class Admin extends BaseController
 		if ($state == 'log') {
 
 			//job list
-			$this->load->model("generalModel");
-			$arrParam = array(
-				"table" => "param_jobs",
-				"order" => "job_description",
-				"column" => "state",
-				"id" => 1
-			);
-			$data['jobList'] = $this->generalModel->get_basic_search($arrParam); //job list
+			$data['jobList'] = $this->generalModel->get_job(['state' => 1]);
 
 			$arrParam = array(
 				"table" => "user",
@@ -474,7 +467,7 @@ class Admin extends BaseController
 				"column" => "id_user",
 				"id" => "x"
 			);
-			$data['user'] = $this->generalModel->get_basic_search($arrParam); //job list
+			$data['user'] = $this->generalModel->get_basic_search($arrParam);
 
 			if ($this->request->getPost('jobName') || $this->request->getPost('user') || $this->request->getPost('from')) {
 
@@ -513,8 +506,7 @@ class Admin extends BaseController
 			}
 		} else {
 			$data['state'] = $state;
-			$arrParam['state'] = $state;
-			$data['info'] = $this->generalModel->get_job($arrParam);
+			$data['info'] = $this->generalModel->get_job(['state' => $state]);
 			$data['dashboardURL'] = $this->session->get("dashboardURL");
 			return $this->renderTopOnly('App\Modules\Admin\Views\job', $data);
 
@@ -591,6 +583,49 @@ class Admin extends BaseController
 		}
 
 		if ($idJobSaved = $this->adminModel->saveJob($post)) {
+
+			//If it is a new JOB, then send text messague to SAFETY USER
+			if ($id == '') {
+				//revisar si se envia mensaje de texto y a quien se le envia
+				$configuracionAlertas = $this->generalModel->get_notifications_access(["idNotification" => ID_NOTIFICATION_NEW_JOB]);
+					
+				if ($configuracionAlertas) {
+
+					//mensaje de texto
+					$mensajeSMS = "NEW JOB APP-VCI";
+					$mensajeSMS .= "\nFor your records, a new Job Code has been created in the system.";
+					$mensajeSMS .= "\nJob Code/Name: " . $jobDescription;
+
+					if ($companyId) {
+						$company = $this->generalModel->get_basic_search([
+																"table" => "param_company",
+																"order" => "id_company",
+																"column" => "id_company",
+																"id" => $companyId
+															]);
+
+						$company = $company[0]['company_name'];
+
+						$mensajeSMS .= "\nCompany name: " . $company;
+
+						//foreman company
+						$company_foreman = $this->generalModel->get_basic_search([
+																	"table" => "param_company_foreman",
+																	"order" => "fk_id_param_company",
+																	"column" => "fk_id_param_company",
+																	"id" => $companyId
+																]);
+
+						if ($company_foreman) {
+							$company_foreman = $company_foreman[0]['foreman_name'];
+
+							$mensajeSMS .= "\nForeman name: " . $company_foreman;
+						}
+					}
+
+					$this->sendNotifications($configuracionAlertas, $mensajeSMS);
+				}
+			}
 
 			//save info FOREMAN
 			$nameForeman = $this->request->getPost('foreman');
@@ -2124,37 +2159,19 @@ class Admin extends BaseController
 	 */
 	public function sendNotifications($configuracionAlertas, $mensajeSMS)
 	{
-		//configuracion para envio de mensaje de texto
-		$this->load->library('encrypt');
-		require 'vendor/Twilio/autoload.php';
+		$numbers = [];
 
-		//busco datos parametricos twilio
-		$arrParam = array(
-			"table" => "parametric",
-			"order" => "id_parametric",
-			"id" => "x"
-		);
-		$parametric = $this->generalModel->get_basic_search($arrParam);
-		$dato1 = $this->encrypt->decode($parametric[3]["value"]);
-		$dato2 = $this->encrypt->decode($parametric[4]["value"]);
-		$twilioPhone = $parametric[5]["value"];
-
-		$client = new Twilio\Rest\Client($dato1, $dato2);
-
-		foreach ($configuracionAlertas as $envioAlerta):
-			//envio mensaje de texto
-			if ($envioAlerta['movil']) {
-				$to = '+1' . $envioAlerta['movil'];
-				$client->messages->create(
-					$to,
-					array(
-						'from' => $twilioPhone,
-						'body' => $mensajeSMS
-					)
-				);
+		foreach ($configuracionAlertas as $envioAlerta) {
+			if (!empty($envioAlerta['movil'])) {
+				$numbers[] = '+1' . $envioAlerta['movil'];
 			}
+		}
 
-		endforeach;
+		if (!empty($numbers)) {
+			$smsService = new \App\Libraries\SmsService();
+			$smsService->sendBulk($numbers, $mensajeSMS);
+		}
+
 		return true;
 	}
 

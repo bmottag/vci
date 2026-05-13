@@ -86,7 +86,6 @@
 												Update <span class="glyphicon glyphicon-edit" aria-hidden="true">
 											</button>
 										</th>
-										<th class="text-center">Shops</th>
 										<th class="text-center">Edit</th>
 									</tr>
 								</thead>
@@ -104,14 +103,10 @@
 										$ <input type="text" id="price" name="form[price][]" class="form-control" placeholder="Price" value="<?php echo $unitPrice; ?>">
 										<?php
 										echo "</td>";
-										echo "<td>" . $lista['shops'] . "</td>";
 										echo "<td class='text-center'>";
 										?>
 										<button type="button" class="btn btn-outline btn-primary btn-xs material" data-toggle="modal" data-target="#modal" id="<?php echo $lista['id_material']; ?>">
 											Edit <span class="glyphicon glyphicon-edit" aria-hidden="true">
-										</button>
-										<button type="button" class="btn btn-success btn-xs shop" data-toggle="modal" data-target="#modal" id="<?php echo $lista['id_material']; ?>">
-											Shop <span class="glyphicon glyphicon-shopping-cart" aria-hidden="true">
 										</button>
 									<?php
 										echo "</td>";

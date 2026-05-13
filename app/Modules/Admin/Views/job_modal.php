@@ -141,7 +141,10 @@
 				</div>
 			</div>
 			<div id="div_error" style="display:none">			
-				<div class="alert alert-danger"><span class="glyphicon glyphicon-remove" id="span_msj">&nbsp;</span></div>
+				<div class="alert alert-danger">
+					<span class="glyphicon glyphicon-remove"></span>
+					<span id="span_msj"></span>
+				</div>
 			</div>	
 		</div>
 
