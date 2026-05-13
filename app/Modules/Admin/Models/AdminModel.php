@@ -696,8 +696,8 @@ class AdminModel extends Model
 	{
 		$id = $post['hddId'] ?? null;
 
-		$smsTo = ($post['smsTo']) ? json_encode($post['smsTo']) : null;
-		$emailTo = ($post['emailTo']) ? json_encode($post['emailTo']) : null;
+		$smsTo = !empty($post['smsTo']) ? json_encode($post['smsTo']) : null;
+		$emailTo = !empty($post['emailTo']) ? json_encode($post['emailTo']) : null;
 
 		$data = [
 			'fk_id_user_email' => $emailTo,

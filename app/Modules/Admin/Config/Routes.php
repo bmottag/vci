@@ -19,6 +19,7 @@ $routes->group('admin', ['namespace' => 'App\Modules\Admin\Controllers'], functi
     $routes->get('attachments/(:any)', 'Admin::attachments/$1');
     $routes->get('tags', 'Admin::tags');
     $routes->get('employeeSettings', 'Admin::employeeSettings');
+    $routes->get('certifications_check', 'Admin::certifications_check');
 
     $routes->post('cargar-modal-employee', 'Admin::cargarModalEmployee');
     $routes->post('save_employee', 'Admin::save_employee');

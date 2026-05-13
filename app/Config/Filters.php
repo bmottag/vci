@@ -84,6 +84,7 @@ class Filters extends BaseFilters
                     'jobs/add_signature_excavation',
                     'safety/review_flha/*',
                     'safety/save_signature',
+                    'admin/certifications_check',
                 ]
             ]
         ],
