@@ -266,8 +266,8 @@ class Hauling extends BaseController
 		$emailBody .= "<br><strong>Truck: </strong>" . esc($infoHauling["unit_number"]);
 		$emailBody .= "<br><strong>Truck Type: </strong>" . esc($infoHauling["truck_type"]);
 		$emailBody .= "<br><strong>Material Type: </strong>" . esc($infoHauling["material"]);
-		$emailBody .= "<br><strong>Job Code/Name: </strong>" . esc($infoHauling["from"]);
-		$emailBody .= "<br><strong>To Site: </strong>" . esc($infoHauling["to"]);
+		$emailBody .= "<br><strong>Job Code/Name: </strong>" . esc($infoHauling["job_from"]);
+		$emailBody .= "<br><strong>To Site: </strong>" . esc($infoHauling["job_to"]);
 		$emailBody .= "<br><strong>Time In: </strong>" . esc($infoHauling["time_in"]);
 		$emailBody .= "<br><strong>Time Out: </strong>" . esc($infoHauling["time_out"]);
 		$emailBody .= "<br><strong>Payment: </strong>" . esc($infoHauling["payment"]);
