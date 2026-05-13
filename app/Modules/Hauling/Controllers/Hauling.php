@@ -284,8 +284,7 @@ class Hauling extends BaseController
 			. $emailBody
 			. "<p>Cordially,</p><p><strong>V-CONTRACTING INC</strong></p>"
 			. "</body></html>";
-pr($infoHauling);
-pr($fullEmail); exit;
+
 		$emailService = new \App\Libraries\EmailService();
 		$emailService->sendRaw($to, $subject, $fullEmail);
 
