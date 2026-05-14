@@ -109,8 +109,82 @@ class Inspection extends BaseController
                 $this->inspectionModel->saveInspectionTotal($idVehicle);
                 $this->inspectionModel->saveVehicleNextOilChange($idVehicle, 1, $idDailyInspection, $post, $idUser);
 
-                // TODO: Email/SMS notification — review later
-                // send_notification([...]) was here. Left commented for implementation.
+                $comments = $post['comments'] ?? '';
+                $hours    = $post['hours'] ?? 0;
+
+                $headLamps       = $post['headLamps'] ?? 1;
+                $hazardLights    = $post['hazardLights'] ?? 1;
+                $bakeLights      = $post['bakeLights'] ?? 1;
+                $workLights      = $post['workLights'] ?? 1;
+                $turnSignals     = $post['turnSignals'] ?? 1;
+                $beaconLight     = $post['beaconLight'] ?? 1;
+                $clearanceLights = $post['clearanceLights'] ?? 1;
+                $lightsCheck     = ($headLamps == 0 || $hazardLights == 0 || $bakeLights == 0 || $workLights == 0 || $turnSignals == 0 || $beaconLight == 0 || $clearanceLights == 0) ? 0 : 1;
+
+                $heaterCheck     = $post['heater'] ?? 1;
+                $brakesCheck     = $post['brakePedal'] ?? 1;
+                $steeringCheck   = $post['steering_wheel'] ?? 1;
+                $suspensionCheck = $post['suspension_system'] ?? 1;
+                $tiresCheck      = $post['nuts'] ?? 1;
+                $wipersCheck     = $post['wipers'] ?? 1;
+                $airBrakeCheck   = $post['air_brake'] ?? 1;
+                $driverSeatCheck = $post['passengerDoor'] ?? 1;
+                $fuelCheck       = $post['fuel_system'] ?? 1;
+
+                $sendNotification = false;
+                $subject          = '';
+                $emailMsnTitle    = '';
+                if ($comments !== '') {
+                    $emailMsnTitle    = '<p>The following inspection have comments please check the complete report in the system.</p>';
+                    $subject          = 'Inspection with comments';
+                    $sendNotification = true;
+                }
+
+                $failsEmail = '';
+                $fails      = '';
+                if ($heaterCheck == 0 || $brakesCheck == 0 || $lightsCheck == 0 || $steeringCheck == 0 || $suspensionCheck == 0 || $tiresCheck == 0 || $wipersCheck == 0 || $airBrakeCheck == 0 || $driverSeatCheck == 0 || $fuelCheck == 0) {
+                    $majorDefect   = '<p>A major defect has been identified in the last inspection, a driver is not legally permitted to operate the vehicle until that defect is repaired.</p>';
+                    $emailMsnTitle = $sendNotification ? $emailMsnTitle . $majorDefect : $majorDefect;
+                    if ($heaterCheck == 0)     { $failsEmail .= '<br>Heater - Fail';                   $fails .= "\nHeater - Fail"; }
+                    if ($brakesCheck == 0)     { $failsEmail .= '<br>Brake pedal - Fail';               $fails .= "\nBrake pedal - Fail"; }
+                    if ($lightsCheck == 0)     { $failsEmail .= '<br>Lamps and reflectors - Fail';      $fails .= "\nLamps and reflectors - Fail"; }
+                    if ($steeringCheck == 0)   { $failsEmail .= '<br>Steering wheel - Fail';            $fails .= "\nSteering wheel - Fail"; }
+                    if ($suspensionCheck == 0) { $failsEmail .= '<br>Suspension system - Fail';         $fails .= "\nSuspension system - Fail"; }
+                    if ($tiresCheck == 0)      { $failsEmail .= '<br>Tires/Lug Nuts/Pressure - Fail';   $fails .= "\nTires/Lug Nuts/Pressure - Fail"; }
+                    if ($wipersCheck == 0)     { $failsEmail .= '<br>Wipers/Washers - Fail';            $fails .= "\nWipers/Washers - Fail"; }
+                    if ($airBrakeCheck == 0)   { $failsEmail .= '<br>Air brake system - Fail';          $fails .= "\nAir brake system - Fail"; }
+                    if ($driverSeatCheck == 0) { $failsEmail .= '<br>Driver and Passenger door - Fail'; $fails .= "\nDriver and Passenger door - Fail"; }
+                    if ($fuelCheck == 0)       { $failsEmail .= '<br>Fuel system - Fail';               $fails .= "\nFuel system - Fail"; }
+                    $subject          = $sendNotification ? $subject . ' & ' : '';
+                    $subject         .= 'Inspection with major defect';
+                    $sendNotification = true;
+                }
+
+                if ($sendNotification) {
+                    $vehicleInfo = $this->generalModel->get_basic_search(['table' => 'param_vehicle', 'order' => 'id_vehicle', 'column' => 'id_vehicle', 'id' => $idVehicle]);
+                    $urlMovil    = base_url('login/index/x/' . base64_encode('INSPECTION_LIST_BY_EQUIPMENT_ID') . '/' . base64_encode($idVehicle));
+
+                    $emailBody  = $emailMsnTitle;
+                    $emailBody .= '<strong>Make: </strong>' . esc($vehicleInfo[0]['make']);
+                    $emailBody .= '<br><strong>Model: </strong>' . esc($vehicleInfo[0]['model']);
+                    $emailBody .= '<br><strong>Unit Number: </strong>' . esc($vehicleInfo[0]['unit_number']);
+                    $emailBody .= '<br><strong>Description: </strong>' . esc($vehicleInfo[0]['description']);
+                    $emailBody .= '<br><strong>Equipment Hours/Kilometers: </strong>' . number_format($hours);
+                    $emailBody .= $comments !== '' ? '<br><strong>Comments: </strong>' . esc($comments) : '';
+                    $emailBody .= $failsEmail ? '<p><b>Fails:</b><br>' . $failsEmail . '</p>' : '';
+                    $emailBody .= "<p>Follow the link to see the list. <a href='{$urlMovil}'>Click here</a></p>";
+
+                    $smsMessage  = $subject . ' App - VCI';
+                    $smsMessage .= "\nUnit Number: " . $vehicleInfo[0]['unit_number'];
+                    $smsMessage .= $comments !== '' ? "\nComments: " . $comments : '';
+                    $smsMessage .= $fails;
+                    $smsMessage .= "\n\nSee: " . $urlMovil;
+
+                    $configuracionAlertas = $this->generalModel->get_notifications_access(['idNotification' => ID_NOTIFICATION_INSPECTIONS]);
+                    if ($configuracionAlertas) {
+                        send_notification($configuracionAlertas, $subject, $emailBody, $smsMessage);
+                    }
+                }
             }
 
             $data["status"]             = "success";
@@ -184,8 +258,32 @@ class Inspection extends BaseController
                 $this->inspectionModel->saveInspectionTotal($idVehicle);
                 $this->inspectionModel->saveVehicleNextOilChange($idVehicle, 1, $idHeavyInspection, $post, $idUser);
 
-                // TODO: Email/SMS notification — review later
-                // send_notification([...]) was here. Left commented for implementation.
+                $comments = $post['comments'] ?? '';
+                $hours    = $post['hours'] ?? 0;
+
+                if ($comments !== '') {
+                    $vehicleInfo = $this->generalModel->get_basic_search(['table' => 'param_vehicle', 'order' => 'id_vehicle', 'column' => 'id_vehicle', 'id' => $idVehicle]);
+                    $urlMovil    = base_url('login/index/x/' . base64_encode('INSPECTION_LIST_BY_EQUIPMENT_ID') . '/' . base64_encode($idVehicle));
+
+                    $emailBody  = '<p>The following inspection have comments please check the complete report in the system.</p>';
+                    $emailBody .= '<strong>Make: </strong>' . esc($vehicleInfo[0]['make']);
+                    $emailBody .= '<br><strong>Model: </strong>' . esc($vehicleInfo[0]['model']);
+                    $emailBody .= '<br><strong>Unit Number: </strong>' . esc($vehicleInfo[0]['unit_number']);
+                    $emailBody .= '<br><strong>Description: </strong>' . esc($vehicleInfo[0]['description']);
+                    $emailBody .= '<br><strong>Equipment Hours/Kilometers: </strong>' . number_format($hours);
+                    $emailBody .= '<br><strong>Comments: </strong>' . esc($comments);
+                    $emailBody .= "<p>Follow the link to see the list. <a href='{$urlMovil}'>Click here</a></p>";
+
+                    $smsMessage  = 'APP VCI - Inspection with comments';
+                    $smsMessage .= "\nUnit Number: " . $vehicleInfo[0]['unit_number'];
+                    $smsMessage .= "\nComments: " . $comments;
+                    $smsMessage .= "\n\nSee: " . $urlMovil;
+
+                    $configuracionAlertas = $this->generalModel->get_notifications_access(['idNotification' => ID_NOTIFICATION_INSPECTIONS]);
+                    if ($configuracionAlertas) {
+                        send_notification($configuracionAlertas, 'Inspection with comments', $emailBody, $smsMessage);
+                    }
+                }
             }
 
             $data["status"]             = "success";
@@ -259,8 +357,32 @@ class Inspection extends BaseController
             if ($flag) {
                 $this->inspectionModel->saveVehicleNextOilChange($idVehicle, 1, $idGeneratorInspection, $post, $idUser);
 
-                // TODO: Email/SMS notification — review later
-                // send_notification([...]) was here. Left commented for implementation.
+                $comments = $post['comments'] ?? '';
+                $hours    = $post['hours'] ?? 0;
+
+                if ($comments !== '') {
+                    $vehicleInfo = $this->generalModel->get_basic_search(['table' => 'param_vehicle', 'order' => 'id_vehicle', 'column' => 'id_vehicle', 'id' => $idVehicle]);
+                    $urlMovil    = base_url('login/index/x/' . base64_encode('INSPECTION_LIST_BY_EQUIPMENT_ID') . '/' . base64_encode($idVehicle));
+
+                    $emailBody  = '<p>The following inspection have comments please check the complete report in the system.</p>';
+                    $emailBody .= '<strong>Make: </strong>' . esc($vehicleInfo[0]['make']);
+                    $emailBody .= '<br><strong>Model: </strong>' . esc($vehicleInfo[0]['model']);
+                    $emailBody .= '<br><strong>Unit Number: </strong>' . esc($vehicleInfo[0]['unit_number']);
+                    $emailBody .= '<br><strong>Description: </strong>' . esc($vehicleInfo[0]['description']);
+                    $emailBody .= '<br><strong>Equipment Hours/Kilometers: </strong>' . number_format($hours);
+                    $emailBody .= '<br><strong>Comments: </strong>' . esc($comments);
+                    $emailBody .= "<p>Follow the link to see the list. <a href='{$urlMovil}'>Click here</a></p>";
+
+                    $smsMessage  = 'Inspection with comments App - VCI';
+                    $smsMessage .= "\nUnit Number: " . $vehicleInfo[0]['unit_number'];
+                    $smsMessage .= "\nComments: " . $comments;
+                    $smsMessage .= "\n\nSee: " . $urlMovil;
+
+                    $configuracionAlertas = $this->generalModel->get_notifications_access(['idNotification' => ID_NOTIFICATION_INSPECTIONS]);
+                    if ($configuracionAlertas) {
+                        send_notification($configuracionAlertas, $smsMessage, $emailBody, $smsMessage);
+                    }
+                }
             }
 
             $data["status"]                 = "success";
@@ -335,8 +457,34 @@ class Inspection extends BaseController
                 $this->inspectionModel->saveInspectionTotal($idVehicle);
                 $this->inspectionModel->saveVehicleNextOilChange($idVehicle, 1, $idSweeperInspection, $post, $idUser);
 
-                // TODO: Email/SMS notification — review later
-                // send_notification([...]) was here. Left commented for implementation.
+                $comments = $post['comments'] ?? '';
+                $hours    = $post['hours'] ?? 0;
+                $hours2   = $post['hours2'] ?? 0;
+
+                if ($comments !== '') {
+                    $vehicleInfo = $this->generalModel->get_basic_search(['table' => 'param_vehicle', 'order' => 'id_vehicle', 'column' => 'id_vehicle', 'id' => $idVehicle]);
+                    $urlMovil    = base_url('login/index/x/' . base64_encode('INSPECTION_LIST_BY_EQUIPMENT_ID') . '/' . base64_encode($idVehicle));
+
+                    $emailBody  = '<p>The following inspection have comments please check the complete report in the system.</p>';
+                    $emailBody .= '<strong>Make: </strong>' . esc($vehicleInfo[0]['make']);
+                    $emailBody .= '<br><strong>Model: </strong>' . esc($vehicleInfo[0]['model']);
+                    $emailBody .= '<br><strong>Unit Number: </strong>' . esc($vehicleInfo[0]['unit_number']);
+                    $emailBody .= '<br><strong>Description: </strong>' . esc($vehicleInfo[0]['description']);
+                    $emailBody .= '<br><strong>Truck Engine Hours: </strong>' . number_format($hours);
+                    $emailBody .= '<br><strong>Sweeper Engine Hours: </strong>' . number_format($hours2);
+                    $emailBody .= '<br><strong>Comments: </strong>' . esc($comments);
+                    $emailBody .= "<p>Follow the link to see the list. <a href='{$urlMovil}'>Click here</a></p>";
+
+                    $smsMessage  = 'Inspection with comments App - VCI';
+                    $smsMessage .= "\nUnit Number: " . $vehicleInfo[0]['unit_number'];
+                    $smsMessage .= "\nComments: " . $comments;
+                    $smsMessage .= "\n\nSee: " . $urlMovil;
+
+                    $configuracionAlertas = $this->generalModel->get_notifications_access(['idNotification' => ID_NOTIFICATION_INSPECTIONS]);
+                    if ($configuracionAlertas) {
+                        send_notification($configuracionAlertas, $smsMessage, $emailBody, $smsMessage);
+                    }
+                }
             }
 
             $data["status"]                = "success";
@@ -412,8 +560,86 @@ class Inspection extends BaseController
                 $this->inspectionModel->saveInspectionTotal($idVehicle);
                 $this->inspectionModel->saveVehicleNextOilChange($idVehicle, 1, $idHydrovacInspection, $post, $idUser);
 
-                // TODO: Email/SMS notification — review later
-                // send_notification([...]) was here. Left commented for implementation.
+                $comments = $post['comments'] ?? '';
+                $hours    = $post['hours'] ?? 0;
+                $hours2   = $post['hours2'] ?? 0;
+                $hours3   = $post['hours3'] ?? 0;
+
+                $headLamps       = $post['headLamps'] ?? 1;
+                $hazardLights    = $post['hazardLights'] ?? 1;
+                $clearanceLights = $post['clearanceLights'] ?? 1;
+                $tailLights      = $post['tailLights'] ?? 1;
+                $workLights      = $post['workLights'] ?? 1;
+                $turnSignals     = $post['turnSignals'] ?? 1;
+                $beaconLight     = $post['beaconLights'] ?? 1;
+                $lightsCheck     = ($headLamps == 0 || $hazardLights == 0 || $tailLights == 0 || $workLights == 0 || $turnSignals == 0 || $beaconLight == 0 || $clearanceLights == 0) ? 0 : 1;
+
+                $heaterCheck     = $post['heater'] ?? 1;
+                $brakesCheck     = $post['brake'] ?? 1;
+                $steeringCheck   = $post['steering_wheel'] ?? 1;
+                $suspensionCheck = $post['suspension_system'] ?? 1;
+                $tiresCheck      = $post['tires'] ?? 1;
+                $wipersCheck     = $post['wipers'] ?? 1;
+                $airBrakeCheck   = $post['air_brake'] ?? 1;
+                $driverSeatCheck = $post['door'] ?? 1;
+                $fuelCheck       = $post['fuel_system'] ?? 1;
+
+                $sendNotification = false;
+                $subject          = '';
+                $emailMsnTitle    = '';
+                if ($comments !== '') {
+                    $emailMsnTitle    = '<p>The following inspection have comments please check the complete report in the system.</p>';
+                    $subject          = 'Inspection with comments';
+                    $sendNotification = true;
+                }
+
+                $failsEmail = '';
+                $fails      = '';
+                if ($heaterCheck == 0 || $brakesCheck == 0 || $lightsCheck == 0 || $steeringCheck == 0 || $suspensionCheck == 0 || $tiresCheck == 0 || $wipersCheck == 0 || $airBrakeCheck == 0 || $driverSeatCheck == 0 || $fuelCheck == 0) {
+                    $majorDefect   = '<p>A major defect has been identified in the last inspection, a driver is not legally permitted to operate the vehicle until that defect is repaired.</p>';
+                    $emailMsnTitle = $sendNotification ? $emailMsnTitle . $majorDefect : $majorDefect;
+                    if ($heaterCheck == 0)     { $failsEmail .= '<br>Heater - Fail';                   $fails .= "\nHeater - Fail"; }
+                    if ($brakesCheck == 0)     { $failsEmail .= '<br>Brake pedal - Fail';               $fails .= "\nBrake pedal - Fail"; }
+                    if ($lightsCheck == 0)     { $failsEmail .= '<br>Lamps and reflectors - Fail';      $fails .= "\nLamps and reflectors - Fail"; }
+                    if ($steeringCheck == 0)   { $failsEmail .= '<br>Steering wheel - Fail';            $fails .= "\nSteering wheel - Fail"; }
+                    if ($suspensionCheck == 0) { $failsEmail .= '<br>Suspension system - Fail';         $fails .= "\nSuspension system - Fail"; }
+                    if ($tiresCheck == 0)      { $failsEmail .= '<br>Tires/Lug Nuts/Pressure - Fail';   $fails .= "\nTires/Lug Nuts/Pressure - Fail"; }
+                    if ($wipersCheck == 0)     { $failsEmail .= '<br>Wipers/Washers - Fail';            $fails .= "\nWipers/Washers - Fail"; }
+                    if ($airBrakeCheck == 0)   { $failsEmail .= '<br>Air brake system - Fail';          $fails .= "\nAir brake system - Fail"; }
+                    if ($driverSeatCheck == 0) { $failsEmail .= '<br>Driver and Passenger door - Fail'; $fails .= "\nDriver and Passenger door - Fail"; }
+                    if ($fuelCheck == 0)       { $failsEmail .= '<br>Fuel system - Fail';               $fails .= "\nFuel system - Fail"; }
+                    $subject          = $sendNotification ? $subject . ' & ' : '';
+                    $subject         .= 'Inspection with major defect';
+                    $sendNotification = true;
+                }
+
+                if ($sendNotification) {
+                    $vehicleInfo = $this->generalModel->get_basic_search(['table' => 'param_vehicle', 'order' => 'id_vehicle', 'column' => 'id_vehicle', 'id' => $idVehicle]);
+                    $urlMovil    = base_url('login/index/x/' . base64_encode('INSPECTION_LIST_BY_EQUIPMENT_ID') . '/' . base64_encode($idVehicle));
+
+                    $emailBody  = $emailMsnTitle;
+                    $emailBody .= '<strong>Make: </strong>' . esc($vehicleInfo[0]['make']);
+                    $emailBody .= '<br><strong>Model: </strong>' . esc($vehicleInfo[0]['model']);
+                    $emailBody .= '<br><strong>Unit Number: </strong>' . esc($vehicleInfo[0]['unit_number']);
+                    $emailBody .= '<br><strong>Description: </strong>' . esc($vehicleInfo[0]['description']);
+                    $emailBody .= '<br><strong>Engine Hours: </strong>' . number_format($hours);
+                    $emailBody .= '<br><strong>Hydraulic Pump Hours: </strong>' . number_format($hours2);
+                    $emailBody .= '<br><strong>Blower Hours: </strong>' . number_format($hours3);
+                    $emailBody .= $comments !== '' ? '<br><strong>Comments: </strong>' . esc($comments) : '';
+                    $emailBody .= $failsEmail ?: '';
+                    $emailBody .= "<p>Follow the link to see the list. <a href='{$urlMovil}'>Click here</a></p>";
+
+                    $smsMessage  = $subject . ' App - VCI';
+                    $smsMessage .= "\nUnit Number: " . $vehicleInfo[0]['unit_number'];
+                    $smsMessage .= $comments !== '' ? "\nComments: " . $comments : '';
+                    $smsMessage .= $fails;
+                    $smsMessage .= "\n\nSee: " . $urlMovil;
+
+                    $configuracionAlertas = $this->generalModel->get_notifications_access(['idNotification' => ID_NOTIFICATION_INSPECTIONS]);
+                    if ($configuracionAlertas) {
+                        send_notification($configuracionAlertas, $subject, $emailBody, $smsMessage);
+                    }
+                }
             }
 
             $data["status"]                  = "success";
@@ -490,8 +716,82 @@ class Inspection extends BaseController
                 $this->inspectionModel->saveInspectionTotal($idVehicle);
                 $this->inspectionModel->saveVehicleNextOilChange($idVehicle, 1, $idWatertruckInspection, $post, $idUser);
 
-                // TODO: Email/SMS notification — review later
-                // send_notification([...]) was here. Left commented for implementation.
+                $comments = $post['comments'] ?? '';
+                $hours    = $post['hours'] ?? 0;
+
+                $headLamps       = $post['headLamps'] ?? 1;
+                $hazardLights    = $post['hazardLights'] ?? 1;
+                $clearanceLights = $post['clearanceLights'] ?? 1;
+                $tailLights      = $post['tailLights'] ?? 1;
+                $workLights      = $post['workLights'] ?? 1;
+                $turnSignals     = $post['turnSignals'] ?? 1;
+                $beaconLight     = $post['beaconLights'] ?? 1;
+                $lightsCheck     = ($headLamps == 0 || $hazardLights == 0 || $tailLights == 0 || $workLights == 0 || $turnSignals == 0 || $beaconLight == 0 || $clearanceLights == 0) ? 0 : 1;
+
+                $heaterCheck     = $post['heater'] ?? 1;
+                $brakesCheck     = $post['brake'] ?? 1;
+                $steeringCheck   = $post['steering_wheel'] ?? 1;
+                $suspensionCheck = $post['suspension_system'] ?? 1;
+                $tiresCheck      = $post['tires'] ?? 1;
+                $wipersCheck     = $post['wipers'] ?? 1;
+                $airBrakeCheck   = $post['air_brake'] ?? 1;
+                $driverSeatCheck = $post['door'] ?? 1;
+                $fuelCheck       = $post['fuel_system'] ?? 1;
+
+                $sendNotification = false;
+                $subject          = '';
+                $emailMsnTitle    = '';
+                if ($comments !== '') {
+                    $emailMsnTitle    = '<p>The following inspection have comments please check the complete report in the system.</p>';
+                    $subject          = 'Inspection with comments';
+                    $sendNotification = true;
+                }
+
+                $failsEmail = '';
+                $fails      = '';
+                if ($heaterCheck == 0 || $brakesCheck == 0 || $lightsCheck == 0 || $steeringCheck == 0 || $suspensionCheck == 0 || $tiresCheck == 0 || $wipersCheck == 0 || $airBrakeCheck == 0 || $driverSeatCheck == 0 || $fuelCheck == 0) {
+                    $majorDefect   = '<p>A major defect has been identified in the last inspection, a driver is not legally permitted to operate the vehicle until that defect is repaired.</p>';
+                    $emailMsnTitle = $sendNotification ? $emailMsnTitle . $majorDefect : $majorDefect;
+                    if ($heaterCheck == 0)     { $failsEmail .= '<br>Heater - Fail';                   $fails .= "\nHeater - Fail"; }
+                    if ($brakesCheck == 0)     { $failsEmail .= '<br>Brake pedal - Fail';               $fails .= "\nBrake pedal - Fail"; }
+                    if ($lightsCheck == 0)     { $failsEmail .= '<br>Lamps and reflectors - Fail';      $fails .= "\nLamps and reflectors - Fail"; }
+                    if ($steeringCheck == 0)   { $failsEmail .= '<br>Steering wheel - Fail';            $fails .= "\nSteering wheel - Fail"; }
+                    if ($suspensionCheck == 0) { $failsEmail .= '<br>Suspension system - Fail';         $fails .= "\nSuspension system - Fail"; }
+                    if ($tiresCheck == 0)      { $failsEmail .= '<br>Tires/Lug Nuts/Pressure - Fail';   $fails .= "\nTires/Lug Nuts/Pressure - Fail"; }
+                    if ($wipersCheck == 0)     { $failsEmail .= '<br>Wipers/Washers - Fail';            $fails .= "\nWipers/Washers - Fail"; }
+                    if ($airBrakeCheck == 0)   { $failsEmail .= '<br>Air brake system - Fail';          $fails .= "\nAir brake system - Fail"; }
+                    if ($driverSeatCheck == 0) { $failsEmail .= '<br>Driver and Passenger door - Fail'; $fails .= "\nDriver and Passenger door - Fail"; }
+                    if ($fuelCheck == 0)       { $failsEmail .= '<br>Fuel system - Fail';               $fails .= "\nFuel system - Fail"; }
+                    $subject          = $sendNotification ? $subject . ' & ' : '';
+                    $subject         .= 'Inspection with major defect';
+                    $sendNotification = true;
+                }
+
+                if ($sendNotification) {
+                    $vehicleInfo = $this->generalModel->get_basic_search(['table' => 'param_vehicle', 'order' => 'id_vehicle', 'column' => 'id_vehicle', 'id' => $idVehicle]);
+                    $urlMovil    = base_url('login/index/x/' . base64_encode('INSPECTION_LIST_BY_EQUIPMENT_ID') . '/' . base64_encode($idVehicle));
+
+                    $emailBody  = $emailMsnTitle;
+                    $emailBody .= '<strong>Make: </strong>' . esc($vehicleInfo[0]['make']);
+                    $emailBody .= '<br><strong>Model: </strong>' . esc($vehicleInfo[0]['model']);
+                    $emailBody .= '<br><strong>Unit Number: </strong>' . esc($vehicleInfo[0]['unit_number']);
+                    $emailBody .= '<br><strong>Description: </strong>' . esc($vehicleInfo[0]['description']);
+                    $emailBody .= '<br><strong>Equipment Hours/Kilometers: </strong>' . number_format($hours);
+                    $emailBody .= $comments !== '' ? '<br><strong>Comments: </strong>' . esc($comments) : '';
+                    $emailBody .= $failsEmail ?: '';
+                    $emailBody .= "<p>Follow the link to see the list. <a href='{$urlMovil}'>Click here</a></p>";
+
+                    $smsMessage  = $subject . ' App - VCI';
+                    $smsMessage .= "\nUnit Number: " . $vehicleInfo[0]['unit_number'];
+                    $smsMessage .= $comments !== '' ? "\nComments: " . $comments : '';
+                    $smsMessage .= $fails;
+                    $smsMessage .= "\n\nSee: " . $urlMovil;
+
+                    $configuracionAlertas = $this->generalModel->get_notifications_access(['idNotification' => ID_NOTIFICATION_INSPECTIONS]);
+                    if ($configuracionAlertas) {
+                        send_notification($configuracionAlertas, $subject, $emailBody, $smsMessage);
+                    }
+                }
             }
 
             $data["status"]                    = "success";
