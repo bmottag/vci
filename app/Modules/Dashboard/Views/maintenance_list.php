@@ -43,7 +43,7 @@
 								}
 								
 								echo "<br>" . $listaMaintenance['description'] . "<br>";
-								echo '<a href="' . base_url("serviceorder/index/x/" . base64_encode($listaMaintenance['id_vehicle'])) . '" class="btn btn-danger btn-xs"> View</a>';	
+								echo '<a href="' . base_url("serviceorder/index/x/" . base64url_encode($listaMaintenance['id_vehicle'])) . '" class="btn btn-danger btn-xs"> View</a>';	
 								echo "</td>";
 
 								echo "<td>";
