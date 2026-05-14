@@ -274,7 +274,7 @@ class Inspection extends BaseController
                     $emailBody .= '<br><strong>Comments: </strong>' . esc($comments);
                     $emailBody .= "<p>Follow the link to see the list. <a href='{$urlMovil}'>Click here</a></p>";
 
-                    $smsMessage  = 'APP VCI - Inspection with comments';
+                    $smsMessage  = 'Inspection with comments App - VCI';
                     $smsMessage .= "\nUnit Number: " . $vehicleInfo[0]['unit_number'];
                     $smsMessage .= "\nComments: " . $comments;
                     $smsMessage .= "\n\nSee: " . $urlMovil;
