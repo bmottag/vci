@@ -51,6 +51,8 @@ $routes->group('jobs', ['namespace' => 'App\Modules\Jobs\Controllers'], function
     $routes->get('fire_watch_checkin/(:num)', 'Jobs::fire_watch_checkin/$1');
     $routes->get('generaFIREWATCHPDF/(:num)', 'Jobs::generaFIREWATCHPDF/$1');
     $routes->get('job_detail/(:num)', 'Jobs::job_detail/$1');
+    $routes->get('sendSMSworkerJSO/(:num)', 'Jobs::sendSMSworkerJSO/$1');
+    $routes->get('jso_worker_view/(:num)', 'Jobs::jso_worker_view/$1');
 
     $routes->post('save_safety_hazards', 'Jobs::save_safety_hazards');
     $routes->post('save_tool_box', 'Jobs::save_tool_box');

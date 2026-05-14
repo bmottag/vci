@@ -41,7 +41,7 @@ class External extends BaseController
         }
 
         // 🔹 Mensaje
-        $mensaje  = "VCI FLHA - " . date('F j, Y', strtotime($infoSafety[0]['date']));
+        $mensaje  = "FLHA App - VCI - " . date('F j, Y', strtotime($infoSafety[0]['date']));
         $mensaje .= "\n" . $infoSafety[0]['job_description'];
         $mensaje .= "\nFollow the link, read the FLHA and sign.";
         $mensaje .= "\n\n" . base_url("safety/review_flha/" . $idSafety);
@@ -52,9 +52,13 @@ class External extends BaseController
         }, $workers);
 
         // 🔹 Enviar SMS
-        $smsService->sendBulk($numbers, $mensaje);
+        try {
+            $smsService->sendBulk($numbers, $mensaje);
+            session()->setFlashdata('retornoExito', 'You have send the SMS to Subcontractors.');
+        } catch (\Exception $e) {
+            session()->setFlashdata('retornoError', '<strong>Error!</strong> SMS could not be sent: ' . $e->getMessage());
+        }
 
-        session()->setFlashdata('retornoExito', 'You have send the SMS to Subcontractors.');
 		return redirect()->to(base_url('safety/review_flha/' . $idSafety));
     }
 
@@ -82,7 +86,7 @@ class External extends BaseController
         }
 
         // 🔹 Mensaje
-        $mensaje  = 'VCI Excavation and Trenching Plan - ' . date('F j, Y', strtotime($information[0]['date_excavation']));
+        $mensaje  = 'Excavation and Trenching Plan App - VCI - ' . date('F j, Y', strtotime($information[0]['date_excavation']));
         $mensaje .= "\n" . $information[0]['job_description'];
         $mensaje .= "\nFollow the link, read the Excavation and Trenching Plan and sign.";
         $mensaje .= "\n\n" . base_url('jobs/review_excavation/' . $idExcavation);
@@ -93,9 +97,13 @@ class External extends BaseController
         }, $workers);
 
         // 🔹 Enviar SMS
-        $smsService->sendBulk($numbers, $mensaje);
+        try {
+            $smsService->sendBulk($numbers, $mensaje);
+            session()->setFlashdata('retornoExito', 'You have send the SMS to Subcontractors.');
+        } catch (\Exception $e) {
+            session()->setFlashdata('retornoError', '<strong>Error!</strong> SMS could not be sent: ' . $e->getMessage());
+        }
 
-        session()->setFlashdata('retornoExito', 'You have send the SMS to Subcontractors.');
 		return redirect()->to(base_url('jobs/review_excavation/' . $idExcavation));
     }
 

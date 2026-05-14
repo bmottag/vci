@@ -2676,4 +2676,59 @@ class Jobs extends BaseController
 		return $this->renderTopOnly('App\Modules\Jobs\Views\job_lic_charged', $data);
 	}
 
+	/**
+	 * Envio de mensaje
+	 * @since 26/11/2020
+	 * @author BMOTTAG
+	 * @review 14/05/2026 - new CI4 version
+	 */
+	public function sendSMSworkerJSO($idJSOworker)
+	{
+		$smsService = new \App\Libraries\SmsService();
+
+		$information = $this->jobsModel->get_jso_workers(['idJobJsoWorker' => $idJSOworker]);
+		$idJobJso    = $information[0]['fk_id_job_jso'];
+		$JSOInfo     = $this->jobsModel->get_jso(['idJobJso' => $idJobJso]);
+		$idJob       = $JSOInfo[0]['id_job'];
+
+		$rawPhone = preg_replace('/[^0-9]/', '', $information[0]['works_phone_number'] ?? '');
+
+		if (strlen($rawPhone) !== 10) {
+			session()->setFlashdata('retornoError', '<strong>Error!</strong> Worker phone number is invalid or not registered.');
+			return redirect()->to(base_url('jobs/add_jso/' . $idJob . '/' . $idJobJso));
+		}
+
+		$mensaje  = date('F j, Y', strtotime($JSOInfo[0]['date_issue_jso']));
+		$mensaje .= "\n" . $JSOInfo[0]['job_description'];
+		$mensaje .= "\nClick the link below to sign the JOB SITE ORIENTATION.";
+		$mensaje .= "\n\n" . base_url('jobs/jso_worker_view/' . $idJSOworker);
+
+		try {
+			$smsService->send('+1' . $rawPhone, $mensaje);
+			session()->setFlashdata('retornoExito', 'You have send the SMS to the worker.');
+		} catch (\Exception $e) {
+			session()->setFlashdata('retornoError', '<strong>Error!</strong> SMS could not be sent: ' . $e->getMessage());
+		}
+
+		return redirect()->to(base_url('jobs/add_jso/' . $idJob . '/' . $idJobJso));
+	}
+
+	/**
+	 * JSO workorder view to sign
+	 * @since 26/11/2020
+	 * @author BMOTTAG
+	 * @review 14/05/2026 - new CI4 version
+	 */
+	public function jso_worker_view($idJSOworker)
+	{
+		//Worker info		
+		$data['information'] = $this->jobsModel->get_jso_workers(["idJobJsoWorker" => $idJSOworker]);
+
+		//JSO info
+		$idJobJso = $data['information'][0]['fk_id_job_jso'];
+		$data['JSOInfo'] = $this->jobsModel->get_jso(["idJobJso" => $idJobJso]);
+
+		return $this->render('App\Modules\Jobs\Views\jso_worker_view', $data);
+	}
+
 }

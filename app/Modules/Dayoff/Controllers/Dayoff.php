@@ -110,7 +110,7 @@ class Dayoff extends BaseController
 					default => 'Unknown',
 				};
 
-				$subject     = "DAY OFF APP-VCI";
+				$subject     = "Day Off App - VCI";
 				$observation = esc($post['observation']);
 
 				$emailBody  = "<p>There is a new request for a Day Off:</p>";
@@ -120,7 +120,7 @@ class Dayoff extends BaseController
 				$emailBody .= "<br><strong>Observation: </strong>" . $observation;
 				$emailBody .= "<p>Follow the link to approve or deny the Day Off: </p>";
 
-				$smsMessage  = "DAY OFF APP-VCI";
+				$smsMessage  = "Day Off App - VCI";
 				$smsMessage .= "\nThere is a new request for a Day Off:";
 				$smsMessage .= "\nEmployee: " . $dayoffInfo[0]["name"];
 				$smsMessage .= "\nType: " . $tipo;

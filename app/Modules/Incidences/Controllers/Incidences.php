@@ -465,13 +465,17 @@ class Incidences extends BaseController
 			return '+1' . $p['person_movil_number'];
 		}, $data['infoPersonsInvolved']);
 
-		$smsService->sendBulk($numbers, $mensaje);
-
 		$path = $incidencesType == 1
 			? 'incidences/add_near_miss/' . $idFormulario . '/' . $incidencesType
 			: 'incidences/add_incident/' . $idFormulario . '/' . $incidencesType;
 
-        session()->setFlashdata('retornoExito', 'You have send the SMS to Persons Involved.');
+		try {
+			$smsService->sendBulk($numbers, $mensaje);
+			session()->setFlashdata('retornoExito', 'You have send the SMS to Persons Involved.');
+		} catch (\Exception $e) {
+			session()->setFlashdata('retornoError', '<strong>Error!</strong> SMS could not be sent: ' . $e->getMessage());
+		}
+
 		return redirect()->to(base_url($path));
 	}
 
@@ -511,7 +515,7 @@ class Incidences extends BaseController
 				break;
 			case 2: //incident report
 				$model = "get_incident_by";
-				$subjet = "Incident Report";
+				$subjet = "Incident Report App - VCI";
 				$arrParam = array('idIncident' => $idIncidence);
 				break;
 		}
@@ -523,7 +527,7 @@ class Incidences extends BaseController
 			$emailBody  = "<p>It is a new " . $subjet . ":</p>";
 			$emailBody .= "<strong>Report by: </strong>" . esc($infoIncident[0]["name"]);
 
-			$smsMessage  = "APP VCI - Incident Notification";
+			$smsMessage  = "Incident Notification App - VCI";
 			$smsMessage .= "\nIt is a new " . $subjet . ":";
 			$smsMessage .= "\nReport by: " . $infoIncident[0]["name"];
 			if ($incidencesType == 3) {

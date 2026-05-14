@@ -265,7 +265,7 @@ class Hauling extends BaseController
 	{
 		$infoHauling = $this->haulingModel->get_hauling_byId($id);
 
-		$subject = "Hauling Information";
+		$subject = "Hauling Information App - VCI";
 		$user    = $infoHauling["contact"];
 		$to      = $infoHauling["email"];
 

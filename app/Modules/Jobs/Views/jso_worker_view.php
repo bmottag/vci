@@ -19,7 +19,6 @@ $(document).ready(function () {
 <div id="page-wrapper">
 	<br>
 	
-	<!-- /.row -->
 	<div class="row">
 
 		<div class="col-lg-6">
@@ -28,35 +27,21 @@ $(document).ready(function () {
 					<i class="fa fa-edit"></i> <strong>JSO - GENERAL INFORMATION</strong>
 				</div>
 				<div class="panel-body">
-<?php
-$retornoExito = $this->session->flashdata('retornoExito');
-if ($retornoExito) {
-    ?>
-    <div class="row">
-		<div class="col-lg-12">	
-			<div class="alert alert-success">
-				<span class="glyphicon glyphicon-ok" aria-hidden="true"></span>
-				<?php echo $retornoExito ?>		
-			</div>
-		</div>
-	</div>
-    <?php
-}
 
-$retornoError = $this->session->flashdata('retornoError');
-if ($retornoError) {
-    ?>
-    <div class="row">
-		<div class="col-lg-12">	
-			<div class="alert alert-danger ">
-				<span class="glyphicon glyphicon-exclamation-sign" aria-hidden="true"></span>
-				<?php echo $retornoError ?>
-			</div>
-		</div>
-	</div>
-    <?php
-}
-?> 
+					<?php if (session()->getFlashdata('retornoExito')): ?>
+						<div class="alert alert-success">
+							<span class="glyphicon glyphicon-ok" aria-hidden="true"></span>
+							<?= session()->getFlashdata('retornoExito') ?>
+						</div>
+					<?php endif; ?>
+
+					<?php if (session()->getFlashdata('retornoError')): ?>
+						<div class="alert alert-danger">
+							<span class="glyphicon glyphicon-exclamation-sign" aria-hidden="true"></span>
+							<?= session()->getFlashdata('retornoError') ?>
+						</div>
+					<?php endif; ?>
+
 					<strong>Date JSO: </strong><?php echo $JSOInfo[0]['date_issue_jso']; ?><br>
 					<strong>Job Code/Name: </strong><br><?php echo $JSOInfo[0]['job_description']; ?><br>
 					<strong>Potential hazards: </strong><br><?php echo $JSOInfo[0]['potential_hazards']; ?>
@@ -69,47 +54,23 @@ if ($retornoError) {
 				<div class="panel-heading">
 					<i class="fa fa-edit fa-fw"></i> Worker Signature
 				</div>
-				<!-- /.panel-heading -->
+
 				<div class="panel-body">
 				
 					<div class="form-group">
-						<div class="row" align="center">
-							<div style="width:80%;" align="center">
-								<?php 								
-								$class = "btn-primary";						
-								if($information[0]['signature'])
-								{ 
-									$class = "btn-default";
-								?>
-								<button type="button" class="btn btn-default" data-toggle="modal" data-target="#myModal" >
-									<span class="glyphicon glyphicon-eye-open" aria-hidden="true"></span> View Signature
-								</button>
 
-								<div id="myModal" class="modal fade" role="dialog">  
-									<div class="modal-dialog">
-										<div class="modal-content">      
-											<div class="modal-header">        
-												<button type="button" class="close" data-dismiss="modal">×</button>        
-												<h4 class="modal-title">Worker Signature</h4>      </div>      
-											<div class="modal-body text-center"><img src="<?php echo base_url($information[0]["signature"]); ?>" class="img-rounded" alt="Meeting conducted by Signature" width="304" height="236" />   </div>
-											<div class="modal-footer">        
-												<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>     
-											</div>  
-										</div>  
-									</div>
-								</div>
-								<?php
-								}
-								?>
-						
-<a class="btn <?php echo $class; ?>" href="<?php echo base_url("jobs/add_signature_jso/externalWorker/" . $JSOInfo[0]['id_job'] . "/" . $JSOInfo[0]['id_job_jso'] . "/" . $information[0]['id_job_jso_worker']); ?>"><span class="glyphicon glyphicon-edit" aria-hidden="true"></span> Signature </a>
+						<?= view('App\Views\template\signature_component', [
+							'imageUrl'        => $information[0]['signature'] ?? null,
+							'formAction'      => base_url('jobs/save_signature_jso'),
+							'height'          => 200,
+							'id' 			  => 'worker_' . $information[0]['id_job_jso_worker'],
+							'extraValue' 	  => $information[0]['id_job_jso_worker'],
+							'otherValue' 	  => 'worker'
+						]) ?>
 
-							</div>
-						</div>
 					</div>
 			
 				</div>
-				<!-- /.panel-body -->
 			</div>
 		</div>	
 
@@ -169,13 +130,13 @@ if ($retornoError) {
 									<input type="radio" name="license" id="license2" value=2 <?php if($information && $information[0]["driver_license_required"] == 2) { echo "checked"; }  ?>>No
 								</label>
 							</div>
-<?php 
-//si pide licencia entonces mostrar el campo de numero de licencia
-	$mostrar = "none";
-	if($information && $information[0]["driver_license_required"]==1){
-		$mostrar = "inline";
-	}
-?>
+							<?php 
+							//si pide licencia entonces mostrar el campo de numero de licencia
+								$mostrar = "none";
+								if($information && $information[0]["driver_license_required"]==1){
+									$mostrar = "inline";
+								}
+							?>
 							<div class="col-sm-6" id="div_licencia" style="display: <?php echo $mostrar; ?>">
 								<label for="from">Driver License Number: *</label>
 								<input type="text" id="license_number" name="license_number" class="form-control" value="<?php echo $information?$information[0]["license_number"]:""; ?>" placeholder="Driver license number" >
@@ -215,7 +176,5 @@ if ($retornoError) {
 		</div>
 			
 	</div>
-	<!-- /.row -->
 		
 </div>
-<!-- /#page-wrapper -->
