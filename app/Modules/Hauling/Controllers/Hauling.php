@@ -128,17 +128,29 @@ class Hauling extends BaseController
 	{
 		$post = $this->request->getPost();
 
-		$data = [];
-		if ($idHauling = $this->haulingModel->saveHauling($post)) {
-			$data["idHauling"] = $idHauling;
-			$data["status"] = "success";
-			session()->setFlashdata('retornoExito', 'You have saved your hauling record, remember to sign and get the contractor signature!!');
-		} else {
-			$data["status"] = "error";
-			session()->setFlashdata('retornoError', '<strong>Error!!!</strong> Ask for help');
-		}
+		$result = $this->haulingModel->saveHauling($post);
 
-		return $this->response->setJSON($data);
+		if ($result['status']) {
+
+			session()->setFlashdata(
+				'retornoExito',
+				'You have saved your hauling record, remember to sign and get the contractor signature!!'
+			);
+
+			return $this->response->setJSON([
+				'status' => 'success',
+				'idHauling' => $result['idHauling']
+			]);
+
+		} else {
+
+			session()->setFlashdata('retornoError', $result['message']);
+
+			return $this->response->setJSON([
+				'status' => 'error',
+				'message' => $result['message']
+			]);
+		}
 	}
 
 	/**

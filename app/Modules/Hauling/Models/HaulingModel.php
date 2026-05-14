@@ -162,8 +162,10 @@ class HaulingModel extends Model
 			$hourIn < 0 || $hourIn > 23 || $minIn < 0 || $minIn > 59 ||
 			$hourOut < 0 || $hourOut > 23 || $minOut < 0 || $minOut > 59
 		) {
-			echo "Error: Las horas deben estar entre 0-23 y los minutos entre 0-59.";
-			return;
+			return [
+				'status' => false,
+				'message' => 'Las horas deben estar entre 0-23 y los minutos entre 0-59.'
+			];
 		}
 
 		// Convertir todo a minutos
@@ -175,8 +177,10 @@ class HaulingModel extends Model
 
 		// Asegurarse de que la diferencia no sea negativa
 		if ($differenceInMinutes < 0) {
-			echo "Error: La hora de salida no puede ser anterior a la hora de entrada.";
-			return;
+			return [
+				'status' => false,
+				'message' => 'La hora de salida no puede ser anterior a la hora de entrada.'
+			];
 		}
 
 		// Convertir la diferencia a horas fraccionarias
@@ -295,9 +299,12 @@ class HaulingModel extends Model
 				$data['date_issue'] = $dateIssue;
 			}
 			if ($builder->insert($data)) {
-				return $this->db->insertID();
+				return [
+					'status' => true,
+					'idHauling' => $this->db->insertID()
+				];
 			}
-			return false;
+			return ['status' => false];
 		} else {
 			if (($userRol == ID_ROL_SUPER_ADMIN || $userRol == ID_ROL_MANAGER) && $dateIssue != "") {
 				$data['date_issue'] = $dateIssue;
@@ -305,7 +312,13 @@ class HaulingModel extends Model
 			$update = $builder->where('id_hauling', $idHauling)
 							->update($data);
 
-			return $update ? $idHauling : false;
+			if($update){
+				return [
+					'status' => true,
+					'idHauling' => $idHauling
+				];
+			}
+			return ['status' => false];			
 		}
 	}
 	
