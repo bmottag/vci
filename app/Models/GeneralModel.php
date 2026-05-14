@@ -2183,5 +2183,139 @@ class GeneralModel extends Model
 		return $result ?: false;
 	}
 
+	/**
+	 * Count Equipment by Type
+	 * @since 14/06/2023
+	 * @review 13/05/2026 - new CI4 version
+	 */
+	public function countEquipmentByType(): array|false
+	{
+		$builder = $this->db->table('param_vehicle A');
+
+		$builder->select('
+			T.inspection_type,
+			T.header_inspection_type,
+			COUNT(A.id_vehicle) as number
+		');
+
+		$builder->join(
+			'param_vehicle_type_2 T',
+			'T.id_type_2 = A.type_level_2',
+			'INNER'
+		);
+
+		$builder->where('A.state', 1);
+
+		$builder->groupBy([
+			'T.inspection_type',
+			'T.header_inspection_type'
+		]);
+
+		$result = $builder->get()->getResultArray();
+
+		return !empty($result) ? $result : false;
+	}
+
+	/**
+	 * Count SO by Status and Year
+	 * @author BMOTTAG
+	 * @since  14/06/2023
+	 * @review 13/05/2026 - new CI4 version
+	 */
+	public function countSOByStatus(): array|false
+	{
+		$firstDay = date('Y-m-d', mktime(0, 0, 0, 1, 1, date('Y')));
+
+		$builder = $this->db->table('service_order S');
+
+		$builder->select('
+			P.status_name,
+			P.status_slug,
+			P.status_style,
+			P.status_icon,
+			COUNT(S.id_service_order) as number
+		');
+
+		$builder->join(
+			'param_status P',
+			'P.status_slug = S.service_status',
+			'INNER'
+		);
+
+		$builder->where('P.status_key', 'serviceorder');
+		$builder->where('S.created_at >=', $firstDay);
+
+		$builder->groupBy([
+			'P.status_name',
+			'P.status_slug',
+			'P.status_style',
+			'P.status_icon'
+		]);
+
+		$result = $builder->get()->getResultArray();
+
+		return !empty($result) ? $result : false;
+	}
+
+	/**
+	 * Get Chat Info
+	 * @since 29/5/2023
+	 * @review 13/05/2026 - new CI4 version
+	 */
+	public function get_chat_info(array $arrData): array|false
+	{
+		$builder = $this->db->table('chat C');
+		$builder->select("C.*, CONCAT(U.first_name, ' ', U.last_name) user_from, W.first_name user_to");
+		$builder->join('user U', 'U.id_user = C.fk_id_user_from', 'INNER');
+		$builder->join('user W', 'W.id_user = C.fk_id_user_to', 'LEFT');
+		if (array_key_exists('idChat', $arrData)) {
+			$builder->where('C.id_chat', $arrData['idChat']);
+		}
+		if (array_key_exists('idModule', $arrData)) {
+			$builder->where('C.fk_id_module', $arrData['idModule']);
+		}
+		if (array_key_exists('module', $arrData)) {
+			$builder->where('C.module', $arrData['module']);
+		}
+		$builder->orderBy('C.id_chat', 'ASC');
+		$result = $builder->get()->getResultArray();
+		return !empty($result) ? $result : false;
+	}
+
+	/**
+	 * Save Chat
+	 * @since 29/5/2023
+	 * @review 13/05/2026 - new CI4 version
+	 */
+	public function saveChat(array $arrData): bool
+	{
+		return $this->db->table('chat')->insert([
+			'fk_id_module'    => $arrData['fk_id_module'],
+			'module'          => $arrData['module'],
+			'fk_id_user_from' => session()->get('id'),
+			'created_at'      => date('Y-m-d G:i:s'),
+			'message'         => $arrData['message'],
+		]);
+	}
+
+	/**
+	 * Get vehicle oil change history (last 30 records)
+	 * @since 17/1/2017
+	 * @review 13/05/2026 - new CI4 version
+	 */
+	public function get_vehicle_oil_change(array $infoVehicle): array|false
+	{
+		$table   = $infoVehicle[0]['table_inspection'] . ' T';
+		$idTable = 'T.' . $infoVehicle[0]['id_table_inspection'];
+
+		$builder = $this->db->table('vehicle_oil_change A');
+		$builder->select("A.*, T.comments, CONCAT(U.first_name, ' ', U.last_name) name");
+		$builder->join('user U', 'U.id_user = A.fk_id_user', 'INNER');
+		$builder->join($table, "$idTable = A.fk_id_inspection", 'LEFT');
+		$builder->where('A.fk_id_vehicle', $infoVehicle[0]['id_vehicle']);
+		$builder->orderBy('A.id_oil_change', 'DESC');
+		$result = $builder->get()->getResultArray();
+		return !empty($result) ? $result : false;
+	}
 
 }

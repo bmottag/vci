@@ -90,6 +90,7 @@ class Filters extends BaseFilters
                     'admin/certifications_check',
                     'incidences/review_incident/*',
                     'incidences/save_signature_person_involved',
+                    'serviceorder/maintenance_check',
                 ]
             ]
         ],
