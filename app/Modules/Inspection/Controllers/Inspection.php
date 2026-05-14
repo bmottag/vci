@@ -162,7 +162,7 @@ class Inspection extends BaseController
 
                 if ($sendNotification) {
                     $vehicleInfo = $this->generalModel->get_basic_search(['table' => 'param_vehicle', 'order' => 'id_vehicle', 'column' => 'id_vehicle', 'id' => $idVehicle]);
-                    $urlMovil    = base_url('login/index/x/' . base64_encode('INSPECTION_LIST_BY_EQUIPMENT_ID') . '/' . base64_encode($idVehicle));
+                    $urlMovil    = base_url('login/index/x/' . base64url_encode('INSPECTION_LIST_BY_EQUIPMENT_ID') . '/' . base64url_encode($idVehicle));
 
                     $emailBody  = $emailMsnTitle;
                     $emailBody .= '<strong>Make: </strong>' . esc($vehicleInfo[0]['make']);
@@ -263,7 +263,7 @@ class Inspection extends BaseController
 
                 if ($comments !== '') {
                     $vehicleInfo = $this->generalModel->get_basic_search(['table' => 'param_vehicle', 'order' => 'id_vehicle', 'column' => 'id_vehicle', 'id' => $idVehicle]);
-                    $urlMovil    = base_url('login/index/x/' . base64_encode('INSPECTION_LIST_BY_EQUIPMENT_ID') . '/' . base64_encode($idVehicle));
+                    $urlMovil    = base_url('login/index/x/' . base64url_encode('INSPECTION_LIST_BY_EQUIPMENT_ID') . '/' . base64url_encode($idVehicle));
 
                     $emailBody  = '<p>The following inspection have comments please check the complete report in the system.</p>';
                     $emailBody .= '<strong>Make: </strong>' . esc($vehicleInfo[0]['make']);
@@ -362,7 +362,7 @@ class Inspection extends BaseController
 
                 if ($comments !== '') {
                     $vehicleInfo = $this->generalModel->get_basic_search(['table' => 'param_vehicle', 'order' => 'id_vehicle', 'column' => 'id_vehicle', 'id' => $idVehicle]);
-                    $urlMovil    = base_url('login/index/x/' . base64_encode('INSPECTION_LIST_BY_EQUIPMENT_ID') . '/' . base64_encode($idVehicle));
+                    $urlMovil    = base_url('login/index/x/' . base64url_encode('INSPECTION_LIST_BY_EQUIPMENT_ID') . '/' . base64url_encode($idVehicle));
 
                     $emailBody  = '<p>The following inspection have comments please check the complete report in the system.</p>';
                     $emailBody .= '<strong>Make: </strong>' . esc($vehicleInfo[0]['make']);
@@ -463,7 +463,7 @@ class Inspection extends BaseController
 
                 if ($comments !== '') {
                     $vehicleInfo = $this->generalModel->get_basic_search(['table' => 'param_vehicle', 'order' => 'id_vehicle', 'column' => 'id_vehicle', 'id' => $idVehicle]);
-                    $urlMovil    = base_url('login/index/x/' . base64_encode('INSPECTION_LIST_BY_EQUIPMENT_ID') . '/' . base64_encode($idVehicle));
+                    $urlMovil    = base_url('login/index/x/' . base64url_encode('INSPECTION_LIST_BY_EQUIPMENT_ID') . '/' . base64url_encode($idVehicle));
 
                     $emailBody  = '<p>The following inspection have comments please check the complete report in the system.</p>';
                     $emailBody .= '<strong>Make: </strong>' . esc($vehicleInfo[0]['make']);
@@ -615,7 +615,7 @@ class Inspection extends BaseController
 
                 if ($sendNotification) {
                     $vehicleInfo = $this->generalModel->get_basic_search(['table' => 'param_vehicle', 'order' => 'id_vehicle', 'column' => 'id_vehicle', 'id' => $idVehicle]);
-                    $urlMovil    = base_url('login/index/x/' . base64_encode('INSPECTION_LIST_BY_EQUIPMENT_ID') . '/' . base64_encode($idVehicle));
+                    $urlMovil    = base_url('login/index/x/' . base64url_encode('INSPECTION_LIST_BY_EQUIPMENT_ID') . '/' . base64url_encode($idVehicle));
 
                     $emailBody  = $emailMsnTitle;
                     $emailBody .= '<strong>Make: </strong>' . esc($vehicleInfo[0]['make']);
@@ -769,7 +769,7 @@ class Inspection extends BaseController
 
                 if ($sendNotification) {
                     $vehicleInfo = $this->generalModel->get_basic_search(['table' => 'param_vehicle', 'order' => 'id_vehicle', 'column' => 'id_vehicle', 'id' => $idVehicle]);
-                    $urlMovil    = base_url('login/index/x/' . base64_encode('INSPECTION_LIST_BY_EQUIPMENT_ID') . '/' . base64_encode($idVehicle));
+                    $urlMovil    = base_url('login/index/x/' . base64url_encode('INSPECTION_LIST_BY_EQUIPMENT_ID') . '/' . base64url_encode($idVehicle));
 
                     $emailBody  = $emailMsnTitle;
                     $emailBody .= '<strong>Make: </strong>' . esc($vehicleInfo[0]['make']);
