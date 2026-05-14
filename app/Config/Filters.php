@@ -91,6 +91,8 @@ class Filters extends BaseFilters
                     'incidences/review_incident/*',
                     'incidences/save_signature_person_involved',
                     'serviceorder/maintenance_check',
+                    'workorders/foreman_view/*',
+                    'workorders/save_signature'
                 ]
             ]
         ],

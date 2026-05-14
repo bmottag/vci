@@ -1366,17 +1366,35 @@ class Workorders extends BaseController
      * Envio de mensaje SMS al foreman
      * @since 4/6/2020
      * @author BMOTTAG
-     * @review 05/05/2026 - new CI4 version — SMS sending pending implementation
+     * @review 14/05/2026 - new CI4 version
      */
     public function sendSMSForeman($idWorkOrder)
     {
-        // TODO: implementar envío de SMS en CI4 (Twilio)
-        $data['linkBack'] = 'workorders/add_workorder/' . $idWorkOrder;
-        $data['titulo']   = "<i class='fa fa-list'></i>WORK ORDER";
-        $data['clase']    = 'alert-info';
-        $data['msj']      = 'SMS sending is not available in this version.';
+        $smsService  = new \App\Libraries\SmsService();
+        $information = $this->workordersModel->get_workorder_by_idJob(['idWorkOrder' => $idWorkOrder]);
 
-        return $this->render('App\Modules\Workorders\Views\template\answer', $data);
+        if (empty($information) || empty($information[0]['foreman_movil_number_wo'])) {
+			session()->setFlashdata('retornoError', '<strong>Error!</strong> Foreman phone number not found.');
+			return redirect()->to(base_url('workorders/add_workorder/' . $idWorkOrder));
+        }
+
+        $info    = $information[0];
+        $mensaje = date('F j, Y', strtotime($info['date']));
+        $mensaje .= "\n" . $info['job_description'];
+        $mensaje .= "\n" . $info['observation'];
+        $mensaje .= "\nClick the following link to review W.O. " . $idWorkOrder;
+        $mensaje .= "\n\n" . base_url('workorders/foreman_view/' . $idWorkOrder);
+
+        $to = '+1' . $info['foreman_movil_number_wo'];
+
+		try {
+			$smsService->send($to, $mensaje);
+			session()->setFlashdata('retornoExito', 'We have sent the SMS to the foreman to sign the Work Order.');
+		} catch (\Exception $e) {
+			session()->setFlashdata('retornoError', '<strong>Error!</strong> SMS could not be sent: ' . $e->getMessage());
+		}
+
+		return redirect()->to(base_url('workorders/add_workorder/' . $idWorkOrder));
     }
 
     /**
