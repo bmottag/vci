@@ -4,6 +4,7 @@ namespace App\Modules\Programming\Controllers;
 use App\Controllers\BaseController;
 use App\Modules\Programming\Models\ProgrammingModel;
 use App\Models\GeneralModel;
+use App\Libraries\SmsService;
 
 class Programming extends BaseController
 {
@@ -447,7 +448,7 @@ class Programming extends BaseController
     /**
      * Actualiza estado de los mensajes SMS del trabajador
      * @since 17/1/2019
-     * @review 01/05/2026 - new CI4 version
+     * @review 04/05/2026 - new CI4 version
      */
     protected function update_sms_worker($idProgrammingWorker, $columnaTipoSMS, $nuevoEstadoSMS)
     {
@@ -463,7 +464,7 @@ class Programming extends BaseController
     /**
      * CRON - Verificar inspecciones de maquinas pendientes
      * @since 17/1/2019
-     * @review 01/05/2026 - new CI4 version
+     * @review 04/05/2026 - new CI4 version
      */
     public function verificacion($idProgramming = 'x', $fecha = 'x')
     {
@@ -483,8 +484,14 @@ class Programming extends BaseController
         $nombres     = '';
 
         if ($information) {
-            // SMS SENDING (modo CRON) - REVIEW LATER
-            // if ($bandera) { ... inicializar Twilio client ... }
+            if ($bandera) {
+                $parametric = $this->generalModel->get_basic_search([
+                    'table' => 'parametric',
+                    'order' => 'id_parametric',
+                    'id'    => 'x',
+                ]);
+                $phoneAdmin = '+1' . $parametric[6]['value'];
+            }
 
             foreach ($information as $lista) {
                 $informationWorker = $this->generalModel->get_programming_workers([
@@ -509,8 +516,28 @@ class Programming extends BaseController
                                     $i++;
                                     $nombres .= '<br>' . $dato['name'] . ' - ' . $inspeccionesValues['unit_description'];
 
-                                    // SMS SENDING - REVIEW LATER
-                                    // if ($bandera && $dato['sms_inspection'] != 2) { ... send SMS ... }
+                                    if ($bandera && $dato['sms_inspection'] != 2) {
+                                        $fechaProgramacion = $fechaBusqueda . ' ' . $dato['formato_24'];
+                                        $datetime1         = date_create($fechaProgramacion);
+                                        $ajuste            = strtotime('-2 hour', strtotime(date('Y-m-d G:i')));
+                                        $datetime2         = date_create(date('Y-m-d G:i', $ajuste));
+
+                                        if ($datetime1 < $datetime2) {
+                                            if ($dato['sms_inspection'] == 0) {
+                                                $this->update_sms_worker($dato['id_programming_worker'], 'sms_inspection', 1);
+                                                $mensaje  = "INSPECTION APP-VCI";
+                                                $mensaje .= "\nDo not forget to do the Inspection:";
+                                                $mensaje .= "\n" . $inspeccionesValues['unit_description'];
+                                                (new SmsService())->send('+1' . $dato['movil'], $mensaje);
+                                            } elseif ($dato['sms_inspection'] == 1) {
+                                                $this->update_sms_worker($dato['id_programming_worker'], 'sms_inspection', 2);
+                                                $mensaje  = "INSPECTION APP-VCI";
+                                                $mensaje .= "\nThe user has not done the Inspection:";
+                                                $mensaje .= "\n" . $dato['name'] . ' - ' . $inspeccionesValues['unit_description'];
+                                                (new SmsService())->send($phoneAdmin, $mensaje);
+                                            }
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -543,7 +570,7 @@ class Programming extends BaseController
     /**
      * CRON - Verificar FLHA y JSO pendientes
      * @since 17/1/2019
-     * @review 01/05/2026 - new CI4 version
+     * @review 04/05/2026 - new CI4 version
      */
     public function verificacion_flha($idProgramming = 'x', $fecha = 'x')
     {
@@ -565,8 +592,14 @@ class Programming extends BaseController
         $nombresJSO  = '';
 
         if ($information) {
-            // SMS SENDING (modo CRON) - REVIEW LATER
-            // if ($bandera) { ... inicializar Twilio client ... }
+            if ($bandera) {
+                $parametric = $this->generalModel->get_basic_search([
+                    'table' => 'parametric',
+                    'order' => 'id_parametric',
+                    'id'    => 'x',
+                ]);
+                $phoneAdmin = '+1' . $parametric[6]['value'];
+            }
 
             foreach ($information as $lista) {
                 $informationWorkerFLHA = $this->generalModel->get_programming_workers([
@@ -584,8 +617,29 @@ class Programming extends BaseController
                         if (!$inspecciones) {
                             $i++;
                             $nombres .= '<br>' . $dato['name'] . ' - Missing FLHA';
-                            // SMS SENDING - REVIEW LATER
-                            // if ($bandera && $dato['sms_safety'] != 2) { ... send SMS ... }
+
+                            if ($bandera && $dato['sms_safety'] != 2) {
+                                $fechaProgramacion = $fechaBusqueda . ' ' . $dato['formato_24'];
+                                $datetime1         = date_create($fechaProgramacion);
+                                $ajuste            = strtotime('-2 hour', strtotime(date('Y-m-d G:i')));
+                                $datetime2         = date_create(date('Y-m-d G:i', $ajuste));
+
+                                if ($datetime1 < $datetime2) {
+                                    if ($dato['sms_safety'] == 0) {
+                                        $this->update_sms_worker($dato['id_programming_worker'], 'sms_safety', 1);
+                                        $mensaje  = "FLHA APP-VCI";
+                                        $mensaje .= "\nDo not forget to do the FLHA:";
+                                        $mensaje .= "\n" . $lista['job_description'];
+                                        (new SmsService())->send('+1' . $dato['movil'], $mensaje);
+                                    } elseif ($dato['sms_safety'] == 1) {
+                                        $this->update_sms_worker($dato['id_programming_worker'], 'sms_safety', 2);
+                                        $mensaje  = "FLHA APP-VCI";
+                                        $mensaje .= "\nThe user has not done the FLHA:";
+                                        $mensaje .= "\n" . $dato['name'];
+                                        (new SmsService())->send($phoneAdmin, $mensaje);
+                                    }
+                                }
+                            }
                         }
                     }
                 }
@@ -605,8 +659,29 @@ class Programming extends BaseController
                         if (!$inspecciones) {
                             $j++;
                             $nombresJSO .= '<br>' . $dato['name'] . ' - Missing JSO';
-                            // SMS SENDING - REVIEW LATER
-                            // if ($bandera && $dato['sms_jso'] != 2) { ... send SMS ... }
+
+                            if ($bandera && $dato['sms_jso'] != 2) {
+                                $fechaProgramacion = $fechaBusqueda . ' ' . $dato['formato_24'];
+                                $datetime1         = date_create($fechaProgramacion);
+                                $ajuste            = strtotime('-2 hour', strtotime(date('Y-m-d G:i')));
+                                $datetime2         = date_create(date('Y-m-d G:i', $ajuste));
+
+                                if ($datetime1 < $datetime2) {
+                                    if ($dato['sms_jso'] == 0) {
+                                        $this->update_sms_worker($dato['id_programming_worker'], 'sms_jso', 1);
+                                        $mensaje  = "JSO APP-VCI";
+                                        $mensaje .= "\nDo not forget to do the JSO:";
+                                        $mensaje .= "\n" . $lista['job_description'];
+                                        (new SmsService())->send('+1' . $dato['movil'], $mensaje);
+                                    } elseif ($dato['sms_jso'] == 1) {
+                                        $this->update_sms_worker($dato['id_programming_worker'], 'sms_jso', 2);
+                                        $mensaje  = "JSO APP-VCI";
+                                        $mensaje .= "\nThe user has not done the JSO:";
+                                        $mensaje .= "\n" . $dato['name'];
+                                        (new SmsService())->send($phoneAdmin, $mensaje);
+                                    }
+                                }
+                            }
                         }
                     }
                 }
@@ -623,7 +698,7 @@ class Programming extends BaseController
     /**
      * CRON - Verificar TOOL BOX (IHSR) pendientes
      * @since 20/1/2019
-     * @review 01/05/2026 - new CI4 version
+     * @review 04/05/2026 - new CI4 version
      */
     public function verificacion_tool_box($idProgramming = 'x', $fecha = 'x')
     {
@@ -643,8 +718,14 @@ class Programming extends BaseController
         $nombres     = '';
 
         if ($information) {
-            // SMS SENDING (modo CRON) - REVIEW LATER
-            // if ($bandera) { ... inicializar Twilio client ... }
+            if ($bandera) {
+                $parametric = $this->generalModel->get_basic_search([
+                    'table' => 'parametric',
+                    'order' => 'id_parametric',
+                    'id'    => 'x',
+                ]);
+                $phoneAdmin = '+1' . $parametric[6]['value'];
+            }
 
             foreach ($information as $lista) {
                 $informationWorker = $this->generalModel->get_programming_workers([
@@ -661,8 +742,29 @@ class Programming extends BaseController
                         if (!$inspecciones) {
                             $i++;
                             $nombres .= '<br>' . $dato['name'] . ' - Missing IHSR';
-                            // SMS SENDING - REVIEW LATER
-                            // if ($bandera && $dato['sms_safety'] != 2) { ... send SMS ... }
+
+                            if ($bandera && $dato['sms_safety'] != 2) {
+                                $fechaProgramacion = $fechaBusqueda . ' ' . $dato['formato_24'];
+                                $datetime1         = date_create($fechaProgramacion);
+                                $ajuste            = strtotime('-2 hour', strtotime(date('Y-m-d G:i')));
+                                $datetime2         = date_create(date('Y-m-d G:i', $ajuste));
+
+                                if ($datetime1 < $datetime2) {
+                                    if ($dato['sms_safety'] == 0) {
+                                        $this->update_sms_worker($dato['id_programming_worker'], 'sms_safety', 1);
+                                        $mensaje  = "IHSR APP-VCI";
+                                        $mensaje .= "\nDo not forget to do the IHSR:";
+                                        $mensaje .= "\n" . $lista['job_description'];
+                                        (new SmsService())->send('+1' . $dato['movil'], $mensaje);
+                                    } elseif ($dato['sms_safety'] == 1) {
+                                        $this->update_sms_worker($dato['id_programming_worker'], 'sms_safety', 2);
+                                        $mensaje  = "IHSR APP-VCI";
+                                        $mensaje .= "\nThe user has not done the IHSR:";
+                                        $mensaje .= "\n" . $dato['name'];
+                                        (new SmsService())->send($phoneAdmin, $mensaje);
+                                    }
+                                }
+                            }
                         }
                     }
                 }

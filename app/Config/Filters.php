@@ -92,7 +92,13 @@ class Filters extends BaseFilters
                     'incidences/save_signature_person_involved',
                     'serviceorder/maintenance_check',
                     'workorders/foreman_view/*',
-                    'workorders/save_signature'
+                    'workorders/save_signature',
+                    'programming/verificacion/*',
+                    'programming/verificacion',
+                    'programming/verificacion_flha/*',
+                    'programming/verificacion_flha',
+                    'programming/verificacion_tool_box/*',
+                    'programming/verificacion_tool_box',
                 ]
             ]
         ],

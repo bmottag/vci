@@ -42,4 +42,16 @@ $routes->group('programming', ['namespace' => 'App\Modules\Programming\Controlle
 
     $routes->get('deleteRecord/(:alpha)/(:num)/(:num)/(:any)', 'Programming::deleteRecord/$1/$2/$3/$4');
 
+    $routes->get('verificacion/(:any)/(:any)', 'Programming::verificacion/$1/$2');
+    $routes->get('verificacion/(:any)', 'Programming::verificacion/$1');
+    $routes->get('verificacion', 'Programming::verificacion');
+
+    $routes->get('verificacion_flha/(:any)/(:any)', 'Programming::verificacion_flha/$1/$2');
+    $routes->get('verificacion_flha/(:any)', 'Programming::verificacion_flha/$1');
+    $routes->get('verificacion_flha', 'Programming::verificacion_flha');
+
+    $routes->get('verificacion_tool_box/(:any)/(:any)', 'Programming::verificacion_tool_box/$1/$2');
+    $routes->get('verificacion_tool_box/(:any)', 'Programming::verificacion_tool_box/$1');
+    $routes->get('verificacion_tool_box', 'Programming::verificacion_tool_box');
+
 });
