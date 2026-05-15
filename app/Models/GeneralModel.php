@@ -1682,7 +1682,7 @@ class GeneralModel extends Model
 		$builder->join('param_jobs J', 'J.id_job = T.fk_id_job', 'INNER');
 		$builder->join('param_jobs H', 'H.id_job = T.fk_id_job_finish', 'LEFT');
 		$builder->join('param_operation O', 'O.id_operation = T.fk_id_operation', 'INNER');
-		$builder->where('T.finish', '0000-00-00 00:00:00');
+		$builder->where("(T.finish IS NULL OR CAST(T.finish AS CHAR) = '0000-00-00 00:00:00')", null, false);
 		$builder->orderBy('id_task', 'DESC');
 
 		$result = $builder->get()->getResultArray();

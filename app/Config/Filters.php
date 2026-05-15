@@ -99,6 +99,7 @@ class Filters extends BaseFilters
                     'programming/verificacion_flha',
                     'programming/verificacion_tool_box/*',
                     'programming/verificacion_tool_box',
+                    'payroll/payroll_check',
                 ]
             ]
         ],

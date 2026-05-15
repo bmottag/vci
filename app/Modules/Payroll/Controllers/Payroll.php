@@ -57,7 +57,7 @@ class Payroll extends BaseController
 
 		$view = 'App\Modules\Payroll\Views\form_add_payroll';
 
-		if ($data['record'] && $data['record'][0]['finish'] == '0000-00-00 00:00:00') {
+		if ($data['record'] && (empty($data['record'][0]['finish']) || $data['record'][0]['finish'] == '0000-00-00 00:00:00')) {
 			$data['programming'] = $data['record'][0]['fk_id_programming'];
 			$data['start']       = $data['record'][0]['start'];
 			$view = 'App\Modules\Payroll\Views\form_end_payroll';
@@ -453,7 +453,7 @@ class Payroll extends BaseController
 	 * Form Payroll Check - used by cron
 	 * @since 12/04/2022
 	 * @author BMOTTAG
-	 * @review 30/04/2026 - new CI4 version
+	 * @review 01/05/2026 - new CI4 version
 	 */
 	public function payroll_check()
 	{
@@ -492,16 +492,27 @@ class Payroll extends BaseController
 	 * Send text message to employee when they haven't checked out
 	 * @since 13/4/2022
 	 * @author BMOTTAG
-	 * @review 30/04/2026 - new CI4 version
+	 * @review 15/05/2026 - new CI4 version
 	 */
 	public function sendSMSWorkerTask($idUser)
 	{
-		// SMS via Twilio - pending implementation
-		// TODO: implement Twilio SMS notification
-		// $userInfo = $this->generalModel->get_user(['idUser' => $idUser]);
-		// $mensaje  = "VCI TIME SHEET\n" . $userInfo[0]['first_name'] . ' ' . $userInfo[0]['last_name'];
-		// $mensaje .= "\nThis message is to remind you that you have been working more than 14 hours...";
-		// ... Twilio client->messages->create('+1' . $userInfo[0]['movil'], ['from' => $twilioPhone, 'body' => $mensaje]);
+		$userInfo = $this->generalModel->get_user(['idUser' => $idUser]);
+
+		if (!$userInfo || empty($userInfo[0]['movil'])) {
+			return false;
+		}
+
+		$mensaje  = "VCI TIME SHEET";
+		$mensaje .= "\n" . $userInfo[0]['first_name'] . ' ' . $userInfo[0]['last_name'];
+		$mensaje .= "\nThis message is to remind you that you have been working more than 14 hours, it is possible that you forgot to check out, if it is the case please login the system and check out.";
+
+		$smsService = new \App\Libraries\SmsService();
+
+		try {
+			$smsService->send('+1' . $userInfo[0]['movil'], $mensaje);
+		} catch (\Exception $e) {
+			log_message('error', 'payroll_check SMS error for user ' . $idUser . ': ' . $e->getMessage());
+		}
 
 		return true;
 	}
