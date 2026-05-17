@@ -374,8 +374,9 @@ class Programming extends BaseController
         $msgHeader .= "\n\nPlease confirm by replying '1' to this text message!\n";
 
         if ($informationWorker) {
-            // SMS SENDING - REVIEW LATER
-            // Requiere: $client = new Twilio\Rest\Client($dato1, $dato2);
+            $smsService       = new \App\Libraries\SmsService();
+            $excluded_numbers = ['686289126', '5068494482', '5068393681', '5870000000'];
+
             foreach ($informationWorker as $info) {
                 $informationEquipments = [];
                 if ($info['fk_id_machine'] != null) {
@@ -406,13 +407,14 @@ class Programming extends BaseController
                     $mensaje .= "\nYou are in charge of the W.O. #" . $idWorkorder;
                 }
 
-                // SMS SENDING - REVIEW LATER
-                // $excluded_numbers = ["686289126", "5068494482", "5068393681", "5870000000"];
-                // if (!in_array($info['movil'], $excluded_numbers)) {
-                //     $to      = '+1' . $info['movil'];
-                //     $message = $client->messages->create($to, ['from' => $twilioPhone, 'body' => $mensaje]);
-                //     $this->programmingModel->updateSMSWorkerStatus($info['id_programming_worker'], $message->status, $message->sid);
-                // }
+                if (!in_array($info['movil'], $excluded_numbers)) {
+                    try {
+                        $message = $smsService->send('+1' . $info['movil'], $mensaje);
+                        $this->programmingModel->updateSMSWorkerStatus($info['id_programming_worker'], $message->status, $message->sid);
+                    } catch (\Exception $e) {
+                        log_message('error', 'SMS send failed for worker ' . $info['id_programming_worker'] . ': ' . $e->getMessage());
+                    }
+                }
             }
         }
 
@@ -528,13 +530,21 @@ class Programming extends BaseController
                                                 $mensaje  = "INSPECTION APP-VCI";
                                                 $mensaje .= "\nDo not forget to do the Inspection:";
                                                 $mensaje .= "\n" . $inspeccionesValues['unit_description'];
-                                                (new SmsService())->send('+1' . $dato['movil'], $mensaje);
+                                                try {
+                                                    (new SmsService())->send('+1' . $dato['movil'], $mensaje);
+                                                } catch (\Exception $e) {
+                                                    log_message('error', 'SMS Inspection send failed: ' . $e->getMessage());
+                                                }
                                             } elseif ($dato['sms_inspection'] == 1) {
                                                 $this->update_sms_worker($dato['id_programming_worker'], 'sms_inspection', 2);
                                                 $mensaje  = "INSPECTION APP-VCI";
                                                 $mensaje .= "\nThe user has not done the Inspection:";
                                                 $mensaje .= "\n" . $dato['name'] . ' - ' . $inspeccionesValues['unit_description'];
-                                                (new SmsService())->send($phoneAdmin, $mensaje);
+                                                try {
+                                                    (new SmsService())->send($phoneAdmin, $mensaje);
+                                                } catch (\Exception $e) {
+                                                    log_message('error', 'SMS Inspection admin send failed: ' . $e->getMessage());
+                                                }
                                             }
                                         }
                                     }
@@ -630,13 +640,21 @@ class Programming extends BaseController
                                         $mensaje  = "FLHA APP-VCI";
                                         $mensaje .= "\nDo not forget to do the FLHA:";
                                         $mensaje .= "\n" . $lista['job_description'];
-                                        (new SmsService())->send('+1' . $dato['movil'], $mensaje);
+                                        try {
+                                            (new SmsService())->send('+1' . $dato['movil'], $mensaje);
+                                        } catch (\Exception $e) {
+                                            log_message('error', 'SMS FLHA send failed: ' . $e->getMessage());
+                                        }
                                     } elseif ($dato['sms_safety'] == 1) {
                                         $this->update_sms_worker($dato['id_programming_worker'], 'sms_safety', 2);
                                         $mensaje  = "FLHA APP-VCI";
                                         $mensaje .= "\nThe user has not done the FLHA:";
                                         $mensaje .= "\n" . $dato['name'];
-                                        (new SmsService())->send($phoneAdmin, $mensaje);
+                                        try {
+                                            (new SmsService())->send($phoneAdmin, $mensaje);
+                                        } catch (\Exception $e) {
+                                            log_message('error', 'SMS FLHA admin send failed: ' . $e->getMessage());
+                                        }
                                     }
                                 }
                             }
@@ -672,13 +690,21 @@ class Programming extends BaseController
                                         $mensaje  = "JSO APP-VCI";
                                         $mensaje .= "\nDo not forget to do the JSO:";
                                         $mensaje .= "\n" . $lista['job_description'];
-                                        (new SmsService())->send('+1' . $dato['movil'], $mensaje);
+                                        try {
+                                            (new SmsService())->send('+1' . $dato['movil'], $mensaje);
+                                        } catch (\Exception $e) {
+                                            log_message('error', 'SMS JSO send failed: ' . $e->getMessage());
+                                        }
                                     } elseif ($dato['sms_jso'] == 1) {
                                         $this->update_sms_worker($dato['id_programming_worker'], 'sms_jso', 2);
                                         $mensaje  = "JSO APP-VCI";
                                         $mensaje .= "\nThe user has not done the JSO:";
                                         $mensaje .= "\n" . $dato['name'];
-                                        (new SmsService())->send($phoneAdmin, $mensaje);
+                                        try {
+                                            (new SmsService())->send($phoneAdmin, $mensaje);
+                                        } catch (\Exception $e) {
+                                            log_message('error', 'SMS JSO admin send failed: ' . $e->getMessage());
+                                        }
                                     }
                                 }
                             }
@@ -755,13 +781,21 @@ class Programming extends BaseController
                                         $mensaje  = "IHSR APP-VCI";
                                         $mensaje .= "\nDo not forget to do the IHSR:";
                                         $mensaje .= "\n" . $lista['job_description'];
-                                        (new SmsService())->send('+1' . $dato['movil'], $mensaje);
+                                        try {
+                                            (new SmsService())->send('+1' . $dato['movil'], $mensaje);
+                                        } catch (\Exception $e) {
+                                            log_message('error', 'SMS IHSR send failed: ' . $e->getMessage());
+                                        }
                                     } elseif ($dato['sms_safety'] == 1) {
                                         $this->update_sms_worker($dato['id_programming_worker'], 'sms_safety', 2);
                                         $mensaje  = "IHSR APP-VCI";
                                         $mensaje .= "\nThe user has not done the IHSR:";
                                         $mensaje .= "\n" . $dato['name'];
-                                        (new SmsService())->send($phoneAdmin, $mensaje);
+                                        try {
+                                            (new SmsService())->send($phoneAdmin, $mensaje);
+                                        } catch (\Exception $e) {
+                                            log_message('error', 'SMS IHSR admin send failed: ' . $e->getMessage());
+                                        }
                                     }
                                 }
                             }
@@ -835,36 +869,73 @@ class Programming extends BaseController
 
     /**
      * Receive SMS from Twilio webhook
+     * Worker replies with "1" to confirm their planning assignment
      * @since 27/8/2023
      * @author BMOTTAG
-     * @review 01/05/2026 - new CI4 version
+     * @review 17/05/2026 - new CI4 version
      */
     public function receive_sms()
     {
-        // SMS WEBHOOK - REVIEW LATER
-        // $incoming_message = $_POST['Body'];
-        // $sender_number    = $_POST['From'];
-        // $arrParam = ['movil' => str_replace('+1', '', $sender_number)];
-        // if ($informationWorker = $this->generalModel->get_programming_user($arrParam)) {
-        //     if ($incoming_message === '1') {
-        //         $this->generalModel->updateRecord([...confirmation = 1...]);
-        //         $this->send_confirmation(...);
-        //         return $this->response->setContentType('text/xml')->setBody('<Response><Message>Thank you for your response!</Message></Response>');
-        //     }
-        // }
-        return $this->response->setContentType('text/xml')->setBody('<Response></Response>');
+        $twiml = '<Response></Response>';
+
+        try {
+            $incomingMessage = $this->request->getPost('Body');
+            $senderNumber    = $this->request->getPost('From');
+
+            if (empty($incomingMessage) || empty($senderNumber)) {
+                return $this->response->setContentType('text/xml')->setBody($twiml);
+            }
+
+            $movil  = str_replace('+1', '', $senderNumber);
+            $worker = $this->generalModel->get_programming_user(['movil' => $movil]);
+
+            if (!$worker) {
+                return $this->response->setContentType('text/xml')->setBody($twiml);
+            }
+
+            if (trim($incomingMessage) === '1') {
+                $this->generalModel->updateRecord([
+                    'table'      => 'programming_worker',
+                    'primaryKey' => 'id_programming_worker',
+                    'id'         => $worker['id_programming_worker'],
+                    'column'     => 'confirmation',
+                    'value'      => 1,
+                ]);
+
+                $this->send_confirmation(
+                    $worker['employee'],
+                    $worker['date_programming'],
+                    $worker['hora'],
+                    $worker['movil']
+                );
+
+                $twiml = '<Response><Message>Thank you for your response!</Message></Response>';
+            } else {
+                $twiml = '<Response><Message>The confirmation should be sent by replying with the number 1.</Message></Response>';
+            }
+        } catch (\Throwable $e) {
+            log_message('error', '[receive_sms] ' . $e->getMessage());
+        }
+
+        return $this->response->setContentType('text/xml')->setBody($twiml);
     }
 
     /**
-     * Send confirmation to supervisor (SMS)
+     * Send confirmation SMS to the supervisor when a worker confirms their planning
      * @since 29/08/2023
-     * @review 01/05/2026 - new CI4 version
+     * @author BMOTTAG
+     * @review 17/05/2026 - new CI4 version
      */
-    protected function send_confirmation($employee, $dateProgramming, $hora, $movil)
+    protected function send_confirmation(string $employee, string $dateProgramming, string $hora, string $movil): bool
     {
-        // SMS SENDING - REVIEW LATER
-        // $mensaje = "APP VCI - Planning\n\n" . $employee . " confirmed the plan for " . $dateProgramming . " at " . $hora . ".";
-        // $client->messages->create('+1' . $movil, ['from' => $twilioPhone, 'body' => $mensaje]);
+        try {
+            $smsService = new \App\Libraries\SmsService();
+            $mensaje    = "APP VCI - Planning\n\n{$employee} confirmed the plan for {$dateProgramming} at {$hora}.";
+            $smsService->send('+1' . $movil, $mensaje);
+        } catch (\Throwable $e) {
+            log_message('error', '[send_confirmation] ' . $e->getMessage());
+        }
+
         return true;
     }
 
@@ -898,8 +969,7 @@ class Programming extends BaseController
 
         if ($information) {
             foreach ($information as $lista) {
-                // SMS SENDING - REVIEW LATER
-                // $this->send($lista['id_programming'], true);
+                $this->send($lista['id_programming'], true);
             }
         }
     }

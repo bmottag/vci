@@ -54,4 +54,6 @@ $routes->group('programming', ['namespace' => 'App\Modules\Programming\Controlle
     $routes->get('verificacion_tool_box/(:any)', 'Programming::verificacion_tool_box/$1');
     $routes->get('verificacion_tool_box', 'Programming::verificacion_tool_box');
 
+    $routes->get('automatic_planning_message', 'Programming::automatic_planning_message');
+
 });

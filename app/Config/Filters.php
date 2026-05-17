@@ -100,6 +100,8 @@ class Filters extends BaseFilters
                     'programming/verificacion_tool_box/*',
                     'programming/verificacion_tool_box',
                     'payroll/payroll_check',
+                    'programming/automatic_planning_message',
+                    'programming/receive_sms',
                 ]
             ]
         ],

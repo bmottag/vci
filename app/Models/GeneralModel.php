@@ -2318,4 +2318,54 @@ class GeneralModel extends Model
 		return !empty($result) ? $result : false;
 	}
 
+	/**
+	 * Get workers with equipment assigned in a programming
+	 * @since 17/05/2026
+	 * @review 17/05/2026 - new CI4 version
+	 */
+	public function get_programming_equipment(array $arrData): array|false
+	{
+		$builder = $this->db->table('programming_worker P');
+		$builder->select('P.fk_id_programming_user, P.description, V.id_vehicle, V.type_level_2');
+		$builder->join('param_vehicle V', "FIND_IN_SET(V.id_vehicle, REPLACE(REPLACE(P.fk_id_machine, '[', ''), ']', '')) > 0", 'left');
+		$builder->where('P.fk_id_machine IS NOT NULL');
+		$builder->where("P.fk_id_machine !=", '');
+
+		if (isset($arrData['idProgramming'])) {
+			$builder->where('P.fk_id_programming', $arrData['idProgramming']);
+		}
+
+		$result = $builder->get()->getResultArray();
+		return !empty($result) ? $result : false;
+	}
+
+	/**
+	 * Get the most recent unconfirmed programming worker by mobile number
+	 * Used by the SMS webhook to identify which worker replied
+	 * @since 27/8/2023
+	 * @author BMOTTAG
+	 * @review 17/05/2026 - new CI4 version
+	 */
+	public function get_programming_user(array $arrData): array|false
+	{
+		$builder = $this->db->table('programming_worker W');
+		$builder->select("W.id_programming_worker, CONCAT(U.first_name, ' ', U.last_name) AS employee, Z.movil, P.date_programming, H.hora");
+		$builder->join('user U',         'U.id_user = W.fk_id_programming_user', 'inner');
+		$builder->join('programming P',  'P.id_programming = W.fk_id_programming', 'inner');
+		$builder->join('user Z',         'Z.id_user = P.fk_id_user', 'inner');
+		$builder->join('param_horas H',  'H.id_hora = W.fk_id_hour', 'left');
+		$builder->where('W.confirmation', 2);
+		$builder->where('W.sms_sent', 1);
+
+		if (isset($arrData['movil'])) {
+			$builder->where('U.movil', $arrData['movil']);
+		}
+
+		$builder->orderBy('W.id_programming_worker', 'DESC');
+		$builder->limit(1);
+
+		$result = $builder->get()->getRowArray();
+		return !empty($result) ? $result : false;
+	}
+
 }
