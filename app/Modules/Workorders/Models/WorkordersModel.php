@@ -255,7 +255,7 @@ class WorkordersModel extends Model
             'fk_id_workorder'  => $idWorkorder,
             'fk_id_type_2'     => $type,
             'fk_id_vehicle'    => $truck,
-            'fk_id_attachment' => $post['attachment'],
+            'fk_id_attachment' => $post['attachment'] ?? null,
             'other'            => $post['otherEquipment'],
             'operatedby'       => $post['operatedby'],
             'hours'            => $post['hour'],

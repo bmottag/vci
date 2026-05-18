@@ -594,25 +594,6 @@ class Payroll extends BaseController
 	}
 
 	/**
-	 * NOTIFICATION HOURS PAYROLL CHECK - used by cron, every day at 12am
-	 * @review 30/04/2026 - new CI4 version
-	 */
-	public function hours_payroll_check()
-	{
-		$infoTask = $this->generalModel->get_without_work_order();
-
-		if ($infoTask) {
-			// Email/SMS notification - pending implementation
-			// TODO: implement send_notification for hours without WO
-			// $subjet      = 'Hour sin WO';
-			// $mensajeSMS  = "APP VCI - $subjet\nHoras sin asignar a WO.\nFollow the link: " . base_url('dashboard/without_work_order');
-			// send_notification(['idNotification' => ID_NOTIFICATION_HOURS_PAYROLL_CHECK, ...]);
-		}
-
-		return true;
-	}
-
-	/**
 	 * Cargo modal - formulario para editar las horas por job code
 	 * @since 2/2/2018
 	 * @review 30/04/2026 - new CI4 version
