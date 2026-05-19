@@ -23,7 +23,7 @@ $routes->group('forceaccount', ['namespace' => 'App\Modules\Forceaccount\Control
     $routes->post('save_rate',                               'Forceaccount::save_rate');
     $routes->post('save_hour',                               'Forceaccount::save_hour');
     $routes->get('email/(:num)',                             'Forceaccount::email/$1');
-    $routes->match(['GET', 'POST'], 'add_signature/(:num)',  'Forceaccount::add_signature/$1');
+    $routes->post('save_signature',                 'Forceaccount::save_signature');
     $routes->post('save_forceaccount_and_send_email',        'Forceaccount::save_forceaccount_and_send_email');
     $routes->post('save_forceaccount_state',                 'Forceaccount::save_forceaccount_state');
     $routes->get('wo_by_state/(:num)/(:any)',                'Forceaccount::wo_by_state/$1/$2');

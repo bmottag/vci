@@ -945,7 +945,7 @@ class Dashboard extends BaseController
 
 	private function guardDashboard(): ?\CodeIgniter\HTTP\RedirectResponse
 	{
-		$current  = trim(service('uri')->getPath(), '/');
+		$current  = trim(uri_string(), '/');
 		$userDash = trim($this->session->get('dashboardURL'), '/');
 
 		if ($current !== $userDash) {

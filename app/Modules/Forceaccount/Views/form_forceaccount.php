@@ -303,52 +303,38 @@
 											Save <span class="glyphicon glyphicon-floppy-disk" aria-hidden="true">
 										</button>
 
+									</div>
+								</div>
+							</div>
+						<?php } ?>
+
+					</form>
+
+
+						<?php if (!$deshabilitar) { ?>
+							<div class="form-group">
+								<div class="row">
+									<div class="col-xs-12" style="display:flex; align-items:flex-start; justify-content:center; gap:10px; flex-wrap:wrap;">
+
 										<?php if ($information) { ?>
 
-											<?php //if($information[0]["fk_id_company"] != "" && $information[0]["fk_id_company"] != 0 && $forceaccountEquipment) { 
-											?>
-											<!-- SE QUITA OPCION DE ENVIAR CORREO A LA EMPRESA DESDE ABRIL DE 2020
-											<button type="button" id="btnEmail" name="btnEmail" class="btn btn-danger" >
-												Save & Send Email <span class="glyphicon glyphicon-send" aria-hidden="true">
-											</button>
--->
-											<?php //} 
-											?>
-
-											<?php if ($information[0]['signature_wo']) { ?>
-
-												<button type="button" class="btn btn-default" data-toggle="modal" data-target="#<?php echo $information[0]['id_forceaccount'] . "wModal"; ?>" id="<?php echo $information[0]['id_forceaccount']; ?>">
-													<span class="glyphicon glyphicon-eye-open" aria-hidden="true"></span> View Signature
-												</button>
-
-												<div id="<?php echo $information[0]['id_forceaccount'] . "wModal"; ?>" class="modal fade" role="dialog">
-													<div class="modal-dialog">
-														<div class="modal-content">
-															<div class="modal-header">
-																<button type="button" class="close" data-dismiss="modal">×</button>
-																<h4 class="modal-title">Foreman signature</h4>
-															</div>
-															<div class="modal-body text-center"><img src="<?php echo base_url($information[0]['signature_wo']); ?>" class="img-rounded" alt="Foreman signature" width="304" height="236" /> </div>
-															<div class="modal-footer">
-																<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
-															</div>
-														</div>
-													</div>
-												</div>
-
-											<?php } ?>
-
-											<!-- enlace para firma -->
-											<a href="<?php echo base_url("forceaccount/add_signature/" . $information[0]['id_forceaccount']); ?>" class="btn btn-default">
-												<span class="glyphicon glyphicon-edit" aria-hidden="true"></span> Signature
-											</a>
-
+											<div>
+												<?= view('App\Views\template\signature_component', [
+													'imageUrl'   => $information[0]['signature_wo'] ?? null,
+													'formAction' => base_url('forceaccount/save_signature'),
+													'hiddenName' => 'image',
+													'height'     => 200,
+													'id' 		 => $information[0]['id_forceaccount']
+												]) ?>
+											</div>
 
 											<!-- enlace para enviar mensaje de texto al foreman -->
 											<?php if ($information[0]['foreman_movil_number_wo']) { ?>
-												<a href="<?php echo base_url("forceaccount/sendSMSForeman/" . $information[0]['id_forceaccount']); ?>" class="btn btn-default">
-													<span class="glyphicon glyphicon-edit" aria-hidden="true"></span> Send SMS to foreman
-												</a>
+												<div>
+													<a href="<?php echo base_url("forceaccount/sendSMSForeman/" . $information[0]['id_forceaccount']); ?>" class="btn btn-default btn-sm">
+														<span class="glyphicon glyphicon-edit" aria-hidden="true"></span> Send SMS to foreman
+													</a>
+												</div>
 											<?php } ?>
 
 										<?php } ?>
@@ -357,17 +343,8 @@
 								</div>
 							</div>
 						<?php } ?>
-						<!-- SE QUITA OPCION DE ENVIAR CORREO A LA EMPRESA DESDE ABRIL DE 2020								
-						<div class="col-lg-12">	
-							<div class="alert alert-danger ">
-								<span class="glyphicon glyphicon-exclamation-sign" aria-hidden="true"></span>
-								In order to save/send an email of the WO, the user needs to specefy whom the client is and what equipment was used.<br>
-								<span class="glyphicon glyphicon-exclamation-sign" aria-hidden="true"></span>
-								An email copy of this WO will be sent to the client, the foreman's email (when provided) and also to <strong>hugo@v-contracting.com</strong>.
-							</div>
-						</div>
--->
-					</form>
+
+
 
 					<?php if($information && empty($information[0]['signature_wo'])) { ?>
 						<div class="row">

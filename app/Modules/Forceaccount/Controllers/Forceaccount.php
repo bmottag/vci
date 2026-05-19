@@ -646,41 +646,37 @@ class Forceaccount extends BaseController
      * Signature
      * @since 16/04/2025
      * @author BMOTTAG
-     * @review 07/05/2026 - new CI4 version
+     * @review 19/05/2026 - new CI4 version
      */
-    public function add_signature($idForceAccount)
-    {
-        if (empty($idForceAccount)) {
-            throw new \CodeIgniter\Exceptions\PageNotFoundException('ERROR!!! - You are in the wrong place.');
-        }
+	public function save_signature()
+	{
+		$imageData = $this->request->getPost('image'); // o el hiddenName que uses
+        $idForceAccount = $this->request->getPost('id');
+		$fileName = 'forceaccount_' . $idForceAccount . '.png';
+		$filePath = WRITEPATH . '../public/images/signature/forceaccount/' . $fileName;
 
-        if ($this->request->getPost()) {
-            $name    = 'images/signature/forceaccount/forceaccount_' . $idForceAccount . '.png';
-            $dataUri = $this->request->getPost('image');
-            file_put_contents($name, base64_decode(explode(',', $dataUri)[1]));
+		if(!$imageData){
+			return redirect()->back()->with('retornoError', 'No signature provided.');
+		}
 
-            $data['titulo']   = "<i class='fa fa-life-saver fa-fw'></i>SIGNATURE";
-            $data['linkBack'] = 'forceaccount/foreman_view/' . $idForceAccount;
+		$imageData = str_replace('data:image/png;base64,', '', $imageData);
+		$imageData = str_replace(' ', '+', $imageData);
 
-            if ($this->generalModel->updateRecord([
+		if(!is_dir(dirname($filePath))) mkdir(dirname($filePath), 0755, true);
+
+		if(file_put_contents($filePath, base64_decode($imageData))){
+			$this->generalModel->updateRecord([
                 'table'      => 'forceaccount',
                 'primaryKey' => 'id_forceaccount',
                 'id'         => $idForceAccount,
                 'column'     => 'signature_wo',
-                'value'      => $name,
-            ])) {
-                $data['clase'] = 'alert-success';
-                $data['msj']   = 'Good job, you have saved your signature.';
-            } else {
-                $data['clase'] = 'alert-danger';
-                $data['msj']   = 'Ask for help.';
-            }
-
-            return $this->render('template/answer', $data);
-        }
-
-        return view('template/make_signature');
-    }
+				"value" => 'images/signature/forceaccount/' . $fileName
+			]);
+			return redirect()->back()->with('retornoExito', 'Signature saved successfully.');
+		} else {
+			return redirect()->back()->with('retornoError', 'Error saving signature.');
+		}
+	}
 
     /**
      * Save forceaccount and send email
@@ -995,18 +991,35 @@ class Forceaccount extends BaseController
      * Envio de mensaje SMS al Foreman
      * @since 16/04/2025
      * @author BMOTTAG
-     * @review 07/05/2026 - new CI4 version
+     * @review 19/05/2026 - new CI4 version
      */
     public function sendSMSForeman($idForceAccount)
     {
-        // TODO: implement SMS sending via Twilio
+        $smsService  = new \App\Libraries\SmsService();
+        $information = $this->forceaccountModel->get_forceaccount_by_idJob(['idForceAccount' => $idForceAccount]);
 
-        $data['linkBack'] = 'forceaccount/add_forceaccount/' . $idForceAccount;
-        $data['titulo']   = "<i class='fa fa-list'></i>Force Account";
-        $data['clase']    = 'alert-info';
-        $data['msj']      = 'We have send the SMS to the foreman to sign the Force Account No.' . $idForceAccount;
+        if (empty($information) || empty($information[0]['foreman_movil_number_wo'])) {
+            session()->setFlashdata('retornoError', '<strong>Error!</strong> Foreman phone number not found.');
+            return redirect()->to(base_url('forceaccount/add_forceaccount/' . $idForceAccount));
+        }
 
-        return $this->render('template/answer', $data);
+        $info    = $information[0];
+        $mensaje = date('F j, Y', strtotime($info['date']));
+        $mensaje .= "\n" . $info['job_description'];
+        $mensaje .= "\n" . $info['observation'];
+        $mensaje .= "\nClick the following link to review W.O. " . $idForceAccount;
+        $mensaje .= "\n\n" . base_url('forceaccount/foreman_view/' . $idForceAccount);
+
+        $to = '+1' . $info['foreman_movil_number_wo'];
+
+        try {
+            $smsService->send($to, $mensaje);
+            session()->setFlashdata('retornoExito', 'We have sent the SMS to the foreman to sign the Force Account.');
+        } catch (\Exception $e) {
+            session()->setFlashdata('retornoError', '<strong>Error!</strong> SMS could not be sent: ' . $e->getMessage());
+        }
+
+        return redirect()->to(base_url('forceaccount/add_forceaccount/' . $idForceAccount));
     }
 
     /**

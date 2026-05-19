@@ -102,6 +102,8 @@ class Filters extends BaseFilters
                     'payroll/payroll_check',
                     'programming/automatic_planning_message',
                     'programming/receive_sms',
+                    'forceaccount/foreman_view/*',
+                    'forceaccount/save_signature',
                 ]
             ]
         ],
