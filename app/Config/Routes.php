@@ -56,6 +56,11 @@ if (file_exists(APPPATH.'Modules/External/Config/Routes.php')) {
     require APPPATH.'Modules/External/Config/Routes.php';
 }
 
+// Cargar rutas del módulo Claims
+if (file_exists(APPPATH.'Modules/Claims/Config/Routes.php')) {
+    require APPPATH.'Modules/Claims/Config/Routes.php';
+}
+
 // Cargar rutas del módulo Forceaccount
 if (file_exists(APPPATH.'Modules/Forceaccount/Config/Routes.php')) {
     require APPPATH.'Modules/Forceaccount/Config/Routes.php';

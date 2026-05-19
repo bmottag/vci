@@ -2368,4 +2368,34 @@ class GeneralModel extends Model
 		return !empty($result) ? $result : false;
 	}
 
+	/**
+	 * Get job detail info joined with claim_apus for a specific claim
+	 * @since 2072/legacy
+	 * @review 18/05/2026 - new CI4 version
+	 */
+	public function get_job_detail_claims_info(array $arrData)
+	{
+		$builder = $this->db->table('job_details D');
+		$builder->select('D.*, C.quantity quantity_claim, C.cost');
+		$builder->join('claim_apus C', 'C.fk_id_job_detail = D.id_job_detail AND C.fk_id_claim = ' . (int) $arrData['idClaim'], 'inner');
+
+		if (array_key_exists('idJobDetail', $arrData)) {
+			$builder->where('id_job_detail', $arrData['idJobDetail']);
+		}
+		if (array_key_exists('idJob', $arrData)) {
+			$builder->where('fk_id_job', $arrData['idJob']);
+		}
+		if (array_key_exists('chapterNumber', $arrData)) {
+			$builder->where('chapter_number', $arrData['chapterNumber']);
+		}
+		if (array_key_exists('status', $arrData)) {
+			$builder->where('status', $arrData['status']);
+		}
+
+		$builder->orderBy('id_job_detail', 'asc');
+		$query = $builder->get();
+
+		return $query->getNumRows() > 0 ? $query->getResultArray() : false;
+	}
+
 }

@@ -12,6 +12,7 @@
     "require": {
         "php": "^8.2",
         "codeigniter4/framework": "^4.7",
+        "phpoffice/phpspreadsheet": "^5.7",
         "tecnickcom/tcpdf": "^6.11",
         "twilio/sdk": "^8.11"
     },
