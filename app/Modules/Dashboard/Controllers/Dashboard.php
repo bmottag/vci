@@ -25,6 +25,7 @@ class Dashboard extends BaseController
 	 */
 	public function index()
 	{
+		if ($redirect = $this->guardDashboard()) return $redirect;
 		$data = [];
 		$data['infoMaintenance']  = false;
 		$data['noJobs']           = false;
@@ -61,6 +62,7 @@ class Dashboard extends BaseController
 	 */
 	public function admin()
 	{
+		if ($redirect = $this->guardDashboard()) return $redirect;
         $data = [];
 		$data['noJobs'] = TRUE;
 		$data['noHauling'] = TRUE;
@@ -140,6 +142,7 @@ class Dashboard extends BaseController
 	 */
 	public function mechanic()
 	{
+		if ($redirect = $this->guardDashboard()) return $redirect;
 		$data = [];
 		$data['noJobs'] = FALSE;
 		$data['noHauling'] = TRUE;
@@ -287,6 +290,7 @@ class Dashboard extends BaseController
 	 */
 	public function supervisor()
 	{
+		if ($redirect = $this->guardDashboard()) return $redirect;
 		$userRol = $this->session->get("rol");
 
 		$data = [];
@@ -326,6 +330,7 @@ class Dashboard extends BaseController
 	 */
 	public function work_order()
 	{
+		if ($redirect = $this->guardDashboard()) return $redirect;
 		$data = [];
 		$data['infoMaintenance'] = FALSE;
 		$data['noJobs'] = FALSE;
@@ -364,6 +369,7 @@ class Dashboard extends BaseController
 	 */
 	public function safety()
 	{
+		if ($redirect = $this->guardDashboard()) return $redirect;
 		$data = [];
 		$data['noJobs'] = TRUE;
 		$data['noHauling'] = FALSE;
@@ -404,6 +410,7 @@ class Dashboard extends BaseController
 	 */
 	public function accounting()
 	{
+		if ($redirect = $this->guardDashboard()) return $redirect;
 		$data = [];
 		$data['noJobs'] = FALSE;
 		$data['noHauling'] = TRUE;
@@ -438,6 +445,7 @@ class Dashboard extends BaseController
 	 */
 	public function management()
 	{
+		if ($redirect = $this->guardDashboard()) return $redirect;
 		$data = [];
 		$data['noJobs'] = TRUE;
 		$data['noHauling'] = TRUE;
@@ -933,6 +941,17 @@ class Dashboard extends BaseController
 
 		$this->db->close();
 		echo json_encode($result);
+	}
+
+	private function guardDashboard(): ?\CodeIgniter\HTTP\RedirectResponse
+	{
+		$current  = trim(service('uri')->getPath(), '/');
+		$userDash = trim($this->session->get('dashboardURL'), '/');
+
+		if ($current !== $userDash) {
+			return redirect()->to(base_url($userDash));
+		}
+		return null;
 	}
 
 	public function assignHoursWo()
