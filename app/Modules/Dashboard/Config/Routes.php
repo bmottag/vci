@@ -1,7 +1,7 @@
 <?php
 
 $routes->group('dashboard', ['namespace' => 'App\Modules\Dashboard\Controllers'], function($routes){
-    $routes->get('/', 'Dashboard::admin');
+    $routes->get('/', 'Dashboard::index');
     $routes->get('admin', 'Dashboard::admin');
     $routes->get('mechanic', 'Dashboard::mechanic');
     $routes->get('supervisor', 'Dashboard::supervisor');

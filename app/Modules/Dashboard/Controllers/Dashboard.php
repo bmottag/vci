@@ -19,6 +19,44 @@ class Dashboard extends BaseController
     }
 
 	/**
+	 * Index Page for this controller.
+	 * BASIC dashboard
+	 * @review 19/05/2026 - new CI4 version
+	 */
+	public function index()
+	{
+		$data = [];
+		$data['infoMaintenance']  = false;
+		$data['noJobs']           = false;
+		$data['infoNextPlanning'] = false;
+		$data['noHauling']        = true;
+		$data['noDailyInspection'] = true;
+		$data['noHeavyInspection'] = true;
+
+		$data['dayoff'] = $this->dashboardModel->dayOffInfo();
+
+		$arrParam = [
+			'idUser'       => $this->session->get('id'),
+			'nextPlanning' => true,
+		];
+		$data['infoPlanning'] = $this->generalModel->get_planning_for_employee($arrParam);
+
+		$arrParam['idEmployee'] = $this->session->get('id');
+
+		$arrParam['limit'] = 60;
+		$data['info']       = $this->generalModel->get_task($arrParam);
+		$data['infoSafety'] = $this->generalModel->get_safety($arrParam);
+
+		$arrParam['limit']          = 6;
+		$data['infoWaterTruck']     = $this->generalModel->get_special_inspection_water_truck($arrParam);
+		$data['infoHydrovac']       = $this->generalModel->get_special_inspection_hydrovac($arrParam);
+		$data['infoSweeper']        = $this->generalModel->get_special_inspection_sweeper($arrParam);
+		$data['infoGenerator']      = $this->generalModel->get_special_inspection_generator($arrParam);
+
+		return $this->render('App\Modules\Dashboard\Views\dashboard', $data);
+	}
+
+	/**
 	 * SUPER ADMIN DASHBOARD
 	 */
 	public function admin()
