@@ -10,7 +10,7 @@
     <meta name="author" content="">
 	
     <title>VCI</title>
-    <link rel="icon" type="image/png" href="<?php echo base_url("images/set_logo.jpeg"); ?>" />
+    <link rel="icon" type="image/png" href="<?php echo base_url("images/favicon.png"); ?>" />
 
     <!-- Bootstrap Core CSS -->
 	<link href="<?php echo base_url("assets/bootstrap/css/bootstrap.min.css"); ?>" rel="stylesheet">
