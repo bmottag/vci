@@ -244,30 +244,36 @@ class WorkordersModel extends Model
     {
         $idWorkorder = $post['hddidWorkorder'];
         $type        = $post['type'];
-        $truck       = $post['truck'];
+        $truck       = $post['truck'] ?? null;
 
         if ($type == 8) {
             $truck = 5;
         }
-        $standby = ($type != 3) ? 2 : $post['standby'];
+
+        $standby = ($type != 3) ? 2 : ($post['standby'] ?? null);
 
         $data = [
             'fk_id_workorder'  => $idWorkorder,
             'fk_id_type_2'     => $type,
             'fk_id_vehicle'    => $truck,
             'fk_id_attachment' => $post['attachment'] ?? null,
-            'other'            => $post['otherEquipment'],
-            'operatedby'       => $post['operatedby'],
-            'hours'            => $post['hour'],
-            'quantity'         => $post['quantity'],
+            'other'            => $post['otherEquipment'] ?? null,
+            'operatedby'       => $post['operatedby'] ?? null,
+            'hours'            => $post['hour'] ?? null,
+            'quantity'         => $post['quantity'] ?? null,
             'standby'          => $standby,
-            'description'      => $post['description'],
+            'description'      => $post['description'] ?? null,
         ];
 
         $result = $this->db->table('workorder_equipment')->insert($data);
 
         $this->logger->user($idUser)->type('workorder_equipment')->id($idWorkorder)
-            ->token('insert')->comment(json_encode(['old' => null, 'new' => json_encode($data)]))->log();
+            ->token('insert')
+            ->comment(json_encode([
+                'old' => null,
+                'new' => $data
+            ]))
+            ->log();
 
         return $result;
     }
