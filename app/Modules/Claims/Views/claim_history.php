@@ -6,7 +6,7 @@
 		<div class="col-lg-12">
 			<div class="panel panel-primary">
 				<div class="panel-heading">
-					<a class="btn btn-primary btn-xs" href="<?php echo base_url().'claims/index/' . $claimsInfo[0]['fk_id_job']; ?> ">
+					<a class="btn btn-primary btn-xs" href="<?php echo base_url().'claims/' . $claimsInfo[0]['fk_id_job']; ?> ">
 						<span class="glyphicon glyphicon-chevron-left" aria-hidden="true"></span> Go back
 					</a>
 					<i class="fa fa-money"></i> <strong>CLAIM HISTORY</strong>

@@ -435,11 +435,25 @@ class Payroll extends BaseController
 
 			$data['to'] = date('Y-m-d', strtotime('+1 day', strtotime($data['to'])));
 
-			$data['info'] = $this->generalModel->get_payroll_full([
+			$allTasks = $this->generalModel->get_payroll_full([
 				'from' => $data['from'],
 				'to' => $data['to'],
 				'idEmployee' => $data['idEmployee'],
 			]);
+
+			$grouped = [];
+			foreach ($allTasks as $task) {
+				$uid = $task['fk_id_user'];
+				if (!isset($grouped[$uid])) {
+					$grouped[$uid] = [
+						'fk_id_user'    => $uid,
+						'employee_name' => $task['employee_name'],
+						'tasks'         => [],
+					];
+				}
+				$grouped[$uid]['tasks'][] = $task;
+			}
+			$data['info'] = array_values($grouped);
 
 			$view = 'App\Modules\Payroll\Views\list_payroll_time_sheet';
 		}
