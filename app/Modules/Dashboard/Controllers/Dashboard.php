@@ -799,9 +799,25 @@ class Dashboard extends BaseController
 				}
 			}
 
-			// Si es payrollInfo, agregar la consulta específica
+			// Si es payrollInfo, agregar workOrderCheck y calcular horas por usuario (igual que en "all")
 			if ($view === "payrollInfo") {
 				$data["workOrderCheck"] = $this->generalModel->get_workorder_info($arrParam);
+
+				if (!empty($data["workOrderCheck"]) && !empty($data["payrollInfo"])) {
+					foreach ($data["payrollInfo"] as &$task) {
+						$userId = $task['fk_id_user'];
+						foreach ($data["workOrderCheck"] as &$wo) {
+							$arrParamCheck = [
+								"idWorkorder" => $wo['id_workorder'],
+								"idUser"      => $userId
+							];
+							$hoursPersonal  = (float)$this->generalModel->countHoursPersonal($arrParamCheck);
+							$hoursEquipment = (float)$this->generalModel->countHoursEquipmentPersonal($arrParamCheck);
+							$wo['hours_by_user'][$userId] = $hoursPersonal + $hoursEquipment;
+						}
+					}
+					unset($task, $wo);
+				}
 			}
 		} else {
 			// Manejo de error si la vista no es válida
