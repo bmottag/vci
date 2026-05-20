@@ -105,7 +105,7 @@ class Programming extends BaseController
 
         $data['jobs'] = $this->generalModel->get_job(['state' => 1]);
 
-        $data['jobInfo'] = $this->generalModel->get_job(['state' => $idJob]);
+        $data['jobInfo'] = $this->generalModel->get_job(['idJob' => $idJob]);
 
         if ($idProgramming != 'x') {
             $data['information'] = $this->generalModel->get_programming(['idProgramming' => $idProgramming]);
