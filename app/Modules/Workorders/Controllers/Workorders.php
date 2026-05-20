@@ -862,8 +862,11 @@ class Workorders extends BaseController
         $data['workorderOcasional'] = $this->workordersModel->get_workorder_ocasional($arrParam);
         $data['workorderHoldBack']  = false;
 
+        $fecha    = date('F j, Y', strtotime($data['info'][0]['date']));
+        $subtitle = 'W.O. #: ' . $idWorkOrder . "\nW.O. date: " . $fecha;
+
         $builder = new PdfBuilder();
-        $pdf     = $builder->create('WORK ORDER');
+        $pdf     = $builder->createWithHeader('WORK ORDER', $subtitle);
 
         $html = view('App\Modules\Workorders\Views\reporte_work_order', $data);
         $pdf->writeHTML($html, true, false, true, false, '');
