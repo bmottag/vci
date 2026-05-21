@@ -3,17 +3,20 @@ namespace App\Modules\Planner\Controllers;
 
 use App\Controllers\BaseController;
 use App\Modules\Planner\Models\PlannerModel;
+use App\Modules\Programming\Models\ProgrammingModel;
 use App\Models\GeneralModel;
 
 class Planner extends BaseController
 {
     protected $plannerModel;
+    protected $programmingModel;
     protected $generalModel;
 
     public function __construct()
     {
-        $this->plannerModel = new PlannerModel();
-        $this->generalModel = new GeneralModel();
+        $this->plannerModel      = new PlannerModel();
+        $this->programmingModel  = new ProgrammingModel();
+        $this->generalModel      = new GeneralModel();
     }
 
     public function planner()
@@ -112,6 +115,7 @@ class Planner extends BaseController
                 'job_description' => $prog['job_description'],
                 'observation'     => $prog['observation'],
                 'fk_id_job'       => (int) $prog['fk_id_job'],
+                'fk_id_workorder' => $prog['fk_id_workorder'] ? (int) $prog['fk_id_workorder'] : null,
                 'workers'         => $workerDetails,
                 'materials'       => $materialList,
                 'occasional'      => $occasionalList,
@@ -471,6 +475,247 @@ class Planner extends BaseController
         ]);
 
         return $this->response->setJSON(['status' => $result ? 'success' : 'error']);
+    }
+
+    public function planner_send()
+    {
+        $idProgramming = (int) $this->request->getPost('id_programming');
+        if (!$idProgramming) {
+            return $this->response->setJSON(['status' => 'error', 'message' => 'Invalid programming ID']);
+        }
+
+        $arrParam    = ['idProgramming' => $idProgramming];
+        $information = $this->generalModel->get_programming($arrParam);
+        if (!$information) {
+            return $this->response->setJSON(['status' => 'error', 'message' => 'Programming not found']);
+        }
+
+        $idWorkorder       = $information[0]['fk_id_workorder'] ?: $this->create_work_order($information);
+        $informationWorker = $this->generalModel->get_programming_workers($arrParam);
+
+        $msgHeader  = date('F j, Y', strtotime($information[0]['date_programming']));
+        $msgHeader .= "\n" . $information[0]['job_description'];
+        $msgHeader .= "\n" . $information[0]['observation'];
+        $msgHeader .= "\n\nPlease confirm by replying '1' to this text message!\n";
+
+        $sent             = 0;
+        $excluded_numbers = ['686289126', '5068494482', '5068393681', '5870000000'];
+
+        if ($informationWorker) {
+            $smsService = new \App\Libraries\SmsService();
+            $siteMap    = [1 => 'At the yard - ', 2 => 'At the site - ', 3 => 'At Terminal - ', 4 => 'On-line training - ', 5 => 'At training facility - ', 6 => "At client's office - "];
+
+            foreach ($informationWorker as $info) {
+                $informationEquipments = [];
+                if ($info['fk_id_machine'] != null) {
+                    $id_values             = implode(',', json_decode($info['fk_id_machine'], true));
+                    $informationEquipments = $this->generalModel->get_vehicle_info_for_planning([
+                        'idValues'        => $id_values,
+                        'forTextMessague' => true,
+                    ]);
+                }
+
+                $mensaje  = $msgHeader . "\n";
+                $mensaje .= $siteMap[$info['site']] ?? 'At the yard - ';
+                $mensaje .= $info['hora'];
+                $mensaje .= "\n" . $info['name'];
+                $mensaje .= $info['description'] ? "\n" . $info['description'] : '';
+                $mensaje .= $info['fk_id_machine'] != null ? "\nInspect following unit(s):\n" . ($informationEquipments['unit_description'] ?? '') : '';
+
+                if ($info['safety'] == 1) {
+                    $mensaje .= "\nFLHA has being assigned to you.";
+                } elseif ($info['safety'] == 2) {
+                    $mensaje .= "\nIHSR has being assigned to you.";
+                } elseif ($info['safety'] == 3) {
+                    $mensaje .= "\nJSO has being assigned to you.";
+                }
+
+                if ($info['creat_wo'] == 1) {
+                    $mensaje .= "\nYou are in charge of the W.O. #" . $idWorkorder;
+                }
+
+                if (!in_array($info['movil'], $excluded_numbers)) {
+                    try {
+                        $message = $smsService->send('+1' . $info['movil'], $mensaje);
+                        $this->programmingModel->updateSMSWorkerStatus($info['id_programming_worker'], $message->status, $message->sid);
+                        $sent++;
+                    } catch (\Exception $e) {
+                        log_message('error', '[Planner] SMS send failed for worker ' . $info['id_programming_worker'] . ': ' . $e->getMessage());
+                    }
+                }
+            }
+        }
+
+        return $this->response->setJSON([
+            'status'           => 'success',
+            'workers_notified' => $sent,
+            'wo_number'        => $idWorkorder ?: null,
+        ]);
+    }
+
+    protected function create_work_order($infoPlanning)
+    {
+        $idProgramming              = $infoPlanning[0]['id_programming'];
+        $arrParam                   = ['idProgramming' => $idProgramming];
+        $informationWorker          = $this->generalModel->get_programming_workers($arrParam);
+        $informationWorkerWithEquip = $this->generalModel->get_programming_equipment($arrParam);
+        $programmingMaterials       = $this->plannerModel->get_programming_materials($arrParam);
+        $programmingSubcontractor   = $this->plannerModel->get_programming_occasional($arrParam);
+
+        $informationWorkerWO = $this->generalModel->get_programming_workers(['idProgramming' => $idProgramming, 'createWO' => true]);
+        $idUser              = $informationWorkerWO ? $informationWorkerWO[0]['fk_id_programming_user'] : $infoPlanning[0]['fk_id_user'];
+
+        $idJob     = $infoPlanning[0]['fk_id_job'];
+        $idCompany = $infoPlanning[0]['id_company'];
+
+        $foremanData = ['foreman_name' => '', 'foreman_movil' => '', 'foreman_email' => ''];
+        $infoForeman = $this->getForemanData('param_company_foreman', 'id_company_foreman', 'fk_id_job', $idJob);
+        if (!$infoForeman && $idCompany > 0) {
+            $infoForeman = $this->getForemanData('param_company_foreman', 'id_company_foreman', 'fk_id_param_company', $idCompany);
+        }
+        if ($infoForeman) {
+            $foremanData = [
+                'foreman_name'  => $infoForeman['foreman_name'],
+                'foreman_movil' => $infoForeman['foreman_movil_number'],
+                'foreman_email' => $infoForeman['foreman_email'],
+            ];
+        }
+
+        $message  = 'A new Work Order was created from the Planning.';
+        $arrParam = [
+            'idUser'       => $idUser,
+            'idJob'        => $idJob,
+            'date'         => $infoPlanning[0]['date_programming'],
+            'idCompany'    => $idCompany,
+            'foremanName'  => $foremanData['foreman_name'],
+            'foremanMovil' => $foremanData['foreman_movil'],
+            'foremanEmail' => $foremanData['foreman_email'],
+            'observation'  => $infoPlanning[0]['observation'],
+            'message'      => $message,
+        ];
+
+        if ($idWorkorder = $this->programmingModel->add_workorder($arrParam)) {
+            $this->generalModel->updateRecord([
+                'table'      => 'programming',
+                'primaryKey' => 'id_programming',
+                'id'         => $idProgramming,
+                'column'     => 'fk_id_workorder',
+                'value'      => $idWorkorder,
+            ]);
+
+            $this->programmingModel->add_workorder_state([
+                'idUser'      => $infoPlanning[0]['fk_id_user'],
+                'idWorkorder' => $idWorkorder,
+                'observation' => $message,
+                'state'       => 0,
+            ]);
+
+            if ($informationWorker) {
+                $map = [
+                    'fk_id_programming_user' => 'fk_id_user',
+                    'fk_id_employee_type'    => 'fk_id_employee_type',
+                    'description'            => 'description',
+                    'id_programming_worker'  => 'fk_id_programming_worker',
+                ];
+                foreach ($informationWorker as $row) {
+                    $item = ['fk_id_workorder' => $idWorkorder, 'hours' => 0];
+                    foreach ($row as $col => $val) {
+                        if (isset($map[$col])) {
+                            $dest        = $map[$col];
+                            $item[$dest] = ($dest == 'fk_id_employee_type' && (empty($val) || is_null($val))) ? 1 : $val;
+                        }
+                    }
+                    $this->programmingModel->add_item_workorder('workorder_personal', $item);
+                }
+            }
+
+            if ($informationWorkerWithEquip) {
+                $map = [
+                    'type_level_2'           => 'fk_id_type_2',
+                    'id_vehicle'             => 'fk_id_vehicle',
+                    'fk_id_programming_user' => 'operatedby',
+                    'description'            => 'description',
+                ];
+                foreach ($informationWorkerWithEquip as $row) {
+                    $item = ['fk_id_workorder' => $idWorkorder, 'quantity' => 1, 'hours' => 0, 'standby' => 2];
+                    foreach ($row as $col => $val) {
+                        if (isset($map[$col])) {
+                            $item[$map[$col]] = $val;
+                        }
+                    }
+                    $this->programmingModel->add_item_workorder('workorder_equipment', $item);
+                }
+            }
+
+            if ($programmingMaterials) {
+                $map = [
+                    'fk_id_material'          => 'fk_id_material',
+                    'quantity'                => 'quantity',
+                    'unit'                    => 'unit',
+                    'description'             => 'description',
+                    'id_programming_material' => 'fk_id_programming_materials',
+                ];
+                foreach ($programmingMaterials as $row) {
+                    $item = ['fk_id_workorder' => $idWorkorder];
+                    foreach ($row as $col => $val) {
+                        if (isset($map[$col])) {
+                            $item[$map[$col]] = $val;
+                        }
+                    }
+                    $this->programmingModel->add_item_workorder('workorder_materials', $item);
+                }
+            }
+
+            if ($programmingSubcontractor) {
+                $map = [
+                    'fk_id_company' => 'fk_id_company', 'equipment'     => 'equipment',
+                    'quantity'      => 'quantity',       'unit'          => 'unit',
+                    'hours'         => 'hours',          'rate'          => 'rate',
+                    'markup'        => 'markup',         'value'         => 'value',
+                    'contact'       => 'contact',        'description'   => 'description',
+                    'view_pdf'      => 'view_pdf',       'flag_expenses' => 'flag_expenses',
+                ];
+                foreach ($programmingSubcontractor as $row) {
+                    $item       = ['fk_id_workorder' => $idWorkorder, 'unit' => ' ', 'contact' => ' ', 'description' => ' '];
+                    foreach ($row as $col => $val) {
+                        if (isset($map[$col])) {
+                            $item[$map[$col]] = $val;
+                        }
+                    }
+                    $insertedId = $this->programmingModel->add_item_workorder('workorder_ocasional', $item);
+
+                    if ($row['does_hauling'] == 1) {
+                        $this->programmingModel->add_item_workorder('hauling', [
+                            'fk_id_user'        => $infoPlanning[0]['fk_id_user'],
+                            'fk_id_company'     => $row['fk_id_company'],
+                            'fk_id_site_from'   => $infoPlanning[0]['fk_id_job'],
+                            'fk_id_site_to'     => $infoPlanning[0]['fk_id_job'],
+                            'comments'          => $row['description'],
+                            'plate'             => $row['unit'],
+                            'date_issue'        => $infoPlanning[0]['date_programming'],
+                            'fk_id_workorder'   => $idWorkorder,
+                            'fk_id_submodule'   => $insertedId,
+                            'fk_id_programming' => $idProgramming,
+                        ]);
+                    }
+                }
+            }
+
+            return $idWorkorder;
+        }
+
+        return false;
+    }
+
+    protected function getForemanData($table, $order, $column, $id)
+    {
+        $result = $this->generalModel->get_basic_search([
+            'table'  => $table,
+            'order'  => $order,
+            'column' => $column,
+            'id'     => $id,
+        ]);
+        return $result ? $result[0] : null;
     }
 
     protected function update_state($idProgramming)

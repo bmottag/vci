@@ -340,6 +340,32 @@
 }
 .btn-rm-proj:hover { background: #e74c3c; border-color: #e74c3c; }
 
+/* ── WO badge (in column header) ── */
+.wo-badge {
+    display: inline-block;
+    margin-top: 4px;
+    font-size: 10px;
+    color: #f9ca24;
+    font-weight: bold;
+}
+.wo-badge a { color: #f9ca24; text-decoration: underline; }
+.wo-badge a:hover { color: #fff; }
+
+/* ── Send button (in column header) ── */
+.btn-send-proj {
+    background: #27ae60;
+    border: 1px solid rgba(255,255,255,.3);
+    color: #fff;
+    font-size: 11px;
+    line-height: 1;
+    padding: 2px 6px;
+    border-radius: 3px;
+    cursor: pointer;
+    flex-shrink: 0;
+    white-space: nowrap;
+}
+.btn-send-proj:hover { background: #1e8449; }
+
 /* ── Board drag-over highlight ── */
 #pb-board.board-drop-target {
     background: rgba(142,68,173,.06);
@@ -774,8 +800,12 @@ const PB = {
                         <div class="proj-name"><i class="fa fa-briefcase"></i> ${this.esc(proj.job_description)}</div>
                         <textarea class="obs-edit-area obsf" data-programming-id="${pid}" rows="2" placeholder="Observation...">${this.esc(proj.observation || '')}</textarea>
                         <span class="obs-saved" id="obs-saved-${pid}"><i class="fa fa-check"></i> saved</span>
+                        <div id="wo-badge-${pid}" class="wo-badge">${proj.fk_id_workorder ? this.woBadgeHtml(proj.fk_id_workorder) : ''}</div>
                     </div>
-                    <button class="btn-rm-proj" onclick="PB.removeProject(this.closest('.proj-col'))" title="Remove from plan">×</button>
+                    <div style="display:flex;flex-direction:column;gap:3px;align-items:stretch;">
+                        <button class="btn-rm-proj" onclick="PB.removeProject(this.closest('.proj-col'))" title="Remove from plan">×</button>
+                        <button class="btn-send-proj" onclick="PB.sendPlan(${pid})" title="Send SMS &amp; create WO"><i class="fa fa-send"></i> Send</button>
+                    </div>
                 </div>
             </div>
             <div class="w-drop-zone" data-programming-id="${proj.id_programming}">
@@ -1147,6 +1177,10 @@ const PB = {
         </div>`;
     },
 
+    woBadgeHtml(woId) {
+        return `<i class="fa fa-file-text-o"></i> <a href="${base_url}workorders/add_workorder/${woId}" target="_blank">W.O. #${woId}</a>`;
+    },
+
     eBadgeHtml(equipId, equipLabel) {
         return `<div class="e-badge" data-equip-id="${equipId}" data-equip-label="${this.esc(equipLabel)}">
             <i class="fa fa-truck" style="font-size:9px;"></i>${this.esc(equipLabel)}<span class="rm-eq" onclick="PB.removeEquip(this)">×</span>
@@ -1473,6 +1507,33 @@ const PB = {
             .fail(() => {
                 chip.style.opacity       = '';
                 chip.style.pointerEvents = '';
+            });
+    },
+
+    /* ── Send SMS & create WO ────────────────────────────────── */
+    sendPlan(pid) {
+        if (!confirm('Send SMS notifications to all workers and create Work Order for this project?')) return;
+
+        const col = document.querySelector(`.w-drop-zone[data-programming-id="${pid}"]`)?.closest('.proj-col');
+        if (col) { col.style.opacity = '.6'; col.style.pointerEvents = 'none'; }
+
+        $.post(base_url + 'planner/planner_send', { id_programming: pid })
+            .done(resp => {
+                if (resp.status === 'success') {
+                    if (resp.wo_number) {
+                        const badge = document.getElementById('wo-badge-' + pid);
+                        if (badge) badge.innerHTML = this.woBadgeHtml(resp.wo_number);
+                    }
+                    let msg = 'Messages sent to ' + resp.workers_notified + ' worker(s).';
+                    if (resp.wo_number) msg += '\nWork Order #' + resp.wo_number + ' created.';
+                    alert(msg);
+                } else {
+                    alert('Error sending notifications. Please try again.');
+                }
+            })
+            .fail(() => alert('Network error. Please try again.'))
+            .always(() => {
+                if (col) { col.style.opacity = ''; col.style.pointerEvents = ''; }
             });
     },
 

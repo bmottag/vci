@@ -18,7 +18,7 @@ class PlannerModel extends Model
     public function get_programmings_by_date(string $date): array
     {
         $builder = $this->db->table('programming P');
-        $builder->select('P.id_programming, P.fk_id_job, P.date_programming, P.observation, P.state, J.job_description');
+        $builder->select('P.id_programming, P.fk_id_job, P.fk_id_workorder, P.date_programming, P.observation, P.state, J.job_description');
         $builder->join('param_jobs J', 'J.id_job = P.fk_id_job', 'inner');
         $builder->where('P.date_programming', $date);
         $builder->where('P.state !=', 3);
