@@ -470,6 +470,7 @@ class GeneralModel extends Model
 		}
 
 		$builder->orderBy('I.date_issue', 'desc');
+		$builder->limit($arrData["limit"]);
 		$query = $builder->get();
 
         $result = $query->getResultArray();
