@@ -1414,12 +1414,47 @@ class Programming extends BaseController
                 ];
             }
 
+            $rawMaterials = $this->programmingModel->get_programming_materials(['idProgramming' => $prog['id_programming']]);
+            $materialList = [];
+            if ($rawMaterials) {
+                foreach ($rawMaterials as $m) {
+                    $materialList[] = [
+                        'id_programming_material' => (int) $m['id_programming_material'],
+                        'fk_id_material'          => (int) $m['fk_id_material'],
+                        'material'                => $m['material'],
+                        'quantity'                => $m['quantity'],
+                        'unit'                    => $m['unit'],
+                        'description'             => $m['description'] ?? '',
+                    ];
+                }
+            }
+
+            $rawOccasional = $this->programmingModel->get_programming_occasional(['idProgramming' => $prog['id_programming']]);
+            $occasionalList = [];
+            if ($rawOccasional) {
+                foreach ($rawOccasional as $o) {
+                    $occasionalList[] = [
+                        'id_programming_ocasional' => (int) $o['id_programming_ocasional'],
+                        'fk_id_company'            => (int) $o['fk_id_company'],
+                        'company_name'             => $o['company_name'],
+                        'equipment'                => $o['equipment'] ?? '',
+                        'quantity'                 => $o['quantity'] ?? '',
+                        'unit'                     => $o['unit'] ?? '',
+                        'hours'                    => $o['hours'] ?? '',
+                        'contact'                  => $o['contact'] ?? '',
+                        'description'              => $o['description'] ?? '',
+                    ];
+                }
+            }
+
             $projects[] = [
                 'id_programming'  => (int) $prog['id_programming'],
                 'job_description' => $prog['job_description'],
                 'observation'     => $prog['observation'],
                 'fk_id_job'       => (int) $prog['fk_id_job'],
                 'workers'         => $workerDetails,
+                'materials'       => $materialList,
+                'occasional'      => $occasionalList,
             ];
         }
 
@@ -1445,6 +1480,19 @@ class Programming extends BaseController
             'order' => 'employee_type',
         ]);
 
+        $materialCatalog = $this->generalModel->get_basic_search([
+            'table' => 'param_material_type',
+            'order' => 'material',
+            'id'    => 'x',
+        ]);
+
+        $companyCatalog = $this->generalModel->get_basic_search([
+            'table'  => 'param_company',
+            'order'  => 'company_name',
+            'column' => 'company_type',
+            'id'     => 2,
+        ]);
+
         return $this->response->setJSON([
             'projects'          => $projects,
             'available_workers' => $availableWorkers,
@@ -1453,6 +1501,8 @@ class Programming extends BaseController
             'hours'             => $horas,
             'project_pool'      => $projectPool,
             'employee_types'    => $employeeTypes ?: [],
+            'material_catalog'  => $materialCatalog ?: [],
+            'company_catalog'   => $companyCatalog ?: [],
         ]);
     }
 
@@ -1577,6 +1627,219 @@ class Programming extends BaseController
             return $this->response->setJSON(['status' => 'success']);
         }
         return $this->response->setJSON(['status' => 'error']);
+    }
+
+    /**
+     * Planner Board - Guardar material en proyecto
+     * @since 21/05/2026
+     */
+    public function planner_save_material()
+    {
+        $idProgramming = (int) $this->request->getPost('id_programming');
+        $fkMaterial    = (int) $this->request->getPost('fk_id_material');
+        $quantity      = $this->request->getPost('quantity');
+        $unit          = $this->request->getPost('unit');
+        $description   = $this->request->getPost('description') ?? '';
+
+        if (!$idProgramming || !$fkMaterial || !$quantity || !$unit) {
+            return $this->response->setJSON(['status' => 'error']);
+        }
+
+        $id = $this->programmingModel->planner_insert_material([
+            'fk_id_programming' => $idProgramming,
+            'fk_id_material'    => $fkMaterial,
+            'quantity'          => $quantity,
+            'unit'              => $unit,
+            'description'       => $description,
+        ]);
+
+        if ($id) {
+            $matInfo = $this->generalModel->get_basic_search([
+                'table'  => 'param_material_type',
+                'order'  => 'material',
+                'column' => 'id_material',
+                'id'     => $fkMaterial,
+            ]);
+            return $this->response->setJSON([
+                'status'   => 'success',
+                'material' => [
+                    'id_programming_material' => $id,
+                    'fk_id_material'          => $fkMaterial,
+                    'material'                => $matInfo ? $matInfo[0]['material'] : '',
+                    'quantity'                => $quantity,
+                    'unit'                    => $unit,
+                    'description'             => $description,
+                ],
+            ]);
+        }
+        return $this->response->setJSON(['status' => 'error']);
+    }
+
+    /**
+     * Planner Board - Eliminar material de proyecto
+     * @since 21/05/2026
+     */
+    public function planner_delete_material()
+    {
+        $id = (int) $this->request->getPost('id_programming_material');
+        if (!$id) {
+            return $this->response->setJSON(['status' => 'error']);
+        }
+
+        if ($this->generalModel->deleteRecord([
+            'table'      => 'programming_material',
+            'primaryKey' => 'id_programming_material',
+            'id'         => $id,
+        ])) {
+            return $this->response->setJSON(['status' => 'success']);
+        }
+        return $this->response->setJSON(['status' => 'error']);
+    }
+
+    /**
+     * Planner Board - Actualizar campo de material
+     * @since 21/05/2026
+     */
+    public function planner_update_material()
+    {
+        $id    = (int) $this->request->getPost('id_programming_material');
+        $field = $this->request->getPost('field');
+        $value = $this->request->getPost('value');
+
+        $allowed = ['quantity', 'unit', 'description'];
+        if (!$id || !in_array($field, $allowed)) {
+            return $this->response->setJSON(['status' => 'error']);
+        }
+
+        $result = $this->db->table('programming_material')
+            ->where('id_programming_material', $id)
+            ->update([$field => $value]);
+
+        return $this->response->setJSON(['status' => $result ? 'success' : 'error']);
+    }
+
+    /**
+     * Planner Board - Guardar subcontractor en proyecto
+     * @since 21/05/2026
+     */
+    public function planner_save_subcontractor()
+    {
+        $idProgramming = (int) $this->request->getPost('id_programming');
+        $fkCompany     = (int) $this->request->getPost('fk_id_company');
+        $equipment     = $this->request->getPost('equipment');
+        $quantity      = $this->request->getPost('quantity');
+        $unit          = $this->request->getPost('unit');
+        $hours         = $this->request->getPost('hours') ?? '';
+        $contact       = $this->request->getPost('contact') ?? '';
+        $description   = $this->request->getPost('description') ?? '';
+
+        if (!$idProgramming || !$fkCompany || !$equipment || !$quantity || !$unit || !$contact) {
+            return $this->response->setJSON(['status' => 'error']);
+        }
+
+        $companyInfo = $this->generalModel->get_basic_search([
+            'table'  => 'param_company',
+            'order'  => 'company_name',
+            'column' => 'id_company',
+            'id'     => $fkCompany,
+        ]);
+
+        if (!$companyInfo) {
+            return $this->response->setJSON(['status' => 'error']);
+        }
+
+        $hauling     = $companyInfo[0]['does_hauling'];
+        $companyName = $companyInfo[0]['company_name'];
+        $rowBase     = [
+            'fk_id_programming' => $idProgramming,
+            'fk_id_company'     => $fkCompany,
+            'equipment'         => $equipment,
+            'unit'              => $unit,
+            'hours'             => $hours,
+            'contact'           => $contact,
+            'description'       => $description,
+        ];
+
+        $inserted = [];
+        if ($hauling == 1) {
+            $qty = max(1, (int) $quantity);
+            for ($i = 0; $i < $qty; $i++) {
+                $this->db->table('programming_ocasional')->insert(array_merge($rowBase, ['quantity' => 1]));
+                $id = $this->db->insertID();
+                if ($id) {
+                    $inserted[] = ['id_programming_ocasional' => $id, 'quantity' => 1];
+                }
+            }
+        } else {
+            $this->db->table('programming_ocasional')->insert(array_merge($rowBase, ['quantity' => $quantity]));
+            $id = $this->db->insertID();
+            if ($id) {
+                $inserted[] = ['id_programming_ocasional' => $id, 'quantity' => $quantity];
+            }
+        }
+
+        if (!empty($inserted)) {
+            $result = [];
+            foreach ($inserted as $row) {
+                $result[] = [
+                    'id_programming_ocasional' => (int) $row['id_programming_ocasional'],
+                    'fk_id_company'            => $fkCompany,
+                    'company_name'             => $companyName,
+                    'equipment'                => $equipment,
+                    'quantity'                 => $row['quantity'],
+                    'unit'                     => $unit,
+                    'hours'                    => $hours,
+                    'contact'                  => $contact,
+                    'description'              => $description,
+                ];
+            }
+            return $this->response->setJSON(['status' => 'success', 'subcontractors' => $result]);
+        }
+
+        return $this->response->setJSON(['status' => 'error']);
+    }
+
+    /**
+     * Planner Board - Eliminar subcontractor de proyecto
+     * @since 21/05/2026
+     */
+    public function planner_delete_subcontractor()
+    {
+        $id = (int) $this->request->getPost('id_programming_ocasional');
+        if (!$id) {
+            return $this->response->setJSON(['status' => 'error']);
+        }
+
+        if ($this->generalModel->deleteRecord([
+            'table'      => 'programming_ocasional',
+            'primaryKey' => 'id_programming_ocasional',
+            'id'         => $id,
+        ])) {
+            return $this->response->setJSON(['status' => 'success']);
+        }
+        return $this->response->setJSON(['status' => 'error']);
+    }
+
+    /**
+     * Planner Board - Actualizar campo de subcontractor
+     * @since 21/05/2026
+     */
+    public function planner_update_subcontractor()
+    {
+        $id    = (int) $this->request->getPost('id_programming_ocasional');
+        $field = $this->request->getPost('field');
+        $value = $this->request->getPost('value');
+
+        $allowed = ['equipment', 'quantity', 'unit', 'hours', 'contact', 'description'];
+        if (!$id || !in_array($field, $allowed)) {
+            return $this->response->setJSON(['status' => 'error']);
+        }
+
+        $result = $this->db->table('programming_ocasional')
+            ->where('id_programming_ocasional', $id)
+            ->update([$field => $value]);
+
+        return $this->response->setJSON(['status' => $result ? 'success' : 'error']);
     }
 
     /**

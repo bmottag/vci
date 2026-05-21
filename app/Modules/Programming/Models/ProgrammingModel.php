@@ -432,6 +432,38 @@ class ProgrammingModel extends Model
     }
 
     /**
+     * Insert material from planner (returns new ID)
+     * @since 21/05/2026
+     */
+    public function planner_insert_material(array $data): int|false
+    {
+        $this->db->table('programming_material')->insert($data);
+        $id = $this->db->insertID();
+
+        if ($id > 0) {
+            $programData = $this->generalModel->get_basic_search([
+                'table'  => 'programming',
+                'order'  => 'id_programming',
+                'column' => 'id_programming',
+                'id'     => $data['fk_id_programming'],
+            ]);
+            $fkWorkorder = $programData ? ($programData[0]['fk_id_workorder'] ?? null) : null;
+            if ($fkWorkorder) {
+                $this->db->table('workorder_materials')->insert([
+                    'fk_id_workorder'             => $fkWorkorder,
+                    'fk_id_material'              => $data['fk_id_material'],
+                    'quantity'                    => $data['quantity'],
+                    'unit'                        => $data['unit'],
+                    'description'                 => $data['description'],
+                    'fk_id_programming_materials' => $id,
+                ]);
+            }
+        }
+
+        return $id > 0 ? $id : false;
+    }
+
+    /**
      * Updated Material
      * @since 20/1/2024
      * @review 01/05/2026 - new CI4 version

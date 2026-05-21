@@ -329,6 +329,142 @@
     box-shadow: inset 0 0 0 3px rgba(142,68,173,.35);
 }
 
+/* ── Materials section ── */
+.mat-section {
+    border-top: 1px solid #c3e6cb;
+    padding: 6px;
+    background: #f0fff4;
+    border-radius: 0 0 6px 6px;
+}
+.mat-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 10px;
+    font-weight: bold;
+    color: #1e8449;
+    letter-spacing: .5px;
+    margin-bottom: 4px;
+}
+.btn-add-mat {
+    background: #27ae60;
+    border: none;
+    color: #fff;
+    font-size: 14px;
+    line-height: 1;
+    padding: 0 6px;
+    border-radius: 3px;
+    cursor: pointer;
+}
+.btn-add-mat:hover { background: #1e8449; }
+.mat-row {
+    background: #fff;
+    border: 1px solid #c3e6cb;
+    border-radius: 3px;
+    padding: 4px 6px;
+    margin-bottom: 3px;
+    font-size: 11px;
+}
+.mat-row-head { display: flex; align-items: center; gap: 4px; }
+.mat-name { flex: 1; font-weight: bold; color: #1e8449; font-size: 11px; }
+.mat-saved { display: none; font-size: 10px; color: #27ae60; }
+.btn-rm-mat {
+    background: none;
+    border: none;
+    color: #e74c3c;
+    font-size: 14px;
+    line-height: 1;
+    padding: 0 2px;
+    cursor: pointer;
+}
+.btn-rm-mat:hover { color: #c0392b; }
+.mat-fields { display: flex; gap: 3px; margin-top: 3px; }
+.mat-fields .form-control { padding: 1px 4px; height: 22px; font-size: 10px; border-radius: 2px; }
+.mat-add-form {
+    background: #fff;
+    border: 1px dashed #27ae60;
+    border-radius: 3px;
+    padding: 6px;
+    margin-top: 4px;
+}
+.mat-add-form .form-control { margin-bottom: 3px; padding: 2px 5px; height: 24px; font-size: 11px; border-radius: 3px; }
+.mat-add-form textarea.form-control { height: auto; }
+.mat-add-btns { display: flex; gap: 4px; margin-top: 4px; }
+.mat-empty { color: #aaa; font-size: 10px; padding: 2px; }
+
+/* ── Subcontractor section ── */
+.sub-section {
+    border-top: 1px solid #b8daff;
+    padding: 6px;
+    background: #f0f4ff;
+    border-radius: 0 0 6px 6px;
+}
+.sub-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 10px;
+    font-weight: bold;
+    color: #1a5276;
+    letter-spacing: .5px;
+    margin-bottom: 4px;
+}
+.btn-add-sub {
+    background: #2980b9;
+    border: none;
+    color: #fff;
+    font-size: 14px;
+    line-height: 1;
+    padding: 0 6px;
+    border-radius: 3px;
+    cursor: pointer;
+}
+.btn-add-sub:hover { background: #1a5276; }
+.sub-row {
+    background: #fff;
+    border: 1px solid #b8daff;
+    border-radius: 3px;
+    padding: 4px 6px;
+    margin-bottom: 3px;
+    font-size: 11px;
+}
+.sub-row-head { display: flex; align-items: center; gap: 4px; }
+.sub-name { flex: 1; font-weight: bold; color: #1a5276; font-size: 11px; }
+.sub-saved { display: none; font-size: 10px; color: #27ae60; }
+.btn-rm-sub {
+    background: none;
+    border: none;
+    color: #e74c3c;
+    font-size: 14px;
+    line-height: 1;
+    padding: 0 2px;
+    cursor: pointer;
+}
+.btn-rm-sub:hover { color: #c0392b; }
+.sub-fields { display: flex; gap: 3px; margin-top: 3px; flex-wrap: wrap; }
+.sub-fields .form-control { padding: 1px 4px; height: 22px; font-size: 10px; border-radius: 2px; }
+.sub-add-form {
+    background: #fff;
+    border: 1px dashed #2980b9;
+    border-radius: 3px;
+    padding: 6px;
+    margin-top: 4px;
+}
+.sub-add-form .form-control { margin-bottom: 3px; padding: 2px 5px; height: 24px; font-size: 11px; border-radius: 3px; }
+.sub-add-form textarea.form-control { height: auto; }
+.sub-add-btns { display: flex; gap: 4px; margin-top: 4px; }
+.sub-empty { color: #aaa; font-size: 10px; padding: 2px; }
+.sub-hauling-warn {
+    font-size: 10px;
+    color: #c0392b;
+    background: #fdf2f8;
+    border: 1px solid #f1948a;
+    border-radius: 3px;
+    padding: 3px 5px;
+    margin-bottom: 3px;
+    display: none;
+}
+
 /* ── Loading overlay ── */
 #pb-loading {
     display: none;
@@ -467,7 +603,10 @@ const PB = {
         availableWorkers: [],
         dayoffWorkers: [],
         equipmentPool: [],
-        hours: []
+        hours: [],
+        employeeTypes: [],
+        materialCatalog: [],
+        companyCatalog: [],
     },
 
     sortWorkerPool:   null,
@@ -502,6 +641,8 @@ const PB = {
                     equipmentPool:    data.equipment_pool     || [],
                     hours:            data.hours              || [],
                     employeeTypes:    data.employee_types     || [],
+                    materialCatalog:  data.material_catalog   || [],
+                    companyCatalog:   data.company_catalog    || [],
                 };
                 this.renderAll();
                 this.initSortables();
@@ -621,7 +762,276 @@ const PB = {
             <div class="w-drop-zone" data-programming-id="${proj.id_programming}">
                 ${wHtml}
             </div>
+            ${this.materialSectionHtml(proj)}
+            ${this.subSectionHtml(proj)}
         </div>`;
+    },
+
+    materialSectionHtml(proj) {
+        const pid   = proj.id_programming;
+        const mats  = proj.materials || [];
+        const listHtml = mats.length
+            ? mats.map(m => this.materialRowHtml(m)).join('')
+            : '<div class="mat-empty">No materials</div>';
+
+        const catOpts = this.state.materialCatalog.map(c =>
+            `<option value="${c.id_material}">${this.esc(c.material)}</option>`
+        ).join('');
+
+        return `<div class="mat-section">
+            <div class="mat-header">
+                <span><i class="fa fa-tint"></i> MATERIALS</span>
+                <button class="btn-add-mat" onclick="PB.toggleAddMaterial(${pid})" title="Add material">+</button>
+            </div>
+            <div id="mat-list-${pid}">${listHtml}</div>
+            <div id="mat-form-${pid}" class="mat-add-form" style="display:none">
+                <select id="mat-sel-${pid}" class="form-control">
+                    <option value="">Select material...</option>
+                    ${catOpts}
+                </select>
+                <div style="display:flex;gap:3px;">
+                    <input type="text" id="mat-qty-${pid}" class="form-control" placeholder="Qty" style="flex:1">
+                    <input type="text" id="mat-unit-${pid}" class="form-control" placeholder="Unit" style="flex:1">
+                </div>
+                <textarea id="mat-desc-${pid}" class="form-control" placeholder="Description (optional)" rows="2" style="height:auto;margin-top:3px;resize:none;"></textarea>
+                <div class="mat-add-btns">
+                    <button class="btn btn-success btn-xs" onclick="PB.saveMaterial(${pid})"><i class="fa fa-save"></i> Save</button>
+                    <button class="btn btn-default btn-xs" onclick="PB.toggleAddMaterial(${pid})">Cancel</button>
+                </div>
+            </div>
+        </div>`;
+    },
+
+    materialRowHtml(m) {
+        const mid = m.id_programming_material;
+        return `<div class="mat-row" data-mat-id="${mid}">
+            <div class="mat-row-head">
+                <span class="mat-name"><i class="fa fa-tint" style="font-size:9px;opacity:.7"></i> ${this.esc(m.material)}</span>
+                <span class="mat-saved"><i class="fa fa-check"></i> saved</span>
+                <button class="btn-rm-mat" onclick="PB.deleteMaterial(this.closest('.mat-row'))" title="Delete">×</button>
+            </div>
+            <div class="mat-fields">
+                <input type="text" class="form-control mf" data-mat-id="${mid}" data-field="quantity" value="${this.esc(m.quantity)}" placeholder="Qty" title="Quantity" style="flex:1">
+                <input type="text" class="form-control mf" data-mat-id="${mid}" data-field="unit" value="${this.esc(m.unit)}" placeholder="Unit" title="Unit" style="flex:1">
+            </div>
+            ${m.description ? `<div style="font-size:10px;color:#555;margin-top:2px;">${this.esc(m.description)}</div>` : ''}
+        </div>`;
+    },
+
+    toggleAddMaterial(pid) {
+        const form = document.getElementById('mat-form-' + pid);
+        if (!form) return;
+        if (form.style.display === 'none') {
+            form.style.display = 'block';
+            const sel = document.getElementById('mat-sel-' + pid);
+            if (sel) sel.focus();
+        } else {
+            form.style.display = 'none';
+            this._clearMatForm(pid);
+        }
+    },
+
+    _clearMatForm(pid) {
+        ['mat-sel-', 'mat-qty-', 'mat-unit-', 'mat-desc-'].forEach(prefix => {
+            const el = document.getElementById(prefix + pid);
+            if (el) el.value = '';
+        });
+    },
+
+    saveMaterial(pid) {
+        const fkMaterial  = document.getElementById('mat-sel-'  + pid)?.value;
+        const quantity    = (document.getElementById('mat-qty-'  + pid)?.value || '').trim();
+        const unit        = (document.getElementById('mat-unit-' + pid)?.value || '').trim();
+        const description = (document.getElementById('mat-desc-' + pid)?.value || '').trim();
+
+        if (!fkMaterial || !quantity || !unit) {
+            alert('Material, quantity and unit are required.');
+            return;
+        }
+
+        $.post(base_url + 'programming/planner_save_material', {
+            id_programming: pid,
+            fk_id_material: fkMaterial,
+            quantity,
+            unit,
+            description,
+        }).done(resp => {
+            if (resp.status === 'success') {
+                const list  = document.getElementById('mat-list-' + pid);
+                const empty = list?.querySelector('.mat-empty');
+                if (empty) empty.remove();
+                list?.insertAdjacentHTML('beforeend', this.materialRowHtml(resp.material));
+                this.toggleAddMaterial(pid);
+            } else {
+                alert('Error saving material.');
+            }
+        }).fail(() => alert('Network error. Please try again.'));
+    },
+
+    deleteMaterial(row) {
+        if (!row) return;
+        const matId = parseInt(row.dataset.matId);
+        if (!matId || !confirm('Delete this material?')) return;
+
+        $.post(base_url + 'programming/planner_delete_material', { id_programming_material: matId })
+            .done(resp => {
+                if (resp.status === 'success') {
+                    const list = row.closest('[id^="mat-list-"]');
+                    row.remove();
+                    if (list && !list.querySelector('.mat-row')) {
+                        list.innerHTML = '<div class="mat-empty">No materials</div>';
+                    }
+                } else {
+                    alert('Error deleting material.');
+                }
+            });
+    },
+
+    /* ── Subcontractor section ───────────────────────────────── */
+    subSectionHtml(proj) {
+        const pid  = proj.id_programming;
+        const subs = proj.occasional || [];
+        const listHtml = subs.length
+            ? subs.map(s => this.subRowHtml(s)).join('')
+            : '<div class="sub-empty">No subcontractors</div>';
+
+        const compOpts = this.state.companyCatalog.map(c =>
+            `<option value="${c.id_company}" data-hauling="${c.does_hauling}">${this.esc(c.company_name)}</option>`
+        ).join('');
+
+        return `<div class="sub-section">
+            <div class="sub-header">
+                <span><i class="fa fa-beer"></i> SUBCONTRACTOR</span>
+                <button class="btn-add-sub" onclick="PB.toggleAddSub(${pid})" title="Add subcontractor">+</button>
+            </div>
+            <div id="sub-list-${pid}">${listHtml}</div>
+            <div id="sub-form-${pid}" class="sub-add-form" style="display:none">
+                <select id="sub-co-${pid}" class="form-control" onchange="PB.onSubCompanyChange(${pid})">
+                    <option value="">Select company...</option>
+                    ${compOpts}
+                </select>
+                <div id="sub-haul-warn-${pid}" class="sub-hauling-warn">
+                    <i class="fa fa-warning"></i> This company provides hauling. Quantity will create that many hauling cards.
+                </div>
+                <textarea id="sub-equip-${pid}" class="form-control" placeholder="Equipment *" rows="2" style="height:auto;"></textarea>
+                <div style="display:flex;gap:3px;">
+                    <input type="text" id="sub-qty-${pid}"  class="form-control" placeholder="Qty *"     style="flex:1">
+                    <input type="text" id="sub-unit-${pid}" class="form-control" placeholder="Unit *"    style="flex:1">
+                    <input type="text" id="sub-hrs-${pid}"  class="form-control" placeholder="Hours"     style="flex:1">
+                </div>
+                <input type="text"     id="sub-cont-${pid}" class="form-control" placeholder="Field Contact *" style="margin-top:3px;">
+                <textarea id="sub-desc-${pid}" class="form-control" placeholder="Description (optional)" rows="2" style="height:auto;margin-top:3px;resize:none;"></textarea>
+                <div class="sub-add-btns">
+                    <button class="btn btn-primary btn-xs" onclick="PB.saveSub(${pid})"><i class="fa fa-save"></i> Save</button>
+                    <button class="btn btn-default btn-xs" onclick="PB.toggleAddSub(${pid})">Cancel</button>
+                </div>
+            </div>
+        </div>`;
+    },
+
+    subRowHtml(s) {
+        const sid = s.id_programming_ocasional;
+        return `<div class="sub-row" data-sub-id="${sid}">
+            <div class="sub-row-head">
+                <span class="sub-name"><i class="fa fa-beer" style="font-size:9px;opacity:.7"></i> ${this.esc(s.company_name)}</span>
+                <span class="sub-saved"><i class="fa fa-check"></i> saved</span>
+                <button class="btn-rm-sub" onclick="PB.deleteSub(this.closest('.sub-row'))" title="Delete">×</button>
+            </div>
+            <div style="margin-top:3px;">
+                <input type="text" class="form-control sf" data-sub-id="${sid}" data-field="equipment" value="${this.esc(s.equipment)}" placeholder="Equipment" title="Equipment" style="width:100%;padding:1px 4px;height:22px;font-size:10px;border-radius:2px;">
+            </div>
+            <div class="sub-fields">
+                <input type="text" class="form-control sf" data-sub-id="${sid}" data-field="quantity"    value="${this.esc(s.quantity)}"    placeholder="Qty"     title="Quantity"      style="flex:1">
+                <input type="text" class="form-control sf" data-sub-id="${sid}" data-field="unit"        value="${this.esc(s.unit)}"        placeholder="Unit"    title="Unit"          style="flex:1">
+                <input type="text" class="form-control sf" data-sub-id="${sid}" data-field="hours"       value="${this.esc(s.hours)}"       placeholder="Hrs"     title="Hours"         style="flex:1">
+                <input type="text" class="form-control sf" data-sub-id="${sid}" data-field="contact"     value="${this.esc(s.contact)}"     placeholder="Contact" title="Field Contact" style="flex:2">
+            </div>
+        </div>`;
+    },
+
+    onSubCompanyChange(pid) {
+        const sel  = document.getElementById('sub-co-' + pid);
+        const warn = document.getElementById('sub-haul-warn-' + pid);
+        if (!sel || !warn) return;
+        const hauling = sel.options[sel.selectedIndex]?.dataset.hauling;
+        warn.style.display = hauling == 1 ? 'block' : 'none';
+    },
+
+    toggleAddSub(pid) {
+        const form = document.getElementById('sub-form-' + pid);
+        if (!form) return;
+        if (form.style.display === 'none') {
+            form.style.display = 'block';
+            const sel = document.getElementById('sub-co-' + pid);
+            if (sel) sel.focus();
+        } else {
+            form.style.display = 'none';
+            this._clearSubForm(pid);
+        }
+    },
+
+    _clearSubForm(pid) {
+        ['sub-co-', 'sub-equip-', 'sub-qty-', 'sub-unit-', 'sub-hrs-', 'sub-cont-', 'sub-desc-'].forEach(prefix => {
+            const el = document.getElementById(prefix + pid);
+            if (el) el.value = '';
+        });
+        const warn = document.getElementById('sub-haul-warn-' + pid);
+        if (warn) warn.style.display = 'none';
+    },
+
+    saveSub(pid) {
+        const fkCompany   = document.getElementById('sub-co-'    + pid)?.value;
+        const equipment   = (document.getElementById('sub-equip-' + pid)?.value || '').trim();
+        const quantity    = (document.getElementById('sub-qty-'   + pid)?.value || '').trim();
+        const unit        = (document.getElementById('sub-unit-'  + pid)?.value || '').trim();
+        const hours       = (document.getElementById('sub-hrs-'   + pid)?.value || '').trim();
+        const contact     = (document.getElementById('sub-cont-'  + pid)?.value || '').trim();
+        const description = (document.getElementById('sub-desc-'  + pid)?.value || '').trim();
+
+        if (!fkCompany || !equipment || !quantity || !unit || !contact) {
+            alert('Company, equipment, quantity, unit and contact are required.');
+            return;
+        }
+
+        $.post(base_url + 'programming/planner_save_subcontractor', {
+            id_programming: pid,
+            fk_id_company:  fkCompany,
+            equipment,
+            quantity,
+            unit,
+            hours,
+            contact,
+            description,
+        }).done(resp => {
+            if (resp.status === 'success') {
+                const list  = document.getElementById('sub-list-' + pid);
+                const empty = list?.querySelector('.sub-empty');
+                if (empty) empty.remove();
+                resp.subcontractors.forEach(s => list?.insertAdjacentHTML('beforeend', this.subRowHtml(s)));
+                this.toggleAddSub(pid);
+            } else {
+                alert('Error saving subcontractor.');
+            }
+        }).fail(() => alert('Network error. Please try again.'));
+    },
+
+    deleteSub(row) {
+        if (!row) return;
+        const subId = parseInt(row.dataset.subId);
+        if (!subId || !confirm('Delete this subcontractor?')) return;
+
+        $.post(base_url + 'programming/planner_delete_subcontractor', { id_programming_ocasional: subId })
+            .done(resp => {
+                if (resp.status === 'success') {
+                    const list = row.closest('[id^="sub-list-"]');
+                    row.remove();
+                    if (list && !list.querySelector('.sub-row')) {
+                        list.innerHTML = '<div class="sub-empty">No subcontractors</div>';
+                    }
+                } else {
+                    alert('Error deleting subcontractor.');
+                }
+            });
     },
 
     wCardHtml(w, programmingId) {
@@ -1204,6 +1614,48 @@ $(document).on('change', '.wf', function() {
 $(document).on('input', 'textarea.wf', function() {
     clearTimeout($(this).data('t'));
     $(this).data('t', setTimeout(() => $(this).trigger('change'), 700));
+});
+
+/* ── Auto-save material fields on change ───────────────────────── */
+$(document).on('change', '.mf', function() {
+    const field = $(this).data('field');
+    const value = $(this).val();
+    const matId = $(this).data('mat-id');
+    const row   = $(this).closest('.mat-row');
+    if (!matId) return;
+
+    $.post(base_url + 'programming/planner_update_material', {
+        id_programming_material: matId,
+        field,
+        value,
+    }).done(resp => {
+        if (resp.status === 'success') {
+            const saved = row.find('.mat-saved');
+            saved.show();
+            setTimeout(() => saved.hide(), 1400);
+        }
+    });
+});
+
+/* ── Auto-save subcontractor fields on change ──────────────────── */
+$(document).on('change', '.sf', function() {
+    const field = $(this).data('field');
+    const value = $(this).val();
+    const subId = $(this).data('sub-id');
+    const row   = $(this).closest('.sub-row');
+    if (!subId) return;
+
+    $.post(base_url + 'programming/planner_update_subcontractor', {
+        id_programming_ocasional: subId,
+        field,
+        value,
+    }).done(resp => {
+        if (resp.status === 'success') {
+            const saved = row.find('.sub-saved');
+            saved.show();
+            setTimeout(() => saved.hide(), 1400);
+        }
+    });
 });
 
 /* ── Drag-over visual feedback ─────────────────────────────────── */

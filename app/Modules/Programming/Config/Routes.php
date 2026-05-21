@@ -49,6 +49,12 @@ $routes->group('programming', ['namespace' => 'App\Modules\Programming\Controlle
     $routes->post('planner_save_assignment',        'Programming::planner_save_assignment');
     $routes->post('planner_remove_assignment',      'Programming::planner_remove_assignment');
     $routes->post('planner_save_worker_detail',     'Programming::planner_save_worker_detail');
+    $routes->post('planner_save_material',           'Programming::planner_save_material');
+    $routes->post('planner_delete_material',         'Programming::planner_delete_material');
+    $routes->post('planner_update_material',         'Programming::planner_update_material');
+    $routes->post('planner_save_subcontractor',      'Programming::planner_save_subcontractor');
+    $routes->post('planner_delete_subcontractor',    'Programming::planner_delete_subcontractor');
+    $routes->post('planner_update_subcontractor',    'Programming::planner_update_subcontractor');
 
     $routes->get('verificacion/(:any)/(:any)', 'Programming::verificacion/$1/$2');
     $routes->get('verificacion/(:any)', 'Programming::verificacion/$1');
