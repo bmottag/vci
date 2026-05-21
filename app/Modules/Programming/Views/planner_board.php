@@ -433,9 +433,9 @@
                         <i class="fa fa-calendar-times-o"></i> DAY OFF
                         <span class="pool-badge" id="dayoff-count">0</span>
                     </span>
-                    <i class="fa fa-chevron-right pool-chevron"></i>
+                    <i class="fa fa-chevron-right pool-chevron open"></i>
                 </div>
-                <div id="do-wrap" style="display:none">
+                <div id="do-wrap">
                     <div id="dayoff-pool" class="pool-list">
                         <div class="pool-empty">-</div>
                     </div>
@@ -501,6 +501,7 @@ const PB = {
                     dayoffWorkers:    data.dayoff_workers     || [],
                     equipmentPool:    data.equipment_pool     || [],
                     hours:            data.hours              || [],
+                    employeeTypes:    data.employee_types     || [],
                 };
                 this.renderAll();
                 this.initSortables();
@@ -656,12 +657,20 @@ const PB = {
 
         const pwId = w.id_programming_worker;
 
+        const empTypeOpts = this.state.employeeTypes.map(t =>
+            `<option value="${t.id_employee_type}" ${t.id_employee_type == w.fk_id_employee_type ? 'selected' : ''}>${this.esc(t.employee_type)}</option>`
+        ).join('');
+
         return `<div class="w-card-head">
             <span class="w-name"><i class="fa fa-user" style="font-size:10px;opacity:.6"></i> ${this.esc(w.name)}</span>
             <span class="w-saved"><i class="fa fa-check"></i> saved</span>
             <button class="btn-rm-worker" onclick="PB.removeWorker(this.closest('.w-card'))" title="Remove worker">×</button>
         </div>
         <div class="w-card-body">
+            <div style="margin-bottom:4px;">
+                <span class="lbl">Employee Type</span>
+                <select class="form-control wf" data-field="fk_id_employee_type">${empTypeOpts}</select>
+            </div>
             <div class="w-row">
                 <div>
                     <span class="lbl">Time In</span>

@@ -1440,6 +1440,11 @@ class Programming extends BaseController
 
         $projectPool = $this->programmingModel->get_available_jobs_for_date($date);
 
+        $employeeTypes = $this->generalModel->get_basic_search([
+            'table' => 'param_employee_type',
+            'order' => 'employee_type',
+        ]);
+
         return $this->response->setJSON([
             'projects'          => $projects,
             'available_workers' => $availableWorkers,
@@ -1447,6 +1452,7 @@ class Programming extends BaseController
             'equipment_pool'    => $equipPool,
             'hours'             => $horas,
             'project_pool'      => $projectPool,
+            'employee_types'    => $employeeTypes ?: [],
         ]);
     }
 
