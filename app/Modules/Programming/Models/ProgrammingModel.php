@@ -636,6 +636,8 @@ class ProgrammingModel extends Model
             ->update($data);
 
         return (bool) $result;
+    }
+
     /**
      * Update worker - equipment
      * @since 11/02/2025

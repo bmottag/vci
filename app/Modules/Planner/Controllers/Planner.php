@@ -453,6 +453,26 @@ class Planner extends BaseController
         return $this->response->setJSON(['status' => $result ? 'success' : 'error']);
     }
 
+    public function planner_save_observation()
+    {
+        $idProgramming = (int) $this->request->getPost('id_programming');
+        $observation   = $this->request->getPost('observation');
+
+        if (!$idProgramming) {
+            return $this->response->setJSON(['status' => 'error']);
+        }
+
+        $result = $this->generalModel->updateRecord([
+            'table'      => 'programming',
+            'primaryKey' => 'id_programming',
+            'id'         => $idProgramming,
+            'column'     => 'observation',
+            'value'      => $observation,
+        ]);
+
+        return $this->response->setJSON(['status' => $result ? 'success' : 'error']);
+    }
+
     protected function update_state($idProgramming)
     {
         $state = $this->plannerModel->countWorkers($idProgramming) >= 1 ? 2 : 1;

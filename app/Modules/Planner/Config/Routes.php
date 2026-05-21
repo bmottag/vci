@@ -14,4 +14,5 @@ $routes->group('planner', ['namespace' => 'App\Modules\Planner\Controllers'], fu
     $routes->post('planner_save_subcontractor',      'Planner::planner_save_subcontractor');
     $routes->post('planner_delete_subcontractor',    'Planner::planner_delete_subcontractor');
     $routes->post('planner_update_subcontractor',    'Planner::planner_update_subcontractor');
+    $routes->post('planner_save_observation',        'Planner::planner_save_observation');
 });

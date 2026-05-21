@@ -181,6 +181,23 @@
 }
 .proj-header .proj-name { font-weight: bold; font-size: 12px; }
 .proj-header .proj-obs  { font-size: 10px; color: #aab7b8; margin-top: 2px; word-break: break-word; }
+.obs-edit-area {
+    width: 100%;
+    background: rgba(255,255,255,.1);
+    border: 1px solid rgba(255,255,255,.2);
+    border-radius: 3px;
+    color: #ecf0f1;
+    font-size: 10px;
+    padding: 3px 5px;
+    resize: none;
+    outline: none;
+    margin-top: 3px;
+    min-height: 28px;
+    box-sizing: border-box;
+}
+.obs-edit-area:focus { border-color: rgba(255,255,255,.6); background: rgba(255,255,255,.15); }
+.obs-edit-area::placeholder { color: rgba(255,255,255,.3); }
+.obs-saved { display:none; font-size:10px; color:#2ecc71; }
 
 .w-drop-zone {
     min-height: 50px;
@@ -745,16 +762,18 @@ const PB = {
     },
 
     projColHtml(proj) {
+        const pid   = proj.id_programming;
         const wHtml = proj.workers.length
-            ? proj.workers.map(w => this.wCardHtml(w, proj.id_programming)).join('')
+            ? proj.workers.map(w => this.wCardHtml(w, pid)).join('')
             : '<div class="w-drop-hint">Drop workers here</div>';
 
         return `<div class="proj-col" data-job-id="${proj.fk_id_job}" data-job-desc="${this.esc(proj.job_description)}">
             <div class="proj-header">
                 <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:6px;">
-                    <div>
+                    <div style="flex:1;min-width:0;">
                         <div class="proj-name"><i class="fa fa-briefcase"></i> ${this.esc(proj.job_description)}</div>
-                        ${proj.observation ? `<div class="proj-obs">${this.esc(proj.observation)}</div>` : ''}
+                        <textarea class="obs-edit-area obsf" data-programming-id="${pid}" rows="2" placeholder="Observation...">${this.esc(proj.observation || '')}</textarea>
+                        <span class="obs-saved" id="obs-saved-${pid}"><i class="fa fa-check"></i> saved</span>
                     </div>
                     <button class="btn-rm-proj" onclick="PB.removeProject(this.closest('.proj-col'))" title="Remove from plan">×</button>
                 </div>
@@ -1635,6 +1654,25 @@ $(document).on('change', '.mf', function() {
             setTimeout(() => saved.hide(), 1400);
         }
     });
+});
+
+/* ── Auto-save observation on input ────────────────────────────── */
+$(document).on('input', 'textarea.obsf', function() {
+    clearTimeout($(this).data('t'));
+    const $ta = $(this);
+    $ta.data('t', setTimeout(() => {
+        const pid   = $ta.data('programmingId');
+        const value = $ta.val();
+        $.post(base_url + 'planner/planner_save_observation', {
+            id_programming: pid,
+            observation:    value,
+        }).done(resp => {
+            if (resp.status === 'success') {
+                const ind = document.getElementById('obs-saved-' + pid);
+                if (ind) { ind.style.display = 'inline'; setTimeout(() => ind.style.display = 'none', 1400); }
+            }
+        });
+    }, 700));
 });
 
 /* ── Auto-save subcontractor fields on change ──────────────────── */
