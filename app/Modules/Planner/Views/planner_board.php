@@ -630,7 +630,7 @@ const PB = {
         $('#pb-loading').css('display', 'flex');
         $('#pb-status').text('');
 
-        $.post(base_url + 'programming/get_daily_plan', { date })
+        $.post(base_url + 'planner/get_daily_plan', { date })
             .done(data => {
                 this.state = {
                     date,
@@ -849,7 +849,7 @@ const PB = {
             return;
         }
 
-        $.post(base_url + 'programming/planner_save_material', {
+        $.post(base_url + 'planner/planner_save_material', {
             id_programming: pid,
             fk_id_material: fkMaterial,
             quantity,
@@ -873,7 +873,7 @@ const PB = {
         const matId = parseInt(row.dataset.matId);
         if (!matId || !confirm('Delete this material?')) return;
 
-        $.post(base_url + 'programming/planner_delete_material', { id_programming_material: matId })
+        $.post(base_url + 'planner/planner_delete_material', { id_programming_material: matId })
             .done(resp => {
                 if (resp.status === 'success') {
                     const list = row.closest('[id^="mat-list-"]');
@@ -993,7 +993,7 @@ const PB = {
             return;
         }
 
-        $.post(base_url + 'programming/planner_save_subcontractor', {
+        $.post(base_url + 'planner/planner_save_subcontractor', {
             id_programming: pid,
             fk_id_company:  fkCompany,
             equipment,
@@ -1020,7 +1020,7 @@ const PB = {
         const subId = parseInt(row.dataset.subId);
         if (!subId || !confirm('Delete this subcontractor?')) return;
 
-        $.post(base_url + 'programming/planner_delete_subcontractor', { id_programming_ocasional: subId })
+        $.post(base_url + 'planner/planner_delete_subcontractor', { id_programming_ocasional: subId })
             .done(resp => {
                 if (resp.status === 'success') {
                     const list = row.closest('[id^="sub-list-"]');
@@ -1201,7 +1201,7 @@ const PB = {
 
         if (fromPool && !toPool) {
             // ── Pool → Project
-            $.post(base_url + 'programming/planner_save_assignment', { id_programming: toPid, id_user: userId })
+            $.post(base_url + 'planner/planner_save_assignment', { id_programming: toPid, id_user: userId })
                 .done(resp => {
                     if (resp.status === 'success') {
                         item.dataset.pwId          = resp.id_programming_worker;
@@ -1224,7 +1224,7 @@ const PB = {
             // ── Project → Pool: return equip first
             this.returnEquipFromCard(item);
 
-            $.post(base_url + 'programming/planner_remove_assignment', { id_programming_worker: pwId, id_programming: fromPid })
+            $.post(base_url + 'planner/planner_remove_assignment', { id_programming_worker: pwId, id_programming: fromPid })
                 .done(resp => {
                     if (resp.status === 'success') {
                         item.dataset.machineIds = '[]';
@@ -1241,9 +1241,9 @@ const PB = {
 
         } else if (!fromPool && !toPool && fromPid !== toPid) {
             // ── Project → Different project (equipment cleared on rebind)
-            $.post(base_url + 'programming/planner_remove_assignment', { id_programming_worker: pwId, id_programming: fromPid })
+            $.post(base_url + 'planner/planner_remove_assignment', { id_programming_worker: pwId, id_programming: fromPid })
                 .done(() => {
-                    $.post(base_url + 'programming/planner_save_assignment', { id_programming: toPid, id_user: userId })
+                    $.post(base_url + 'planner/planner_save_assignment', { id_programming: toPid, id_user: userId })
                         .done(resp => {
                             if (resp.status === 'success') {
                                 item.dataset.pwId          = resp.id_programming_worker;
@@ -1292,7 +1292,7 @@ const PB = {
             item.innerHTML = `<i class="fa fa-truck" style="font-size:9px;"></i>${this.esc(eLabel)}<span class="rm-eq" onclick="PB.removeEquip(this)">×</span>`;
             this.refreshEquipHint(to);
 
-            $.post(base_url + 'programming/planner_save_worker_detail', {
+            $.post(base_url + 'planner/planner_save_worker_detail', {
                 id_programming_worker: toPwId,
                 field: 'fk_id_machine',
                 value: machineIds.join(',')
@@ -1319,7 +1319,7 @@ const PB = {
             item.innerHTML = `<i class="fa fa-truck" style="font-size:9px;opacity:.8"></i>${this.esc(eLabel)}`;
             this.refreshEquipHint(from);
 
-            $.post(base_url + 'programming/planner_save_worker_detail', {
+            $.post(base_url + 'planner/planner_save_worker_detail', {
                 id_programming_worker: fromPwId,
                 field: 'fk_id_machine',
                 value: machineIds.join(',')
@@ -1349,8 +1349,8 @@ const PB = {
             this.refreshEquipHint(from);
             this.refreshEquipHint(to);
 
-            $.post(base_url + 'programming/planner_save_worker_detail', { id_programming_worker: fromPwId, field: 'fk_id_machine', value: fromIds.join(',') });
-            $.post(base_url + 'programming/planner_save_worker_detail', { id_programming_worker: toPwId,   field: 'fk_id_machine', value: toIds.join(',')   })
+            $.post(base_url + 'planner/planner_save_worker_detail', { id_programming_worker: fromPwId, field: 'fk_id_machine', value: fromIds.join(',') });
+            $.post(base_url + 'planner/planner_save_worker_detail', { id_programming_worker: toPwId,   field: 'fk_id_machine', value: toIds.join(',')   })
                 .done(resp => { if (resp.status === 'success') this.showSaved(toCard); });
         }
     },
@@ -1368,7 +1368,7 @@ const PB = {
 
         this.returnEquipFromCard(card);
 
-        $.post(base_url + 'programming/planner_remove_assignment', { id_programming_worker: pwId, id_programming: programmingId })
+        $.post(base_url + 'planner/planner_remove_assignment', { id_programming_worker: pwId, id_programming: programmingId })
             .done(resp => {
                 if (resp.status === 'success') {
                     card.className = 'w-chip';
@@ -1402,7 +1402,7 @@ const PB = {
         this.refreshEquipHint(zone);
         document.getElementById('equip-pool').insertAdjacentHTML('beforeend', this.eChipHtml({ id: equipId, label: eLabel }));
 
-        $.post(base_url + 'programming/planner_save_worker_detail', {
+        $.post(base_url + 'planner/planner_save_worker_detail', {
             id_programming_worker: pwId,
             field: 'fk_id_machine',
             value: machineIds.join(',')
@@ -1428,7 +1428,7 @@ const PB = {
         chip.style.opacity       = '.5';
         chip.style.pointerEvents = 'none';
 
-        $.post(base_url + 'programming/planner_add_project', { id_job: idJob, date: this.state.date })
+        $.post(base_url + 'planner/planner_add_project', { id_job: idJob, date: this.state.date })
             .done(resp => {
                 if (resp.status === 'success') {
                     chip.remove();
@@ -1470,7 +1470,7 @@ const PB = {
         col.style.opacity       = '.5';
         col.style.pointerEvents = 'none';
 
-        $.post(base_url + 'programming/planner_remove_project', { id_programming: idProgramming })
+        $.post(base_url + 'planner/planner_remove_project', { id_programming: idProgramming })
             .done(resp => {
                 if (resp.status === 'success') {
                     col.querySelectorAll('.w-card').forEach(card => {
@@ -1604,7 +1604,7 @@ $(document).on('change', '.wf', function() {
     const pwId  = card.data('pw-id');
     if (!pwId) return;
 
-    $.post(base_url + 'programming/planner_save_worker_detail', {
+    $.post(base_url + 'planner/planner_save_worker_detail', {
         id_programming_worker: pwId,
         field,
         value
@@ -1624,7 +1624,7 @@ $(document).on('change', '.mf', function() {
     const row   = $(this).closest('.mat-row');
     if (!matId) return;
 
-    $.post(base_url + 'programming/planner_update_material', {
+    $.post(base_url + 'planner/planner_update_material', {
         id_programming_material: matId,
         field,
         value,
@@ -1645,7 +1645,7 @@ $(document).on('change', '.sf', function() {
     const row   = $(this).closest('.sub-row');
     if (!subId) return;
 
-    $.post(base_url + 'programming/planner_update_subcontractor', {
+    $.post(base_url + 'planner/planner_update_subcontractor', {
         id_programming_ocasional: subId,
         field,
         value,

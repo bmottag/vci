@@ -135,3 +135,8 @@ if (file_exists(APPPATH.'Modules/Template/Config/Routes.php')) {
 if (file_exists(APPPATH.'Modules/Workorders/Config/Routes.php')) {
     require APPPATH.'Modules/Workorders/Config/Routes.php';
 }
+
+// Cargar rutas del módulo Workorders
+if (file_exists(APPPATH.'Modules/Planner/Config/Routes.php')) {
+    require APPPATH.'Modules/Planner/Config/Routes.php';
+}
