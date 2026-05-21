@@ -1347,6 +1347,233 @@ class Programming extends BaseController
     }
 
     /**
+     * Planner Board - Vista principal
+     * @since 21/05/2026
+     * @author BMOTTAG
+     */
+    public function planner()
+    {
+        return $this->renderTopOnly('App\Modules\Programming\Views\planner_board', []);
+    }
+
+    /**
+     * Planner Board - Cargar plan del día (JSON)
+     * @since 21/05/2026
+     * @author BMOTTAG
+     */
+    public function get_daily_plan()
+    {
+        $date         = $this->request->getPost('date');
+        $programmings = $this->programmingModel->get_programmings_by_date($date);
+        $allWorkers   = $this->generalModel->get_user(['state' => 1]) ?: [];
+        $dayoffList   = $this->programmingModel->get_dayoff_workers_by_date($date);
+        $dayoffIds    = array_map('intval', array_column($dayoffList, 'id_user'));
+        $horas        = $this->generalModel->get_horas();
+
+        $allVehicles = $this->programmingModel->get_vehicles_inspection([]);
+        $vehicleMap  = array_column($allVehicles, 'unit_number', 'id_truck');
+
+        $assignedUserIds  = [];
+        $assignedEquipIds = [];
+        $projects         = [];
+
+        foreach ($programmings as $prog) {
+            $workers       = $this->generalModel->get_programming_workers(['idProgramming' => $prog['id_programming']]);
+            $workerDetails = [];
+
+            foreach ($workers as $w) {
+                $assignedUserIds[] = (int) $w['fk_id_programming_user'];
+                $machineIds  = [];
+                $machineItems = [];
+
+                if (!empty($w['fk_id_machine'])) {
+                    $decoded = json_decode($w['fk_id_machine'], true);
+                    if (is_array($decoded)) {
+                        foreach ($decoded as $eid) {
+                            $eid             = (int) $eid;
+                            $machineIds[]    = $eid;
+                            $assignedEquipIds[] = $eid;
+                            $machineItems[]  = ['id' => $eid, 'label' => $vehicleMap[$eid] ?? 'Unit #' . $eid];
+                        }
+                    }
+                }
+
+                $workerDetails[] = [
+                    'id_programming_worker' => (int) $w['id_programming_worker'],
+                    'id_user'               => (int) $w['fk_id_programming_user'],
+                    'name'                  => $w['name'],
+                    'fk_id_hour'            => (int) $w['fk_id_hour'],
+                    'hora'                  => $w['hora'] ?? '',
+                    'site'                  => (int) ($w['site'] ?? 1),
+                    'safety'                => $w['safety'] ?? '',
+                    'description'           => $w['description'] ?? '',
+                    'machine_ids'           => $machineIds,
+                    'machine_items'         => $machineItems,
+                    'creat_wo'              => $w['creat_wo'] ?? '',
+                    'fk_id_employee_type'   => (int) ($w['fk_id_employee_type'] ?? 1),
+                ];
+            }
+
+            $projects[] = [
+                'id_programming'  => (int) $prog['id_programming'],
+                'job_description' => $prog['job_description'],
+                'observation'     => $prog['observation'],
+                'fk_id_job'       => (int) $prog['fk_id_job'],
+                'workers'         => $workerDetails,
+            ];
+        }
+
+        $availableWorkers = [];
+        foreach ($allWorkers as $w) {
+            $uid = (int) $w['id_user'];
+            if (!in_array($uid, $assignedUserIds) && !in_array($uid, $dayoffIds)) {
+                $availableWorkers[] = ['id_user' => $uid, 'name' => $w['first_name'] . ' ' . $w['last_name']];
+            }
+        }
+
+        $equipPool = [];
+        foreach ($allVehicles as $v) {
+            if (!in_array((int) $v['id_truck'], $assignedEquipIds)) {
+                $equipPool[] = ['id' => (int) $v['id_truck'], 'label' => $v['unit_number']];
+            }
+        }
+
+        $projectPool = $this->programmingModel->get_available_jobs_for_date($date);
+
+        return $this->response->setJSON([
+            'projects'          => $projects,
+            'available_workers' => $availableWorkers,
+            'dayoff_workers'    => $dayoffList,
+            'equipment_pool'    => $equipPool,
+            'hours'             => $horas,
+            'project_pool'      => $projectPool,
+        ]);
+    }
+
+    /**
+     * Planner Board - Agregar proyecto al día
+     * @since 21/05/2026
+     * @author BMOTTAG
+     */
+    public function planner_add_project()
+    {
+        $idJob = (int) $this->request->getPost('id_job');
+        $date  = $this->request->getPost('date');
+
+        if (!$idJob || !$date) {
+            return $this->response->setJSON(['status' => 'error']);
+        }
+
+        if ($this->programmingModel->verifyProject(['idJob' => $idJob, 'date' => $date])) {
+            return $this->response->setJSON(['status' => 'error', 'message' => 'already_exists']);
+        }
+
+        $idProgramming = $this->programmingModel->planner_create_programming($idJob, $date);
+        if (!$idProgramming) {
+            return $this->response->setJSON(['status' => 'error']);
+        }
+
+        $jobInfo = $this->generalModel->get_job(['idJob' => $idJob]);
+        return $this->response->setJSON([
+            'status'  => 'success',
+            'project' => [
+                'id_programming'  => $idProgramming,
+                'job_description' => $jobInfo[0]['job_description'] ?? '',
+                'observation'     => '',
+                'fk_id_job'       => $idJob,
+                'workers'         => [],
+            ],
+        ]);
+    }
+
+    /**
+     * Planner Board - Eliminar proyecto del día (cascade delete)
+     * @since 21/05/2026
+     * @author BMOTTAG
+     */
+    public function planner_remove_project()
+    {
+        $idProgramming = (int) $this->request->getPost('id_programming');
+        if (!$idProgramming) {
+            return $this->response->setJSON(['status' => 'error']);
+        }
+        if ($this->programmingModel->planner_delete_project($idProgramming)) {
+            return $this->response->setJSON(['status' => 'success']);
+        }
+        return $this->response->setJSON(['status' => 'error']);
+    }
+
+    /**
+     * Planner Board - Asignar worker a proyecto (drag & drop)
+     * @since 21/05/2026
+     * @author BMOTTAG
+     */
+    public function planner_save_assignment()
+    {
+        $idProgramming = (int) $this->request->getPost('id_programming');
+        $idUser        = (int) $this->request->getPost('id_user');
+
+        $idPW = $this->programmingModel->planner_add_worker($idProgramming, $idUser);
+        if ($idPW) {
+            $this->update_state($idProgramming);
+            return $this->response->setJSON(['status' => 'success', 'id_programming_worker' => $idPW]);
+        }
+        return $this->response->setJSON(['status' => 'error']);
+    }
+
+    /**
+     * Planner Board - Remover worker de proyecto
+     * @since 21/05/2026
+     * @author BMOTTAG
+     */
+    public function planner_remove_assignment()
+    {
+        $idPW          = (int) $this->request->getPost('id_programming_worker');
+        $idProgramming = (int) $this->request->getPost('id_programming');
+
+        if ($this->generalModel->deleteRecord([
+            'table'      => 'programming_worker',
+            'primaryKey' => 'id_programming_worker',
+            'id'         => $idPW,
+        ])) {
+            $this->update_state($idProgramming);
+            return $this->response->setJSON(['status' => 'success']);
+        }
+        return $this->response->setJSON(['status' => 'error']);
+    }
+
+    /**
+     * Planner Board - Guardar detalle de worker (campo individual)
+     * @since 21/05/2026
+     * @author BMOTTAG
+     */
+    public function planner_save_worker_detail()
+    {
+        $idPW  = (int) $this->request->getPost('id_programming_worker');
+        $field = $this->request->getPost('field');
+        $value = $this->request->getPost('value');
+
+        $allowed = ['fk_id_hour', 'site', 'safety', 'description', 'creat_wo', 'fk_id_machine', 'fk_id_employee_type'];
+        if (!in_array($field, $allowed)) {
+            return $this->response->setJSON(['status' => 'error']);
+        }
+
+        if ($field === 'fk_id_machine') {
+            if (!empty($value)) {
+                $ids   = array_filter(explode(',', $value), fn($x) => is_numeric(trim($x)));
+                $value = !empty($ids) ? '[' . implode(',', array_map('intval', $ids)) . ']' : null;
+            } else {
+                $value = null;
+            }
+        }
+
+        if ($this->programmingModel->planner_save_worker_detail($idPW, $field, $value)) {
+            return $this->response->setJSON(['status' => 'success']);
+        }
+        return $this->response->setJSON(['status' => 'error']);
+    }
+
+    /**
      * Delete record from a programming sub-table
      * @review 05/05/2026 - new CI4 version
      */
