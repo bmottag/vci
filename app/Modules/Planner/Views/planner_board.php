@@ -508,6 +508,24 @@
     display: none;
 }
 
+/* ── Read-only mode ── */
+.pb-readonly #pb-sidebar .pool-box:not(:last-child) { display: none; }
+.pb-readonly .btn-rm-proj,
+.pb-readonly .btn-send-proj,
+.pb-readonly .btn-add-mat,
+.pb-readonly .btn-add-sub,
+.pb-readonly .btn-rm-worker,
+.pb-readonly .btn-rm-mat,
+.pb-readonly .btn-rm-sub { display: none !important; }
+.pb-readonly .w-card-head { cursor: default; }
+.pb-readonly .obs-edit-area,
+.pb-readonly .wf,
+.pb-readonly .mf,
+.pb-readonly .sf { pointer-events: none; background: #f5f5f5; color: #666; cursor: default; }
+.pb-readonly .e-drop-zone { pointer-events: none; }
+.pb-readonly .e-badge { cursor: default; }
+.pb-readonly .e-badge .rm-eq { display: none; }
+
 /* ── Loading overlay ── */
 #pb-loading {
     display: none;
@@ -544,6 +562,7 @@
             <i class="fa fa-refresh"></i> Load
         </button>
         <span class="status" id="pb-status"></span>
+        <span id="pb-readonly-badge" style="display:none;color:#e74c3c;font-size:11px;font-weight:bold;margin-left:6px;"><i class="fa fa-lock"></i> VIEW ONLY</span>
     </div>
 
     <!-- Main -->
@@ -677,6 +696,7 @@ const PB = {
             .done(data => {
                 this.state = {
                     date,
+                    readOnly:         date < new Date().toISOString().split('T')[0],
                     projects:         data.projects          || [],
                     projectPool:      data.project_pool      || [],
                     availableWorkers: data.available_workers  || [],
@@ -698,9 +718,14 @@ const PB = {
 
     /* ── Render ───────────────────────────────────────────────── */
     renderAll() {
-        this.renderProjectPool();
-        this.renderWorkerPool();
-        this.renderEquipPool();
+        const ro = this.state.readOnly;
+        document.getElementById('pb-wrap').classList.toggle('pb-readonly', ro);
+        document.getElementById('pb-readonly-badge').style.display = ro ? 'inline' : 'none';
+        if (!ro) {
+            this.renderProjectPool();
+            this.renderWorkerPool();
+            this.renderEquipPool();
+        }
         this.renderDayoff();
         this.renderProjects();
     },
@@ -1189,6 +1214,7 @@ const PB = {
 
     /* ── Sortable initialization ──────────────────────────────── */
     initSortables() {
+        if (this.state.readOnly) return;
         // Destroy existing
         if (this.sortWorkerPool) this.sortWorkerPool.destroy();
         if (this.sortEquipPool)  this.sortEquipPool.destroy();
@@ -1475,6 +1501,7 @@ const PB = {
     /* ── Add project to board ────────────────────────────────── */
     addProjectToBoard(chip) {
         if (!chip) return;
+        if (this.state.readOnly) return;
         if (!this.state.date) { alert('Select a date first.'); return; }
 
         const idJob  = parseInt(chip.dataset.jobId);
@@ -1540,6 +1567,7 @@ const PB = {
     /* ── Remove project from board ───────────────────────────── */
     removeProject(col) {
         if (!col) return;
+        if (this.state.readOnly) return;
         const zone          = col.querySelector('.w-drop-zone');
         const idProgramming = parseInt(zone.dataset.programmingId);
         const idJob         = parseInt(col.dataset.jobId);
@@ -1678,6 +1706,7 @@ const PB = {
 
 /* ── Auto-save on field change (delegated) ─────────────────────── */
 $(document).on('change', '.wf', function() {
+    if (PB.state.readOnly) return;
     const field = $(this).data('field');
     const value = $(this).val();
     const card  = $(this).closest('.w-card');
@@ -1692,12 +1721,14 @@ $(document).on('change', '.wf', function() {
 });
 
 $(document).on('input', 'textarea.wf', function() {
+    if (PB.state.readOnly) return;
     clearTimeout($(this).data('t'));
     $(this).data('t', setTimeout(() => $(this).trigger('change'), 700));
 });
 
 /* ── Auto-save material fields on change ───────────────────────── */
 $(document).on('change', '.mf', function() {
+    if (PB.state.readOnly) return;
     const field = $(this).data('field');
     const value = $(this).val();
     const matId = $(this).data('mat-id');
@@ -1719,6 +1750,7 @@ $(document).on('change', '.mf', function() {
 
 /* ── Auto-save observation on input ────────────────────────────── */
 $(document).on('input', 'textarea.obsf', function() {
+    if (PB.state.readOnly) return;
     clearTimeout($(this).data('t'));
     const $ta = $(this);
     $ta.data('t', setTimeout(() => {
@@ -1738,6 +1770,7 @@ $(document).on('input', 'textarea.obsf', function() {
 
 /* ── Auto-save subcontractor fields on change ──────────────────── */
 $(document).on('change', '.sf', function() {
+    if (PB.state.readOnly) return;
     const field = $(this).data('field');
     const value = $(this).val();
     const subId = $(this).data('sub-id');
