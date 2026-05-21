@@ -328,17 +328,18 @@
 
 /* ── Remove project button (in column header) ── */
 .btn-rm-proj {
-    background: rgba(255,255,255,.15);
-    border: 1px solid rgba(255,255,255,.3);
+    background: #e74c3c;
+    border: 1px solid #c0392b;
     color: #fff;
-    font-size: 14px;
+    font-size: 11px;
     line-height: 1;
-    padding: 1px 6px;
+    padding: 2px 8px;
     border-radius: 3px;
     cursor: pointer;
-    flex-shrink: 0;
+    flex: 1;
+    white-space: nowrap;
 }
-.btn-rm-proj:hover { background: #e74c3c; border-color: #e74c3c; }
+.btn-rm-proj:hover { background: #c0392b; border-color: #a93226; }
 
 /* ── WO badge (in column header) ── */
 .wo-badge {
@@ -358,10 +359,10 @@
     color: #fff;
     font-size: 11px;
     line-height: 1;
-    padding: 2px 6px;
+    padding: 2px 8px;
     border-radius: 3px;
     cursor: pointer;
-    flex-shrink: 0;
+    flex: 1;
     white-space: nowrap;
 }
 .btn-send-proj:hover { background: #1e8449; }
@@ -820,17 +821,13 @@ const PB = {
 
         return `<div class="proj-col" data-job-id="${proj.fk_id_job}" data-job-desc="${this.esc(proj.job_description)}">
             <div class="proj-header">
-                <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:6px;">
-                    <div style="flex:1;min-width:0;">
-                        <div class="proj-name"><i class="fa fa-briefcase"></i> ${this.esc(proj.job_description)}</div>
-                        <textarea class="obs-edit-area obsf" data-programming-id="${pid}" rows="2" placeholder="Observation...">${this.esc(proj.observation || '')}</textarea>
-                        <span class="obs-saved" id="obs-saved-${pid}"><i class="fa fa-check"></i> saved</span>
-                        <div id="wo-badge-${pid}" class="wo-badge">${proj.fk_id_workorder ? this.woBadgeHtml(proj.fk_id_workorder) : ''}</div>
-                    </div>
-                    <div style="display:flex;flex-direction:column;gap:3px;align-items:stretch;">
-                        <button class="btn-rm-proj" onclick="PB.removeProject(this.closest('.proj-col'))" title="Remove from plan">×</button>
-                        <button class="btn-send-proj" onclick="PB.sendPlan(${pid})" title="Send SMS &amp; create WO"><i class="fa fa-send"></i> Send</button>
-                    </div>
+                <div class="proj-name"><i class="fa fa-briefcase"></i> ${this.esc(proj.job_description)}</div>
+                <textarea class="obs-edit-area obsf" data-programming-id="${pid}" rows="2" placeholder="Observation..." style="width:100%;box-sizing:border-box;">${this.esc(proj.observation || '')}</textarea>
+                <span class="obs-saved" id="obs-saved-${pid}"><i class="fa fa-check"></i> saved</span>
+                <div id="wo-badge-${pid}" class="wo-badge">${proj.fk_id_workorder ? this.woBadgeHtml(proj.fk_id_workorder) : ''}</div>
+                <div style="display:flex;gap:4px;margin-top:4px;">
+                    <button class="btn-rm-proj" onclick="PB.removeProject(this.closest('.proj-col'))" title="Remove from plan"><i class="fa fa-trash"></i> Remove Planning</button>
+                    <button class="btn-send-proj" onclick="PB.sendPlan(${pid})" title="Send SMS &amp; create WO"><i class="fa fa-send"></i> Send SMS</button>
                 </div>
             </div>
             <div class="w-drop-zone" data-programming-id="${proj.id_programming}">
