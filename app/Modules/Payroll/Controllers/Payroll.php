@@ -673,4 +673,14 @@ class Payroll extends BaseController
 
 		return $this->response->setJSON($data);
 	}
+
+	public function reverseGeocode()
+	{
+		$lat = $this->request->getGet('lat');
+		$lon = $this->request->getGet('lon');
+
+		$data = reverse_geocode($lat, $lon);
+
+		return $this->response->setJSON($data);
+	}
 }

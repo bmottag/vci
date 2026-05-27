@@ -27,6 +27,8 @@ $routes->group('payroll', ['namespace' => 'App\Modules\Payroll\Controllers'], fu
     $routes->post('cargarModalJobCode',                    'Payroll::cargarModalJobCode');
     $routes->post('updateTaskWithWO',                      'Payroll::updateTaskWithWO');
 
+    $routes->get('reverse-geocode',                       'Payroll::reverseGeocode');
+
     $routes->match(['GET', 'POST'], 'reviewPaystubs',      'Payroll::reviewPaystubs');
     $routes->match(['GET', 'POST'], 'reviewYearly',        'Payroll::reviewYearly');
     $routes->match(['GET', 'POST'], 'payrollSearchTimeSheet',                      'Payroll::payrollSearchTimeSheet');

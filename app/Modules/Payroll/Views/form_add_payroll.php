@@ -1,4 +1,4 @@
-<script type="text/javascript" src="<?php echo base_url("assets/js/validate/payroll/payrollStart.js?v=1.0.0"); ?>"></script>
+<script type="text/javascript" src="<?= base_url("assets/js/validate/payroll/payrollStart.js?v=1.0.0"); ?>"></script>
 
 <script>
 	$(document).ready(function() {
@@ -6,8 +6,8 @@
 	});
 </script>
 
-<!-- Agrega esto en el <head> o antes del cierre de </body> -->
 <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 
 <script>
@@ -15,69 +15,94 @@
 	let marker;
 
 	function initMap() {
-		if (navigator.geolocation) {
-			navigator.geolocation.getCurrentPosition(showPosition, showError, {
-				enableHighAccuracy: true,
-				timeout: 5000,
-				maximumAge: 0
-			});
-		} else {
-			alert("Geolocalización no es soportada por este navegador.");
+
+		if (!navigator.geolocation) {
+			alert("Geolocalización no soportada");
+			return;
 		}
+
+		document.getElementById("viewaddress").value = "Loading...";
+		document.getElementById("btnSubmit").disabled = true;
+
+		navigator.geolocation.getCurrentPosition(
+			showPosition,
+			showError,
+			{
+				enableHighAccuracy: true,
+				timeout: 20000,
+				maximumAge: 0
+			}
+		);
 	}
 
 	function showPosition(position) {
+
 		const lat = position.coords.latitude;
 		const lng = position.coords.longitude;
 
+		// inputs
 		document.getElementById("latitud").value = lat;
 		document.getElementById("longitud").value = lng;
 
-		// Inicializa el mapa con Leaflet
+		// mapa
+		if (map) map.remove();
+
 		map = L.map('map').setView([lat, lng], 14);
 
-		// Carga mapas desde OpenStreetMap
 		L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-			attribution: '&copy; OpenStreetMap contributors'
+			attribution: '&copy; OpenStreetMap'
 		}).addTo(map);
 
-		// Agrega marcador
 		marker = L.marker([lat, lng]).addTo(map);
 
-		// Obtiene la dirección con Nominatim
-		fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`)
-			.then(response => response.json())
+		// CI4 reverse geocode
+		fetch(`<?= base_url('payroll/reverse-geocode') ?>?lat=${lat}&lon=${lng}`)
+			.then(res => {
+
+				if (!res.ok) {
+					throw new Error("HTTP error " + res.status);
+				}
+
+				return res.json();
+			})
 			.then(data => {
-				const address = data.display_name;
+
+				const address =
+					data && data.display_name
+						? data.display_name
+						: `${lat}, ${lng}`;
+
 				document.getElementById("viewaddress").value = address;
 				document.getElementById("address").value = address;
+
 			})
-			.catch(error => {
-				console.error("Error obteniendo dirección:", error);
+			.catch(err => {
+
+				console.error(err);
+
+				const fallback = `${lat}, ${lng}`;
+
+				document.getElementById("viewaddress").value = fallback;
+				document.getElementById("address").value = fallback;
+			})
+			.finally(() => {
+
+				// habilitar submit siempre
+				document.getElementById("btnSubmit").disabled = false;
 			});
 	}
 
 	function showError(error) {
-		let msg = "";
-		switch (error.code) {
-			case error.PERMISSION_DENIED:
-				msg = "Permiso denegado para obtener ubicación.";
-				break;
-			case error.POSITION_UNAVAILABLE:
-				msg = "Ubicación no disponible.";
-				break;
-			case error.TIMEOUT:
-				msg = "Tiempo de espera agotado.";
-				break;
-			default:
-				msg = "Error desconocido.";
-				break;
-		}
-		alert(msg);
+
+		console.error(error);
+
+		alert("No se pudo obtener ubicación");
+
+		document.getElementById("viewaddress").value = "Ubicación no disponible";
+		document.getElementById("btnSubmit").disabled = true;
 	}
 
-	// Ejecutar al cargar la página
-	window.onload = initMap;
+	window.addEventListener('load', initMap);
 </script>
 
 <div id="page-wrapper">
@@ -90,22 +115,29 @@
 					<i class="fa fa-book"></i> <strong>RECORD TASK(S) - PAYROLL</strong>
 					<br><small>Time Stamp - Start</small>
 				</div>
-				<div class="panel-body">
-					<form name="form" id="form" class="form-horizontal" method="post" action="<?php echo base_url("payroll/savePayroll"); ?>">
 
-						<!-- Task : Time Stamp  -->
+				<div class="panel-body">
+
+					<form name="form" id="form" class="form-horizontal" method="post" action="<?= base_url("payroll/savePayroll"); ?>">
+
+						<!-- Task -->
 						<input type="hidden" id="hddTask" name="hddTask" value="1" />
 
 						<div class="form-group">
 							<label class="col-sm-4 control-label" for="address">Address:</label>
+
 							<div class="col-sm-4">
-								<input id="viewaddress" name="viewaddress" class="form-control" type="text" disabled>
+								<input id="viewaddress" name="viewaddress" class="form-control" type="text" readonly>
+
 								<input id="latitud" name="latitud" type="hidden">
 								<input id="longitud" name="longitud" type="hidden">
 								<input id="address" name="address" type="hidden">
 							</div>
+
 							<div class="col-sm-1">
-								<a class="btn btn-success btn-circle" href=" <?php echo base_url() . 'payroll/add_payroll/'; ?> "><i class="fa fa-refresh "></i> </a>
+								<a class="btn btn-success btn-circle" href="<?= base_url('payroll/add_payroll'); ?>">
+									<i class="fa fa-refresh"></i>
+								</a>
 							</div>
 						</div>
 
@@ -117,55 +149,57 @@
 							</div>
 						</div>
 
-						<input id="programming" name="programming" type="hidden" value="<?php echo $programming; ?>">
+						<input id="programming" name="programming" type="hidden" value="<?= $programming; ?>">
+
 						<div class="form-group">
-							<label class="col-sm-4 control-label" for="jobName">Job Code/Name:
-								<?php if ($job_programming) { ?>
-									<p class="help-block">Are you logging in under this Job Code/Name?</p>
-								<?php } ?>
-							</label>
+							<label class="col-sm-4 control-label" for="jobName">Job Code/Name:</label>
+
 							<div class="col-sm-5">
 								<select name="jobName" id="jobName" class="form-control js-example-basic-single">
 									<option value=''>Select...</option>
+
 									<?php for ($i = 0; $i < count($jobs); $i++) { ?>
-										<option value="<?php echo $jobs[$i]["id_job"]; ?>" <?php if ($job_programming == $jobs[$i]["id_job"]) {
-																								echo "selected";
-																							}; ?>><?php echo $jobs[$i]["job_description"]; ?></option>
+										<option value="<?= $jobs[$i]["id_job"]; ?>"
+											<?php if ($job_programming == $jobs[$i]["id_job"]) echo "selected"; ?>>
+											<?= $jobs[$i]["job_description"]; ?>
+										</option>
 									<?php } ?>
+
 								</select>
 							</div>
 						</div>
 
 						<div class="form-group">
-							<label class="col-sm-6 control-label small" for="certify">
-								I certify to be clean for the last 8 hours of any substance such:
-								recreational cannabis, alcohol, drugs or any over the counter medicine that may or will affect
-								the fitness of my work performance.
+							<label class="col-sm-6 control-label small">
+								I certify to be clean for the last 8 hours...
 							</label>
+
 							<div class="col-sm-3">
 								<select name="certify" id="certify" class="form-control" required>
 									<option value="">Select...</option>
-									<option value=1>Yes</option>
-									<option value=2>No</option>
+									<option value="1">Yes</option>
+									<option value="2">No</option>
 								</select>
 							</div>
 						</div>
 
 						<div class="form-group">
-							<label class="col-sm-6 control-label small" for="certify">
-								I certify to be well-rested, having slept a minimun of 6 - 8 hours. I certify my ability or alertness to perform my work for this shift will NOT be impaired by the amount or quality of sleep I had before coming to work.
+							<label class="col-sm-6 control-label small">
+								I certify to be well-rested...
 							</label>
+
 							<div class="col-sm-3">
 								<select name="slept_certify" id="slept_certify" class="form-control" required>
 									<option value="">Select...</option>
-									<option value=1>Yes</option>
-									<option value=2>No</option>
+									<option value="1">Yes</option>
+									<option value="2">No</option>
 								</select>
 							</div>
 						</div>
 
 						<div class="form-group">
-							<label class="col-sm-4 control-label" for="taskDescription">Task/Report Description:</label>
+							<label class="col-sm-4 control-label">Task/Report Description:</label>
+
 							<div class="col-sm-5">
 								<textarea id="taskDescription" name="taskDescription" class="form-control" rows="3"></textarea>
 							</div>
@@ -174,12 +208,13 @@
 						<div class="row" align="center">
 							<div style="width:50%;" align="center">
 								<button type="submit" id="btnSubmit" name="btnSubmit" class="btn btn-primary">
-									Submit <span class="glyphicon glyphicon-log-in" aria-hidden="true">
+									Submit <span class="glyphicon glyphicon-log-in"></span>
 								</button>
 							</div>
 						</div>
 
 					</form>
+
 				</div>
 			</div>
 		</div>

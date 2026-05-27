@@ -15,69 +15,94 @@
 	let marker;
 
 	function initMap() {
-		if (navigator.geolocation) {
-			navigator.geolocation.getCurrentPosition(showPosition, showError, {
-				enableHighAccuracy: true,
-				timeout: 5000,
-				maximumAge: 0
-			});
-		} else {
-			alert("Geolocalización no es soportada por este navegador.");
+
+		if (!navigator.geolocation) {
+			alert("Geolocalización no soportada");
+			return;
 		}
+
+		document.getElementById("viewaddress").value = "Loading...";
+		document.getElementById("btnSubmit").disabled = true;
+
+		navigator.geolocation.getCurrentPosition(
+			showPosition,
+			showError,
+			{
+				enableHighAccuracy: true,
+				timeout: 20000,
+				maximumAge: 0
+			}
+		);
 	}
 
 	function showPosition(position) {
+
 		const lat = position.coords.latitude;
 		const lng = position.coords.longitude;
 
+		// inputs
 		document.getElementById("latitud").value = lat;
 		document.getElementById("longitud").value = lng;
 
-		// Inicializa el mapa con Leaflet
+		// mapa
+		if (map) map.remove();
+
 		map = L.map('map').setView([lat, lng], 14);
 
-		// Carga mapas desde OpenStreetMap
 		L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-			attribution: '&copy; OpenStreetMap contributors'
+			attribution: '&copy; OpenStreetMap'
 		}).addTo(map);
 
-		// Agrega marcador
 		marker = L.marker([lat, lng]).addTo(map);
 
-		// Obtiene la dirección con Nominatim
-		fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`)
-			.then(response => response.json())
+		// CI4 reverse geocode
+		fetch(`<?= base_url('payroll/reverse-geocode') ?>?lat=${lat}&lon=${lng}`)
+			.then(res => {
+
+				if (!res.ok) {
+					throw new Error("HTTP error " + res.status);
+				}
+
+				return res.json();
+			})
 			.then(data => {
-				const address = data.display_name;
+
+				const address =
+					data && data.display_name
+						? data.display_name
+						: `${lat}, ${lng}`;
+
 				document.getElementById("viewaddress").value = address;
 				document.getElementById("address").value = address;
+
 			})
-			.catch(error => {
-				console.error("Error obteniendo dirección:", error);
+			.catch(err => {
+
+				console.error(err);
+
+				const fallback = `${lat}, ${lng}`;
+
+				document.getElementById("viewaddress").value = fallback;
+				document.getElementById("address").value = fallback;
+			})
+			.finally(() => {
+
+				// habilitar submit siempre
+				document.getElementById("btnSubmit").disabled = false;
 			});
 	}
 
 	function showError(error) {
-		let msg = "";
-		switch (error.code) {
-			case error.PERMISSION_DENIED:
-				msg = "Permiso denegado para obtener ubicación.";
-				break;
-			case error.POSITION_UNAVAILABLE:
-				msg = "Ubicación no disponible.";
-				break;
-			case error.TIMEOUT:
-				msg = "Tiempo de espera agotado.";
-				break;
-			default:
-				msg = "Error desconocido.";
-				break;
-		}
-		alert(msg);
+
+		console.error(error);
+
+		alert("No se pudo obtener ubicación");
+
+		document.getElementById("viewaddress").value = "Ubicación no disponible";
+		document.getElementById("btnSubmit").disabled = true;
 	}
 
-	// Ejecutar al cargar la página
-	window.onload = initMap;
+	window.addEventListener('load', initMap);
 </script>
 
 <div id="page-wrapper">
@@ -106,7 +131,7 @@
 						<div class="form-group">
 							<label class="col-sm-4 control-label" for="address">Address: </label>
 							<div class="col-sm-4">
-								<input id="viewaddress" name="viewaddress" class="form-control" type="text" disabled>
+								<input id="viewaddress" name="viewaddress" class="form-control" type="text" readonly>
 								<input id="latitud" name="latitud" type="hidden">
 								<input id="longitud" name="longitud" type="hidden">
 								<input id="address" name="address" type="hidden">

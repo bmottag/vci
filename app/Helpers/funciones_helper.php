@@ -170,3 +170,57 @@ if (!function_exists("send_notification")) {
     }
 
 }
+
+
+if (!function_exists('reverse_geocode')) {
+
+    function reverse_geocode($lat, $lon)
+    {
+        // Redondeo para evitar keys infinitas por precisión GPS
+        $lat = round($lat, 5);
+        $lon = round($lon, 5);
+
+        // Cache key estable
+        $cacheKey = "reverse_geo_{$lat}_{$lon}";
+
+        // 1. Revisar cache primero
+        if ($cached = cache($cacheKey)) {
+            return $cached;
+        }
+
+        // 2. Si no hay cache, llamar API
+        $apiKey = env('LOCATIONIQ_KEY');
+
+        $url = "https://us1.locationiq.com/v1/reverse?key={$apiKey}&lat={$lat}&lon={$lon}&format=json";
+
+        $client = \Config\Services::curlrequest();
+
+        try {
+
+            $response = $client->get($url, [
+                'timeout' => 5,
+                'headers' => [
+                    'Accept' => 'application/json',
+                    'User-Agent' => 'CI4 Payroll System'
+                ]
+            ]);
+
+            $data = json_decode($response->getBody(), true);
+
+            if (!$data || isset($data['error'])) {
+                return null;
+            }
+
+            // 3. Guardar en cache (1 día)
+            cache()->save($cacheKey, $data, 86400);
+
+            return $data;
+
+        } catch (\Exception $e) {
+
+            log_message('error', 'Reverse geocode error: ' . $e->getMessage());
+
+            return null;
+        }
+    }
+}
