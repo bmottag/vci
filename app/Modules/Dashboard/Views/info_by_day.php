@@ -360,6 +360,8 @@
                             <?php
                                     }
                                 }
+                                echo $lista['task_description'] ? "</br></br><b>Task Description</b><br>"  . $lista['task_description'] : '';
+                                echo $lista['observation'] ? "<br><br><b>Observation</b><br>"  . $lista['observation'] : '';
                                 echo "</td>";
                                 echo "<td class='text-center'>" . $hours_start . $text_start;
                                 echo "<button type='button' class='btn btn-danger btn-sm " . $hidden_start . "' data-toggle='modal' id='btnAssign_" . $lista["id_task"] . "' time='start'>Assign to a W.O.</button>";

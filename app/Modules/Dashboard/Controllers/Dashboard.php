@@ -720,7 +720,52 @@ class Dashboard extends BaseController
 
 			if (!empty($data["workOrderCheck"]) && !empty($data["planningInfo"])) {
 
+				$vehicleCache = [];
 				foreach ($data["planningInfo"] as &$planning) {
+
+					$workers = $this->generalModel->get_programming_workers([
+						"idProgramming" => $planning['id_programming']
+					]);
+
+					foreach ($workers as &$worker) {
+
+						// Texto del site (mueve el switch aquí 👇)
+						switch ($worker['site']) {
+							case 1: $worker['site_text'] = "At the yard - "; break;
+							case 2: $worker['site_text'] = "At the site - "; break;
+							case 3: $worker['site_text'] = "At Terminal - "; break;
+							case 4: $worker['site_text'] = "On-line training - "; break;
+							case 5: $worker['site_text'] = "At training facility - "; break;
+							case 6: $worker['site_text'] = "At client's office - "; break;
+							default: $worker['site_text'] = "At the yard - "; break;
+						}
+
+						// Vehículos
+						if (!empty($worker['fk_id_machine']) && $worker['fk_id_machine'] != 0) {
+
+							$machines = json_decode($worker['fk_id_machine'], true);
+
+							if (!is_array($machines)) {
+								$machines = [$worker['fk_id_machine']];
+							}
+
+							$ids = implode(',', $machines);
+
+							if (!isset($vehicleCache[$ids])) {
+								$vehicleCache[$ids] = $this->generalModel->get_vehicle_info_for_planning([
+									"idValues" => $ids
+								]);
+							}
+
+							$worker['vehicles'] = $vehicleCache[$ids];
+						} else {
+							$worker['vehicles'] = [];
+						}
+					}
+
+					$planning['workers'] = $workers;
+
+
 
 					$userId = $planning['fk_id_user'];
 
@@ -738,7 +783,24 @@ class Dashboard extends BaseController
 					}
 				}
 
-				unset($planning, $wo);
+				unset($planning, $wo, $worker);
+			}
+
+			if (!empty($data["workOrderCheck"]) && !empty($data["payrollInfo"])) {
+
+				foreach ($data["payrollInfo"] as &$task) {
+					$userId = $task['fk_id_user'];
+					foreach ($data["workOrderCheck"] as &$wo) {
+						$arrParamCheck = [
+							"idWorkorder" => $wo['id_workorder'],
+							"idUser"      => $userId
+						];
+						$hoursPersonal  = (float)$this->generalModel->countHoursPersonal($arrParamCheck);
+						$hoursEquipment = (float)$this->generalModel->countHoursEquipmentPersonal($arrParamCheck);
+						$wo['hours_by_user'][$userId] = $hoursPersonal + $hoursEquipment;
+					}
+				}
+				unset($task, $wo);
 			}
 		} elseif (isset($viewsMapping[$view])) {
 			// Si la vista es una específica, obtener solo esa
