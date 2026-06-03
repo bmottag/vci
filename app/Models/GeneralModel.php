@@ -1404,7 +1404,7 @@ class GeneralModel extends Model
 		$builder->join('user U', 'U.id_user = C.fk_id_user', 'INNER');
 		$builder->join('user X', 'X.id_user = C.fk_id_user_authorization', 'INNER');
 		$builder->join('user Z', 'Z.id_user = C.fk_id_user_cancellation', 'INNER');
-		$builder->join('user W', 'W.id_user = C.fk_id_post_entry_user', 'INNER');
+		$builder->join('user W', 'W.id_user = C.fk_id_post_entry_user', 'LEFT');
 
 		if (isset($arrDatos["idJob"]) && $arrDatos["idJob"] != 'x') {
 			$builder->where('fk_id_job', $arrDatos["idJob"]);
