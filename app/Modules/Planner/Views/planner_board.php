@@ -114,6 +114,7 @@
     transition: background .15s;
 }
 .w-chip:hover { background: #1f618d; }
+.w-hours { opacity: .75; font-size: 10px; margin-left: auto; }
 .w-chip.sortable-ghost { opacity: .35; }
 .w-chip.sortable-chosen { box-shadow: 0 2px 8px rgba(0,0,0,.3); }
 
@@ -803,7 +804,7 @@ const PB = {
 
     wChipHtml(w) {
         return `<div class="w-chip" data-user-id="${w.id_user}" data-user-name="${this.esc(w.name)}">
-            <i class="fa fa-user" style="font-size:10px;opacity:.7"></i>${this.esc(w.name)}
+            <i class="fa fa-user" style="font-size:10px;opacity:.7"></i>${this.esc(w.name)} <span class="w-hours">(${w.weekly_hours})</span>
         </div>`;
     },
 

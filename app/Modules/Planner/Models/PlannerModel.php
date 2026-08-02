@@ -38,6 +38,35 @@ class PlannerModel extends Model
         return $builder->get()->getResultArray();
     }
 
+    /**
+     * Total worked hours per employee, from Monday of the week containing
+     * $date through $date (inclusive). Used to show workers' accumulated
+     * hours for the running week in the Planner sidebar.
+     */
+    public function get_weekly_worked_hours(string $date): array
+    {
+        $dateObj   = new \DateTime($date);
+        $dayOfWeek = (int) $dateObj->format('N'); // 1 (Mon) - 7 (Sun)
+        $monday    = (clone $dateObj)->modify('-' . ($dayOfWeek - 1) . ' days');
+
+        $builder = $this->db->table('task');
+        $builder->select('fk_id_user, working_hours_new');
+        $builder->where('start >=', $monday->format('Y-m-d') . ' 00:00:00');
+        $builder->where('start <=', $dateObj->format('Y-m-d') . ' 23:59:59');
+        $builder->where('working_hours_new IS NOT NULL');
+
+        $totals = [];
+        foreach ($builder->get()->getResultArray() as $row) {
+            $parts   = explode(':', $row['working_hours_new']);
+            $seconds = ((int) $parts[0] * 3600) + ((int) ($parts[1] ?? 0) * 60) + (int) ($parts[2] ?? 0);
+
+            $uid           = (int) $row['fk_id_user'];
+            $totals[$uid] = ($totals[$uid] ?? 0) + $seconds;
+        }
+
+        return $totals;
+    }
+
     public function planner_add_worker(int $idProgramming, int $idUser): int|false
     {
         $this->db->table('programming_worker')->insert([
