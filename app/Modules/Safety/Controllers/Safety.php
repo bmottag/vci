@@ -502,14 +502,7 @@ class Safety extends BaseController
 	{
 		$idSafety = $this->request->getPost('hddId');
 
-		$arrParam = [
-			"table" => "safety_workers",
-			"primaryKey" => "id_safety_worker",
-			"id" => $this->request->getPost('hddIdSafetyWorker'),
-			"column" => "understanding",
-			"value" => $this->request->getPost('description')
-		];
-		if ($this->generalModel->updateRecord($arrParam)) {
+		if ($this->safetyModel->save_worker_understanding($this->request->getPost())) {
 			$data["status"] = "success";
 			session()->setFlashdata('retornoExito', "You have saved the understanding information!!");
 		} else {

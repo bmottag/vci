@@ -257,6 +257,38 @@ $(function(){
 							<td >
 								<?php echo $data['name']; ?>
 								<br>
+
+								<?php if($data['understanding'] == "") { ?>
+								<div class="checkbox">
+									<label>
+										<input type="checkbox" id="safetyBoots" name="safetyBoots" <?php if($data['safety_boots'] == 1) { echo "checked"; } ?> /> Safety boots
+									</label>
+								</div>
+								<div class="checkbox">
+									<label>
+										<input type="checkbox" id="hardHat" name="hardHat" <?php if($data['hard_hat'] == 1) { echo "checked"; } ?> /> Hard hat
+									</label>
+								</div>
+								<div class="checkbox">
+									<label>
+										<input type="checkbox" id="safetyGlasses" name="safetyGlasses" <?php if($data['safety_glasses'] == 1) { echo "checked"; } ?> /> Safety glasses
+									</label>
+								</div>
+								<input type="text" id="specializedPpe" name="specializedPpe" class="form-control" value="<?php echo $data['specialized_ppe']; ?>" placeholder="Specialized PPE" maxlength="100" />
+								<br>
+								<?php } else { ?>
+								<strong>PPE:</strong>
+								<?php
+									$ppeList = [];
+									if ($data['safety_boots'] == 1) { $ppeList[] = "Safety boots"; }
+									if ($data['hard_hat'] == 1) { $ppeList[] = "Hard hat"; }
+									if ($data['safety_glasses'] == 1) { $ppeList[] = "Safety glasses"; }
+									echo $ppeList ? implode(", ", $ppeList) : "None";
+									if ($data['specialized_ppe']) { echo " | Specialized PPE: " . $data['specialized_ppe']; }
+								?>
+								<br>
+								<?php } ?>
+
 								<textarea id="description" name="description" class="form-control" rows="6" minlength="200" required placeholder="Worker's Understanding of Hazards Discussed"><?php echo $data['understanding']; ?></textarea>
 								<br>
 					<?php

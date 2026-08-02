@@ -132,8 +132,6 @@ docker-compose.override.yml
 /public/assets/timepicker/
 /public/images/
 /public/files/
-/legacy/
-/app/Modules/zzzzz
 
 .dockerignore
 .env.example

@@ -454,39 +454,40 @@ class Report extends BaseController
             if (!$workers) {
                 $html .= 'No data was found for workers';
             } else {
-                $html     .= '<table border="1" cellspacing="0" cellpadding="5">';
-                $total     = count($workers);
-                $totalFilas = 1;
-                if ($total >= 4) {
-                    $totalFilas = ceil($total / 4);
-                }
-                $n = 1;
-                for ($i = 0; $i < $totalFilas; $i++) {
-                    $finish = $n * 4;
-                    $star   = $finish - 4;
-                    if ($finish > $total) {
-                        $finish = $total;
-                    }
-                    $n++;
+                $html .= '<table border="1" cellspacing="0" cellpadding="5">
+                            <tr bgcolor="#337ab7" style="color:white;">
+                                <th width="10%" align="center"><strong>Signature</strong></th>
+                                <th width="10%" align="center"><strong>Company</strong></th>
+                                <th width="15%" align="center"><strong>Worker Name</strong></th>
+                                <th width="20%" align="center"><strong>PPE</strong></th>
+                                <th width="45%" align="center"><strong>Worker\'s Understanding of Hazards Discussed</strong></th>
+                            </tr>';
 
-                    $html .= '<tr><th align="center" width="20%"><strong><p>Initials</p></strong></th>';
-                    for ($j = $star; $j < $finish; $j++) {
-                        $sig  = $workers[$j]['signature'] ? '<img src="' . $workers[$j]['signature'] . '" border="0" width="70" height="70" />' : '';
-                        $html .= '<th align="center" width="20%">' . $sig . '</th>';
-                    }
-                    $html .= '</tr>';
+                foreach ($workers as $w) {
+                    $sig = $w['signature'] ? '<img src="' . $w['signature'] . '" border="0" width="70" height="70" />' : '';
 
-                    $html .= '<tr bgcolor="#337ab7" style="color:white;"><th align="center"><strong>Company</strong></th>';
-                    for ($j = $star; $j < $finish; $j++) {
-                        $html .= '<th align="center"><strong>VCI</strong></th>';
+                    $ppeList = [];
+                    if ($w['safety_boots'] == 1) {
+                        $ppeList[] = 'Safety boots';
                     }
-                    $html .= '</tr>';
+                    if ($w['hard_hat'] == 1) {
+                        $ppeList[] = 'Hard hat';
+                    }
+                    if ($w['safety_glasses'] == 1) {
+                        $ppeList[] = 'Safety glasses';
+                    }
+                    $ppe = $ppeList ? implode(', ', $ppeList) : '-';
+                    if ($w['specialized_ppe']) {
+                        $ppe .= '<br><i>Specialized: ' . $w['specialized_ppe'] . '</i>';
+                    }
 
-                    $html .= '<tr bgcolor="#337ab7" style="color:white;"><th align="center"><strong>Worker Name</strong></th>';
-                    for ($j = $star; $j < $finish; $j++) {
-                        $html .= '<th align="center"><strong>' . $workers[$j]['name'] . '</strong></th>';
-                    }
-                    $html .= '</tr>';
+                    $html .= '<tr>
+                                <th align="center">' . $sig . '</th>
+                                <th align="center"><strong>VCI</strong></th>
+                                <th align="center"><strong>' . $w['name'] . '</strong></th>
+                                <th>' . $ppe . '</th>
+                                <th>' . $w['understanding'] . '</th>
+                              </tr>';
                 }
                 $html .= '</table>';
             }
