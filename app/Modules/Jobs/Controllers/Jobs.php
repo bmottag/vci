@@ -2111,10 +2111,15 @@ class Jobs extends BaseController
 			session()->remove(['current_tag_name']);
 		}
 
+		$arrFireWatch = ['idJob' => $idJob];
+		if ($this->session->get('rol') == ID_ROL_BASIC) { //If it is a BASIC USER, just show the records of the user session
+			$arrFireWatch['idEmployee'] = $this->session->get('id');
+		}
+
 		$data = [
 			'jobInfo' => $this->generalModel->get_job(['idJob' => $idJob]),
 			'infoFireWatchSetup' => $this->jobsModel->get_fire_watch_setup(['idJob' => $idJob]),
-			'information' => $this->jobsModel->get_fire_watch(['idJob' => $idJob])
+			'information' => $this->jobsModel->get_fire_watch($arrFireWatch)
 		];
 
 		return $this->render('App\Modules\Jobs\Views\fire_watch_list', $data);

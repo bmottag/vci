@@ -1041,6 +1041,9 @@ Y.movil phone_emer_1, CONCAT(Y.first_name, " " , Y.last_name) emer_1, Z.movil ph
 		if (isset($arrDatos["idFireWatch"])) {
 			$builder->where('id_job_fire_watch', $arrDatos["idFireWatch"]);
 		}
+		if (isset($arrDatos["idEmployee"])) {
+			$builder->where('F.fk_id_user', $arrDatos["idEmployee"]);
+		}
 
 		$builder->orderBy('id_job_fire_watch', 'DESC');
 
