@@ -45,6 +45,9 @@ class Jobs extends BaseController
 			"limit" => 30,
 			"idJob" => $idJob
 		];
+		if ($this->session->get('rol') == ID_ROL_BASIC) { //If it is a BASIC USER, just show their own safety records or the ones where they are a listed worker
+			$arrParam['idBasicUser'] = $this->session->get('id');
+		}
 		$data['information'] = $this->generalModel->get_safety($arrParam); //info de safety
 
 		//hazards list

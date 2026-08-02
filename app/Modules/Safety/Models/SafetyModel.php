@@ -47,17 +47,9 @@ class SafetyModel extends Model
 			'specify_ppe' => $post['specify'] ?? null,
 		];
 
-		$ppe = $post['hddTask'] ?? null; // 1: con ppe; 2: sin ppe
+		$ppe = $post['ppe'] ?? null; // 1: con ppe; 2: sin ppe (checkbox ausente cuando no está marcado)
 
-		if(!empty($ppe)) {
-			if($ppe == 'on') {
-				$data['ppe'] = 1;
-			} else if($ppe == 'off') {
-				unset($data['ppe']);
-			}
-		} else {
-			$data['ppe'] = 2;
-		}
+		$data['ppe'] = ($ppe === 'on') ? 1 : 2;
 
 		$builder = $this->db->table('safety');
 

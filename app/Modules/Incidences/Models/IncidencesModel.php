@@ -33,12 +33,19 @@ class IncidencesModel extends Model
 		if (isset($arrDatos["idEmployee"])) {
 			$builder->where('W.fk_id_user', $arrDatos["idEmployee"]);
 		}
+		if (isset($arrDatos["idSupervisor"])) {
+			$builder->groupStart()
+				->where('W.fk_id_user', $arrDatos["idSupervisor"])
+				->orWhere('W.manager_user', $arrDatos["idSupervisor"])
+				->orWhere('W.safety_user', $arrDatos["idSupervisor"])
+				->groupEnd();
+		}
 		if (isset($arrDatos["jobId"])) {
 			$builder->where('fk_id_job =', $arrDatos["jobId"]);
 		}
-		
+
 		$builder->where('W.date_issue >=', $firstDay);
-		
+
 		$builder->orderBy('id_near_miss', 'DESC');
 		$builder->limit(20);
 		return $builder->get()->getResultArray();
@@ -229,12 +236,19 @@ class IncidencesModel extends Model
 		if (isset($arrDatos["idEmployee"])) {
 			$builder->where('W.fk_id_user', $arrDatos["idEmployee"]);
 		}
+		if (isset($arrDatos["idSupervisor"])) {
+			$builder->groupStart()
+				->where('W.fk_id_user', $arrDatos["idSupervisor"])
+				->orWhere('W.manager_user', $arrDatos["idSupervisor"])
+				->orWhere('W.safety_user', $arrDatos["idSupervisor"])
+				->groupEnd();
+		}
 		if (isset($arrDatos["jobId"])) {
 			$builder->where('fk_id_job =', $arrDatos["jobId"]);
 		}
-		
+
 		$builder->where('W.date_issue >=', $firstDay);
-		
+
 		$builder->orderBy('id_incident', 'DESC');
 		$builder->limit(20);
 		return $builder->get()->getResultArray();

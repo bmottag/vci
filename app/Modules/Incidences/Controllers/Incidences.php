@@ -25,8 +25,15 @@ class Incidences extends BaseController
 	 */
 	public function near_miss($idJob)
 	{
+		$arrNearMiss = ["jobId" => $idJob];
+		if ($this->session->get('rol') == ID_ROL_BASIC) { //If it is a BASIC USER, just show the records of the user session
+			$arrNearMiss['idEmployee'] = $this->session->get('id');
+		} elseif ($this->session->get('rol') == ID_ROL_SUPERVISOR) { //If it is a SUPERVISOR, show only records where the user is the employee, manager or safety
+			$arrNearMiss['idSupervisor'] = $this->session->get('id');
+		}
+
 		$data['jobInfo'] = $this->generalModel->get_job(['idJob' => $idJob]);
-		$data['nearMissInfo'] = $this->incidencesModel->get_near_miss_by_idUser(["jobId" => $idJob]);
+		$data['nearMissInfo'] = $this->incidencesModel->get_near_miss_by_idUser($arrNearMiss);
 		return $this->render('App\Modules\Incidences\Views\near_miss_list', $data);
 	}
 
@@ -251,8 +258,15 @@ class Incidences extends BaseController
 	 */
 	public function incident($idJob)
 	{
+		$arrIncident = ["jobId" => $idJob];
+		if ($this->session->get('rol') == ID_ROL_BASIC) { //If it is a BASIC USER, just show the records of the user session
+			$arrIncident['idEmployee'] = $this->session->get('id');
+		} elseif ($this->session->get('rol') == ID_ROL_SUPERVISOR) { //If it is a SUPERVISOR, show only records where the user is the employee, manager or safety
+			$arrIncident['idSupervisor'] = $this->session->get('id');
+		}
+
 		$data['jobInfo'] = $this->generalModel->get_job(['idJob' => $idJob]);
-		$data['incidentInfo'] = $this->incidencesModel->get_incident_by(["jobId" => $idJob]);
+		$data['incidentInfo'] = $this->incidencesModel->get_incident_by($arrIncident);
 		return $this->render('App\Modules\Incidences\Views\incident_list', $data);
 	}
 

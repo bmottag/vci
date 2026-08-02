@@ -363,6 +363,20 @@ class GeneralModel extends Model
 			$fecha = $arrData["fecha"] . '%';
 			$builder->where('S.date LIKE', $fecha);
 		}
+		if (isset($arrData["idBasicUser"])) {
+			$workerSafetyIds = $this->db->table('safety_workers')
+				->select('fk_id_safety')
+				->where('fk_id_user', $arrData["idBasicUser"])
+				->get()->getResultArray();
+			$workerSafetyIds = array_column($workerSafetyIds, 'fk_id_safety');
+
+			$builder->groupStart()
+				->where('S.fk_id_user', $arrData["idBasicUser"]);
+			if (!empty($workerSafetyIds)) {
+				$builder->orWhereIn('S.id_safety', $workerSafetyIds);
+			}
+			$builder->groupEnd();
+		}
 
         $builder->orderBy('id_safety', 'desc');
 

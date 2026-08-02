@@ -43,6 +43,9 @@ class Dashboard extends BaseController
 		$data['infoPlanning'] = $this->generalModel->get_planning_for_employee($arrParam);
 
 		$arrParam['idEmployee'] = $this->session->get('id');
+		if ($this->session->get('rol') == ID_ROL_BASIC) { //If it is a BASIC USER, just show their own safety records or the ones where they are a listed worker
+			$arrParam['idBasicUser'] = $this->session->get('id');
+		}
 
 		$arrParam['limit'] = 60;
 		$data['info']       = $this->generalModel->get_task($arrParam);

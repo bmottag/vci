@@ -135,4 +135,8 @@ docker-compose.override.yml
 /legacy/
 /app/Modules/zzzzz
 
+.dockerignore
+.env.example
+
 CLAUDE.md
+docs
