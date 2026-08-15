@@ -31,6 +31,10 @@ $html= '
 
 $html.= '<table border="0" cellspacing="0" cellpadding="5">';
 $html.= '<tr>
+		<th width="20%"><b>F.A. #: </b></th><th width="35%">' . $info[0]['id_forceaccount'] . '</th>
+		<th width="15%"><b>Force Account Date: </b></th><th width="30%">' . $info[0]['date'] . '</th>
+		</tr>';
+$html.= '<tr>
 		<th width="20%"><b>Project: </b></th><th width="35%">' . $info[0]['job_description'] . '</th>
 		<th width="15%"><b>Bill To: </b></th><th width="30%">' . $info[0]['company_name'] . '</th>
 		</tr>';
