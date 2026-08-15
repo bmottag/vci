@@ -191,7 +191,7 @@ class ReportModel extends Model
     public function get_safety_workers($idSafety)
     {
         $builder = $this->db->table('safety_workers W');
-        $builder->select("W.id_safety_worker, W.fk_id_safety, W.signature, W.understanding, W.safety_boots, W.hard_hat, W.safety_glasses, W.specialized_ppe, CONCAT(first_name, ' ', last_name) name");
+        $builder->select("W.id_safety_worker, W.fk_id_safety, W.signature, W.understanding, W.safety_boots, W.hard_hat, W.safety_glasses, W.safety_vest, W.specialized_ppe, CONCAT(first_name, ' ', last_name) name");
         $builder->join('user U', 'U.id_user = W.fk_id_user', 'INNER');
         $builder->where('W.fk_id_safety', $idSafety);
         $builder->orderBy('U.first_name, U.last_name', 'asc');

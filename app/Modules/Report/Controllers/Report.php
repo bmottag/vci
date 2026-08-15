@@ -476,6 +476,9 @@ class Report extends BaseController
                     if ($w['safety_glasses'] == 1) {
                         $ppeList[] = 'Safety glasses';
                     }
+                    if ($w['safety_vest'] == 1) {
+                        $ppeList[] = 'Safety vest';
+                    }
                     $ppe = $ppeList ? implode(', ', $ppeList) : '-';
                     if ($w['specialized_ppe']) {
                         $ppe .= '<br><i>Specialized: ' . $w['specialized_ppe'] . '</i>';

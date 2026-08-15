@@ -274,6 +274,11 @@ $(function(){
 										<input type="checkbox" id="safetyGlasses" name="safetyGlasses" <?php if($data['safety_glasses'] == 1) { echo "checked"; } ?> /> Safety glasses
 									</label>
 								</div>
+								<div class="checkbox">
+									<label>
+										<input type="checkbox" id="safetyVest" name="safetyVest" <?php if($data['safety_vest'] == 1) { echo "checked"; } ?> /> Safety vest
+									</label>
+								</div>
 								<input type="text" id="specializedPpe" name="specializedPpe" class="form-control" value="<?php echo $data['specialized_ppe']; ?>" placeholder="Specialized PPE" maxlength="100" />
 								<br>
 								<?php } else { ?>
@@ -283,6 +288,7 @@ $(function(){
 									if ($data['safety_boots'] == 1) { $ppeList[] = "Safety boots"; }
 									if ($data['hard_hat'] == 1) { $ppeList[] = "Hard hat"; }
 									if ($data['safety_glasses'] == 1) { $ppeList[] = "Safety glasses"; }
+									if ($data['safety_vest'] == 1) { $ppeList[] = "Safety vest"; }
 									echo $ppeList ? implode(", ", $ppeList) : "None";
 									if ($data['specialized_ppe']) { echo " | Specialized PPE: " . $data['specialized_ppe']; }
 								?>
