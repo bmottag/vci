@@ -31,6 +31,8 @@ class Planner extends BaseController
         $allWorkers   = $this->generalModel->get_user(['state' => 1]) ?: [];
         $dayoffList   = $this->plannerModel->get_dayoff_workers_by_date($date);
         $dayoffIds    = array_map('intval', array_column($dayoffList, 'id_user'));
+        $vacationList = $this->plannerModel->get_vacation_workers_by_date($date);
+        $vacationIds  = array_map('intval', array_column($vacationList, 'id_user'));
         $horas        = $this->generalModel->get_horas();
 
         $allVehicles = $this->plannerModel->get_vehicles_inspection([]);
@@ -127,7 +129,7 @@ class Planner extends BaseController
         $availableWorkers = [];
         foreach ($allWorkers as $w) {
             $uid = (int) $w['id_user'];
-            if (!in_array($uid, $assignedUserIds) && !in_array($uid, $dayoffIds)) {
+            if (!in_array($uid, $assignedUserIds) && !in_array($uid, $dayoffIds) && !in_array($uid, $vacationIds)) {
                 $seconds = $weeklyHoursSeconds[$uid] ?? 0;
                 $availableWorkers[] = [
                     'id_user'      => $uid,
@@ -168,6 +170,7 @@ class Planner extends BaseController
             'projects'          => $projects,
             'available_workers' => $availableWorkers,
             'dayoff_workers'    => $dayoffList,
+            'vacation_workers'  => $vacationList,
             'equipment_pool'    => $equipPool,
             'hours'             => $horas,
             'project_pool'      => $projectPool,

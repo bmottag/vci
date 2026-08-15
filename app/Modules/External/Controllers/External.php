@@ -350,4 +350,41 @@ class External extends BaseController
 
         return $this->response->setJSON($data);
     }
+
+    /**
+     * List Vacation, for ADMIN
+     * @since 15/08/2026
+     */
+    public function aproveVacation($idVacation, $idUser)
+    {
+        $data['idVacation']   = $idVacation;
+        $data['idUser']       = $idUser;
+        $data['vacationInfo'] = $this->generalModel->get_vacation($data);
+
+        if (!$data['vacationInfo']) {
+            throw new \CodeIgniter\Exceptions\PageNotFoundException('Vacation not found.');
+        }
+
+        return $this->renderTopOnly('App\Modules\External\Views\vacation', $data);
+    }
+
+    /**
+     * Update vacation status
+     * @since 15/08/2026
+     */
+    public function updateVacationStatus()
+    {
+        $post   = $this->request->getPost();
+        $data   = ['return' => ($post['hddIdVacation'] ?? '') . '/' . ($post['hddIdUser'] ?? '')];
+
+        if ($this->externalModel->update_vacation($post)) {
+            $data['status'] = 'success';
+            $this->session->setFlashdata('retornoExito', 'Information saved successfully!!');
+        } else {
+            $data['status'] = 'error';
+            $this->session->setFlashdata('retornoError', '<strong>Error!!!</strong> Ask for help');
+        }
+
+        return $this->response->setJSON($data);
+    }
 }

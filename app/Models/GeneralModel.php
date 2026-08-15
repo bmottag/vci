@@ -1134,6 +1134,48 @@ class GeneralModel extends Model
 	}
 
 	/**
+	 * Get vacation info
+	 * @since 15/08/2026
+	 */
+	public function get_vacation($arrData)
+	{
+		$idUser = session()->get("id");
+
+		$firstDay = (new \DateTime())->modify('-6 months')->format('Y-m-d');
+		$beforeYesterday = (new \DateTime())->modify('-2 days')->format('Y-m-d');
+
+		$builder = $this->db->table('vacation V');
+		$builder->select("V.*, CONCAT(first_name, ' ', last_name) name");
+		$builder->join('user U', 'U.id_user = V.fk_id_user', 'INNER');
+
+		// empleado
+		if (isset($arrData["idEmployee"])) {
+			$builder->where('U.id_user', $idUser);
+		}
+
+		// estado
+		if (isset($arrData["state"])) {
+			$builder->where('V.state', $arrData["state"]);
+
+			if ($arrData["state"] > 1) {
+				$builder->where('V.date_end >=', $beforeYesterday);
+			}
+		}
+
+		// id específico
+		if (isset($arrData["idVacation"])) {
+			$builder->where('V.id_vacation', $arrData["idVacation"]);
+		}
+
+		// últimos 6 meses
+		$builder->where('V.date_issue >=', $firstDay);
+
+		$builder->orderBy('V.id_vacation', 'DESC');
+
+		return $builder->get()->getResultArray();
+	}
+
+	/**
 	 * Lista de menu
 	 * Modules: MENU
 	 * @since 30/3/2020

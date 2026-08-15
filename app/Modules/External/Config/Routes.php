@@ -27,4 +27,8 @@ $routes->group('external', ['namespace' => 'App\Modules\External\Controllers'], 
     // Day Off
     $routes->get('aprove_day_off/(:num)/(:num)', 'External::aproveDayOff/$1/$2');
     $routes->post('update_dayoff_status',        'External::updateDayoffStatus');
+
+    // Vacation
+    $routes->get('aprove_vacation/(:num)/(:num)', 'External::aproveVacation/$1/$2');
+    $routes->post('update_vacation_status',        'External::updateVacationStatus');
 });

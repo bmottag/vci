@@ -31,6 +31,11 @@ if (file_exists(APPPATH.'Modules/Dayoff/Config/Routes.php')) {
     require APPPATH.'Modules/Dayoff/Config/Routes.php';
 }
 
+// Cargar rutas del módulo Vacation
+if (file_exists(APPPATH.'Modules/Vacation/Config/Routes.php')) {
+    require APPPATH.'Modules/Vacation/Config/Routes.php';
+}
+
 // Cargar rutas del módulo Enlaces
 if (file_exists(APPPATH.'Modules/Enlaces/Config/Routes.php')) {
     require APPPATH.'Modules/Enlaces/Config/Routes.php';

@@ -146,6 +146,16 @@
     font-size: 11px;
 }
 
+/* ── Vacation entries ── */
+.vac-chip {
+    padding: 4px 7px;
+    margin: 2px 0;
+    background: #2980b9;
+    color: #fff;
+    border-radius: 4px;
+    font-size: 11px;
+}
+
 /* ── Board (project columns) ── */
 #pb-board {
     flex: 1;
@@ -298,6 +308,7 @@
 
 /* ── Project chips (pool) ── */
 .pool-box-title.purple { background: #8e44ad; }
+.pool-box-title.blue   { background: #2980b9; }
 .p-chip {
     display: flex;
     align-items: center;
@@ -642,6 +653,21 @@
                 </div>
             </div>
 
+            <div class="pool-box">
+                <div class="pool-box-title blue" data-wrap="vac-wrap">
+                    <span class="pool-title-left">
+                        <i class="fa fa-suitcase"></i> VACATION
+                        <span class="pool-badge" id="vacation-count">0</span>
+                    </span>
+                    <i class="fa fa-chevron-right pool-chevron open"></i>
+                </div>
+                <div id="vac-wrap">
+                    <div id="vacation-pool" class="pool-list">
+                        <div class="pool-empty">-</div>
+                    </div>
+                </div>
+            </div>
+
         </div>
 
         <!-- Board -->
@@ -666,6 +692,7 @@ const PB = {
         projectPool: [],
         availableWorkers: [],
         dayoffWorkers: [],
+        vacationWorkers: [],
         equipmentPool: [],
         hours: [],
         employeeTypes: [],
@@ -703,6 +730,7 @@ const PB = {
                     projectPool:      data.project_pool      || [],
                     availableWorkers: data.available_workers  || [],
                     dayoffWorkers:    data.dayoff_workers     || [],
+                    vacationWorkers:  data.vacation_workers    || [],
                     equipmentPool:    data.equipment_pool     || [],
                     hours:            data.hours              || [],
                     employeeTypes:    data.employee_types     || [],
@@ -729,6 +757,7 @@ const PB = {
             this.renderEquipPool();
         }
         this.renderDayoff();
+        this.renderVacation();
         this.renderProjects();
     },
 
@@ -779,6 +808,19 @@ const PB = {
         }
         el.innerHTML = this.state.dayoffWorkers
             .map(w => `<div class="do-chip"><i class="fa fa-user"></i> ${this.esc(w.name)}</div>`)
+            .join('');
+    },
+
+    renderVacation() {
+        const el    = document.getElementById('vacation-pool');
+        const count = this.state.vacationWorkers.length;
+        document.getElementById('vacation-count').textContent = count;
+        if (!count) {
+            el.innerHTML = '<div class="pool-empty">None</div>';
+            return;
+        }
+        el.innerHTML = this.state.vacationWorkers
+            .map(w => `<div class="vac-chip"><i class="fa fa-user"></i> ${this.esc(w.name)}</div>`)
             .join('');
     },
 

@@ -101,4 +101,20 @@ class ExternalModel extends Model
                 'date_update'       => date('Y-m-d G:i:s'),
             ]);
     }
+
+    /**
+     * Update vacation's state
+     * @since 15/08/2026
+     */
+    public function update_vacation(array $post): bool
+    {
+        return $this->db->table('vacation')
+            ->where('id_vacation', $post['hddIdVacation'] ?? null)
+            ->update([
+                'fk_id_boss'        => $post['hddIdUser'] ?? null,
+                'state'             => $post['status'] ?? null,
+                'admin_observation' => $post['observation'] ?? '',
+                'date_update'       => date('Y-m-d G:i:s'),
+            ]);
+    }
 }

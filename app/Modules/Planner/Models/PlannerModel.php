@@ -38,6 +38,19 @@ class PlannerModel extends Model
         return $builder->get()->getResultArray();
     }
 
+    public function get_vacation_workers_by_date(string $date): array
+    {
+        $builder = $this->db->table('vacation V');
+        $builder->select('U.id_user, CONCAT(U.first_name, " ", U.last_name) AS name');
+        $builder->join('user U', 'U.id_user = V.fk_id_user', 'inner');
+        $builder->where('V.date_start <=', $date);
+        $builder->where('V.date_end >=', $date);
+        $builder->where('V.state', 2);
+        $builder->groupBy('U.id_user');
+        $builder->orderBy('U.first_name', 'asc');
+        return $builder->get()->getResultArray();
+    }
+
     /**
      * Total worked hours per employee, from Monday of the week containing
      * $date through $date (inclusive). Used to show workers' accumulated
