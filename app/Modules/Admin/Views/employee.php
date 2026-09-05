@@ -44,11 +44,11 @@ $(function(){
 	$session = session();
 	$userRol = $session->rol;
 	
-	if($userRol != 99){
+	if($userRol != ID_ROL_SUPER_ADMIN){
 		$deshabilitar = 'disabled';
 	}
 ?>
-				<?php if(!$deshabilitar){ ?>
+				<?php if($userRol == ID_ROL_SUPER_ADMIN || $userRol == ID_ROL_SAFETY || $userRol == ID_ROL_WORKORDER){ ?>
 					<button type="button" class="btn btn-outline btn-primary btn-block" data-toggle="modal" data-target="#modal" id="x">
 							<span class="glyphicon glyphicon-plus" aria-hidden="true"></span> Add an Employee
 					</button><br>
@@ -116,7 +116,7 @@ $(function(){
 
 								echo '<p class="' . $lista['estilos'] . '"><strong>Rol: ' . $lista['rol_name'] . '</strong></p>';
 								echo '<p class="' . $clase . '"><strong>' . $valor . '</strong></p>';
-								if(!$deshabilitar){ 					
+								if($userRol == ID_ROL_SUPER_ADMIN || $userRol == ID_ROL_SAFETY || $userRol == ID_ROL_WORKORDER){					
 						?>
 								<br>
 								<button type="button" class="btn btn-outline btn-primary btn-xs" data-toggle="modal" data-target="#modal" id="<?php echo $lista['id_user']; ?>" title="Edit" >
@@ -125,7 +125,7 @@ $(function(){
 						<?php
 								}
 								//SOLO SE HABILITA EL BOTON DE CERTIFICADOS PARA EL USUARIO SUPER ADMINISTRADOR Y SAFETY 
-								if($userRol == 99 || $userRol == 4){
+								if($userRol == ID_ROL_SUPER_ADMIN || $userRol == ID_ROL_SAFETY){
 						?>
 								<a href="<?php echo base_url("admin/userCertificates/" . $lista['id_user']); ?>" class="btn btn-info btn-xs" title="Certificates"><i class='fa fa-link'></i></a>
 						<?php

@@ -338,8 +338,8 @@ class Dashboard extends BaseController
 		$data['infoMaintenance'] = FALSE;
 		$data['noJobs'] = FALSE;
 		$data['noHauling'] = TRUE;
-		$data['noDailyInspection'] = FALSE;
-		$data['noHeavyInspection'] = FALSE;
+		$data['noDailyInspection'] = TRUE;
+		$data['noHeavyInspection'] = TRUE;
 
 		$data['infoNextPlanning']  = FALSE;
 
