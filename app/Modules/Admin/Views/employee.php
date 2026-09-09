@@ -130,7 +130,7 @@ $(function(){
 								<a href="<?php echo base_url("admin/userCertificates/" . $lista['id_user']); ?>" class="btn btn-info btn-xs" title="Certificates"><i class='fa fa-link'></i></a>
 						<?php
 								}
-								if(!$deshabilitar){ 					
+								if($userRol == ID_ROL_SUPER_ADMIN || $userRol == ID_ROL_SAFETY || $userRol == ID_ROL_WORKORDER){					
 						?>
 								<a href="<?php echo base_url("admin/change_password/" . $lista['id_user']); ?>" class="btn btn-violeta btn-xs" title="Change password"><i class='fa fa-lock'></i></a>	
 						<?php

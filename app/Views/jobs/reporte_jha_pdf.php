@@ -38,7 +38,7 @@
 				
 				$html .= '<table border="1" cellspacing="0" cellpadding="5">
 						<tr>
-							<th colspan="4"><strong><i>Identify and prioritize hazards below, then identify plans to eliminate/control the hazards</i></strong></th>
+							<th colspan="5"><strong><i>Identify and prioritize hazards below, then identify plans to eliminate/control the hazards</i></strong></th>
 						</tr>
 						<tr bgcolor="#337ab7" style="color:white;">
 							<th width="5%" align="center"><strong>#</strong></th>
@@ -48,8 +48,8 @@
 							<th width="40%" align="center"><strong>Control/Eliminate</strong></th>
 						</tr>';
 					if(!$hazards){
-							$html.= '<tr>';					
-							$html.= '<th colspan="4" align="center"> ---- No data was found for Hazard -----</th>';
+							$html.= '<tr>';
+							$html.= '<th colspan="5" align="center"> ---- No data was found for Hazard -----</th>';
 							$html.= '</tr>';					
 					}else{
 						$i = 0;
