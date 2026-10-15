@@ -8,7 +8,7 @@
 
     .table-container {
         max-height: 700px; /* Ajusta la altura según necesites */
-        overflow-y: auto;
+        overflow: auto; /* Scroll vertical y horizontal cuando hay muchas W.O. */
         border: 1px solid #ddd;
         position: relative;
         background: white;
@@ -26,6 +26,84 @@
     /* Opcional: Agregar sombra para mayor visibilidad del encabezado */
     .table-container thead th {
         box-shadow: 0 2px 2px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Payroll: ancho mínimo por columna para que la tabla crezca y haga scroll horizontal */
+    #dataTablesPayroll {
+        width: auto !important;
+        min-width: 100%;
+    }
+
+    #dataTablesPayroll th,
+    #dataTablesPayroll td {
+        min-width: 130px;
+    }
+
+    /* Fijar la columna Employee al hacer scroll horizontal */
+    #dataTablesPayroll th:first-child,
+    #dataTablesPayroll td:first-child {
+        min-width: 200px;
+        position: sticky;
+        left: 0;
+        background: white;
+        z-index: 100;
+        box-shadow: 2px 0 2px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Fijar la columna Total W.O. Hours a la derecha */
+    #dataTablesPayroll tr > :last-child {
+        position: sticky;
+        right: 0;
+        background: white;
+        z-index: 100;
+        box-shadow: -2px 0 2px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Columnas fijas: mantener el rayado y el hover de las filas */
+    #dataTablesPayroll tbody tr:nth-of-type(odd) > td:first-child,
+    #dataTablesPayroll tbody tr:nth-of-type(odd) > td:last-child {
+        background: #f9f9f9;
+    }
+
+    #dataTablesPayroll tbody tr:hover > td:first-child,
+    #dataTablesPayroll tbody tr:hover > td:last-child {
+        background: #f5f5f5;
+    }
+
+    /* Total W.O. Hours comparado con Payroll Working Hours */
+    #dataTablesPayroll tbody td.total-match {
+        background: #dff0d8;
+    }
+
+    #dataTablesPayroll tbody td.total-payroll-over {
+        background: #f2dede;
+    }
+
+    #dataTablesPayroll tbody td.total-wo-over {
+        background: #fcf8e3;
+    }
+
+    /* Encabezado W.O.: descripcion del job en maximo 2 lineas */
+    #dataTablesPayroll .wo-header-job {
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        font-weight: normal;
+        color: #777;
+    }
+
+    #dataTablesPayroll td.wo-hours {
+        font-weight: bold;
+    }
+
+    #dataTablesPayroll td.wo-hours-empty {
+        color: #ccc;
+    }
+
+    #dataTablesPayroll .text-small-muted {
+        font-size: 11px;
+        color: #777;
     }
 </style>
 
@@ -278,25 +356,27 @@
                     <i class="fa fa-book fa-fw"></i> <strong>PAYROLL RECORDS</strong> - <?php echo date('l, F j, Y', strtotime($fecha)); ?>
                 </div>
                 <div class="panel-body table-container">
-                    <br>
-                    <table width="100%" class="table table-striped table-bordered table-hover small" id="dataTablesPayroll">
+                    <table class="table table-striped table-bordered table-hover small" id="dataTablesPayroll">
                         <thead>
                             <tr>
-                                <th width='8%'>Employee</th>
-                                <th width='7%' class="text-center">Hours Worked at Project Start</th>
-                                <th width='7%' class="text-center">Hours Worked at Project Finish</th>
-                                <th width='8%' class="text-center">Payroll Working Hours </th>
+                                <th>Employee</th>
+                                <th class="text-center">Hours Worked at Project Start</th>
+                                <th class="text-center">Hours Worked at Project Finish</th>
+                                <th class="text-center">Payroll Working Hours </th>
 
                                 <?php 
                                     if (isset($workOrderCheck) && $workOrderCheck) {
                                         foreach ($workOrderCheck as $wo) : 
                                 ?>
-                                        <th width='7%' class='text-center'><?php echo $wo['job_description'] . "<br><a target='_blanck' href='" . base_url('workorders/add_workorder/' . $wo['id_workorder']) . "'>W.O. # " . $wo['id_workorder'] . "</a>"; ?></th>
+                                        <th class='text-center' title='<?= esc($wo['job_description']) ?>'>
+                                            <a target='_blanck' href='<?= base_url('workorders/add_workorder/' . $wo['id_workorder']) ?>'>W.O. # <?= $wo['id_workorder'] ?></a>
+                                            <div class='wo-header-job'><?= esc($wo['job_description']) ?></div>
+                                        </th>
                                 <?php 
                                         endforeach; 
                                     }
                                 ?>
-                                <th width='10%' class='text-center'>Total W.O. Hours</td>
+                                <th class='text-center'>Total W.O. Hours</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -335,11 +415,11 @@
                                     : "";
                                 
                                 $textSameJob = $lista['fk_id_job'] == $lista['fk_id_job_finish'] 
-                                    ? "<br><p><b>Job Code/Name: " . $lista['job_start'] . "</b></p>"
+                                    ? "<div class='text-small-muted'>Job Code/Name: " . esc($lista['job_start']) . "</div>"
                                     :' ';
 
                                 echo "<tr>";
-                                echo "<td>" . $lista['first_name'] . " " . $lista['last_name'] . "<br><br>";
+                                echo "<td><b>" . esc($lista['first_name'] . " " . $lista['last_name']) . "</b><br>";
                                 /**
                                  * Opcion de editar horas para  SUPER ADMIN
                                  */
@@ -354,14 +434,14 @@
                                     <?php
                                     } else {
                                     ?>
-                                        <div class="alert alert-danger">
-                                            <span class="glyphicon glyphicon-exclamation-sign" aria-hidden="true"></span> These hours have already been paid, they cannot be edited.
-                                        </div>
+                                        <span class="label label-danger" title="These hours have already been paid, they cannot be edited.">
+                                            <i class="fa fa-lock"></i> Paid
+                                        </span>
                             <?php
                                     }
                                 }
-                                echo $lista['task_description'] ? "</br></br><b>Task Description</b><br>"  . $lista['task_description'] : '';
-                                echo $lista['observation'] ? "<br><br><b>Observation</b><br>"  . $lista['observation'] : '';
+                                echo $lista['task_description'] ? "<div class='text-small-muted'><b>Task Description:</b> " . esc($lista['task_description']) . "</div>" : '';
+                                echo $lista['observation'] ? "<div class='text-small-muted'><b>Observation:</b> " . esc($lista['observation']) . "</div>" : '';
                                 echo "</td>";
                                 echo "<td class='text-center'>" . $hours_start . $text_start;
                                 echo "<button type='button' class='btn btn-danger btn-sm " . $hidden_start . "' data-toggle='modal' id='btnAssign_" . $lista["id_task"] . "' time='start'>Assign to a W.O.</button>";
@@ -371,7 +451,7 @@
                                 echo "<button type='button' class='btn btn-danger btn-sm " . $hidden_finished . "' data-toggle='modal' id='btnAssign_" . $lista["id_task"] . "' time='end'>Assign to a W.O.</button>";
                                 echo "</td>";
 
-                                echo "<td class='text-center'>" . convert_hours_minutes($workingHours) . "<br><br>" . $workingHoursHM . "<br><br>" . $textSameJob . "</td>";
+                                echo "<td class='text-center'>" . convert_hours_minutes($workingHours) . "<br><br>" . $workingHoursHM . $textSameJob . "</td>";
 
                                 // Ahora recorremos todas las órdenes de trabajo y verificamos si el usuario tiene horas en esa WO
                                 $sumWorkorders = 0;
@@ -381,7 +461,7 @@
                                         $hoursWorked = $wo['hours_by_user'][$lista['fk_id_user']] ?? 0;
                                 ?>
 
-                                        <td class="text-center">
+                                        <td class="text-center <?= $hoursWorked ? 'wo-hours' : 'wo-hours-empty' ?>">
                                             <?= convert_hours_minutes($hoursWorked) ?>
                                         </td>
 
@@ -390,7 +470,20 @@
 
                                     endforeach;
                                 endif;
-                                echo "<th class='text-center'>";
+                                // Color de la celda segun la diferencia entre horas de W.O. y de payroll
+                                $tolerancia = 5 / 60; // 5 minutos en horas = 0.0833...
+                                $totalClass = '';
+                                if ($lista['finish'] != "0000-00-00 00:00:00") {
+                                    if (abs($sumWorkorders - $lista['working_hours']) <= $tolerancia) {
+                                        $totalClass = 'total-match';
+                                    } elseif ($sumWorkorders < $lista['working_hours']) {
+                                        $totalClass = 'total-payroll-over';
+                                    } else {
+                                        $totalClass = 'total-wo-over';
+                                    }
+                                }
+
+                                echo "<td class='text-center " . $totalClass . "'>";
                                 
                                 echo "<p>" . convert_hours_minutes($sumWorkorders) . "</p>";
                                 
@@ -399,7 +492,6 @@
                                     echo "<button type='button' class='btn btn-danger btn-xs " . $hidden_total . "' data-toggle='modal' id='btnAssign_" . $lista["id_task"] . " ' time='total'>Assign to a W.O.</button><br><br>";
                                 }
 
-                                $tolerancia = 5 / 60; // 5 minutos en horas = 0.0833...
                                 if (abs($sumWorkorders - $lista['working_hours']) > $tolerancia) {
 
                                     if ($sumWorkorders < $lista['working_hours']) {
@@ -630,7 +722,7 @@
         });
 
         $('#dataTablesPayroll').DataTable({
-            responsive: true,
+            autoWidth: false,
             "ordering": true,
             paging: false
         });
