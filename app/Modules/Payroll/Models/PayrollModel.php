@@ -79,7 +79,6 @@ class PayrollModel extends Model
 		}
 
 		$hours_first_project = $post['hours_first_project'] ?? 0;
-		$idProgramming       = $post['programming'] ?? null;
 		$idTask              = $post['hddIdentificador'] ?? null;
 
 		$hours_first_project = $hours_first_project ?: 0;
@@ -146,6 +145,12 @@ class PayrollModel extends Model
 			];
 		}
 
+		/*
+		 * Desactivado: ya no se asignan automaticamente las horas a la work order (workorder_personal) al cerrar el payroll.
+		 * La asignacion se hace manualmente desde el Dashboard.
+		 *
+		$idProgramming = $post['programming'] ?? null;
+
 		if ($idProgramming) {
 			$progRow = $this->db->table('programming')
 				->select('fk_id_job, fk_id_workorder')
@@ -205,6 +210,7 @@ class PayrollModel extends Model
 				]);
 			}
 		}
+		*/
 
 		return $this->db->table('task')->where('id_task', $idTask)->update($data);
 	}
