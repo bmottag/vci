@@ -36,7 +36,7 @@ $( document ).ready( function () {
 	var job_start = $('#job_start').val();
 	var jobName = $('#jobName').val();
 
-	if (programming == ''){
+	if (programming == '' && jobName){
 
 		if (job_start != jobName) {
 			// labelText = "How long were you in the last project: ";
@@ -54,7 +54,9 @@ $( document ).ready( function () {
 
 		//var labelText = "How long were you in: ";
 
-		if (!programming) {
+		if (!jobName) {
+			$('#div_timeFirstJob').hide();
+		} else if (!programming) {
 			if (job_start != jobName) {
 
 				// var selectedText = $(jobName).find("option:selected").text();

@@ -105,7 +105,45 @@
 	window.addEventListener('load', initMap);
 </script>
 
-<div id="page-wrapper">
+<style>
+	#map {
+		width: 100%;
+		height: 180px;
+		border-radius: 4px;
+		border: 1px solid #ddd;
+	}
+
+	.payroll-start .select2-container {
+		width: 100% !important;
+	}
+
+	.payroll-start .certify-label {
+		font-weight: normal;
+	}
+
+	@media (max-width: 767px) {
+		.payroll-start .panel-body {
+			padding: 10px;
+		}
+
+		.payroll-start .control-label {
+			margin-bottom: 4px;
+		}
+
+		/* 16px evita el zoom automatico de iOS al enfocar campos */
+		.payroll-start .form-control,
+		.payroll-start .select2-container .select2-selection__rendered {
+			font-size: 16px;
+		}
+
+		.payroll-start #btnSubmit {
+			padding: 12px;
+			font-size: 18px;
+		}
+	}
+</style>
+
+<div id="page-wrapper" class="payroll-start">
 	<br>
 
 	<div class="row">
@@ -124,28 +162,27 @@
 						<input type="hidden" id="hddTask" name="hddTask" value="1" />
 
 						<div class="form-group">
-							<label class="col-sm-4 control-label" for="address">Address:</label>
+							<label class="col-sm-4 control-label" for="viewaddress">Address:</label>
 
-							<div class="col-sm-4">
-								<input id="viewaddress" name="viewaddress" class="form-control" type="text" readonly>
+							<div class="col-sm-5">
+								<div class="input-group">
+									<input id="viewaddress" name="viewaddress" class="form-control" type="text" readonly>
+									<span class="input-group-btn">
+										<a class="btn btn-success" href="<?= base_url('payroll/add_payroll'); ?>" title="Refresh location">
+											<i class="fa fa-refresh"></i>
+										</a>
+									</span>
+								</div>
 
 								<input id="latitud" name="latitud" type="hidden">
 								<input id="longitud" name="longitud" type="hidden">
 								<input id="address" name="address" type="hidden">
 							</div>
-
-							<div class="col-sm-1">
-								<a class="btn btn-success btn-circle" href="<?= base_url('payroll/add_payroll'); ?>">
-									<i class="fa fa-refresh"></i>
-								</a>
-							</div>
 						</div>
 
 						<div class="form-group">
-							<div class="row" align="center">
-								<div style="width:80%;" align="center">
-									<div id="map" style="width: 100%; height: 150px"></div>
-								</div>
+							<div class="col-sm-5 col-sm-offset-4">
+								<div id="map"></div>
 							</div>
 						</div>
 
@@ -159,8 +196,7 @@
 									<option value=''>Select...</option>
 
 									<?php for ($i = 0; $i < count($jobs); $i++) { ?>
-										<option value="<?= $jobs[$i]["id_job"]; ?>"
-											<?php if ($job_programming == $jobs[$i]["id_job"]) echo "selected"; ?>>
+										<option value="<?= $jobs[$i]["id_job"]; ?>">
 											<?= $jobs[$i]["job_description"]; ?>
 										</option>
 									<?php } ?>
@@ -170,11 +206,11 @@
 						</div>
 
 						<div class="form-group">
-							<label class="col-sm-6 control-label small">
+							<label class="col-sm-4 control-label certify-label" for="certify">
 								I certify to be clean for the last 8 hours...
 							</label>
 
-							<div class="col-sm-3">
+							<div class="col-sm-5">
 								<select name="certify" id="certify" class="form-control" required>
 									<option value="">Select...</option>
 									<option value="1">Yes</option>
@@ -184,11 +220,11 @@
 						</div>
 
 						<div class="form-group">
-							<label class="col-sm-6 control-label small">
+							<label class="col-sm-4 control-label certify-label" for="slept_certify">
 								I certify to be well-rested...
 							</label>
 
-							<div class="col-sm-3">
+							<div class="col-sm-5">
 								<select name="slept_certify" id="slept_certify" class="form-control" required>
 									<option value="">Select...</option>
 									<option value="1">Yes</option>
@@ -198,16 +234,16 @@
 						</div>
 
 						<div class="form-group">
-							<label class="col-sm-4 control-label">Task/Report Description:</label>
+							<label class="col-sm-4 control-label" for="taskDescription">Task/Report Description:</label>
 
 							<div class="col-sm-5">
 								<textarea id="taskDescription" name="taskDescription" class="form-control" rows="3"></textarea>
 							</div>
 						</div>
 
-						<div class="row" align="center">
-							<div style="width:50%;" align="center">
-								<button type="submit" id="btnSubmit" name="btnSubmit" class="btn btn-primary">
+						<div class="form-group">
+							<div class="col-sm-5 col-sm-offset-4">
+								<button type="submit" id="btnSubmit" name="btnSubmit" class="btn btn-primary btn-block">
 									Submit <span class="glyphicon glyphicon-log-in"></span>
 								</button>
 							</div>
