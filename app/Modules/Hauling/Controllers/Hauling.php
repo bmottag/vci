@@ -59,18 +59,19 @@ class Hauling extends BaseController
 				throw \CodeIgniter\Exceptions\PageNotFoundException::forPageNotFound();
 			}
 
-			$idWorkorder = $data['information']['fk_id_workorder'];
+			// DISABLED 2026-10-15: hauling independiente de WO - ya no se muestra la WO en el formulario
+			// $idWorkorder = $data['information']['fk_id_workorder'];
 
-			$workorder = $this->generalModel->get_basic_search([
-				"table" => "workorder",
-				"order" => "id_workorder",
-				"column" => "id_workorder",
-				"id" => $idWorkorder
-			]);
+			// $workorder = $this->generalModel->get_basic_search([
+				// "table" => "workorder",
+				// "order" => "id_workorder",
+				// "column" => "id_workorder",
+				// "id" => $idWorkorder
+			// ]);
 
-			$data['workorder'] = $workorder
-				? $workorder[0]['id_workorder'] . ' - ' . $workorder[0]['observation']
-				: 'Not Work Order';
+			// $data['workorder'] = $workorder
+				// ? $workorder[0]['id_workorder'] . ' - ' . $workorder[0]['observation']
+				// : 'Not Work Order';
 		}
 
 		return $this->render('App\Modules\Hauling\Views\form_add_hauling', $data);
@@ -153,37 +154,38 @@ class Hauling extends BaseController
 		}
 	}
 
-	/**
-	 * Work Order list
-	 * @since 9/1/2025
-	 * @author BMOTTAG
-	 * @review 16/04/2026 - new CI4 version
-	 */
-	public function list_by_job_code()
-	{
-		$jobCode = $this->request->getPost('jobCode');
-		$id_workorder = $this->haulingModel->list_by_job_code($jobCode);
+	// DISABLED 2026-10-15: hauling independiente de WO - metodos para asignar WO desde la hauling
+	// /**
+	 // * Work Order list
+	 // * @since 9/1/2025
+	 // * @author BMOTTAG
+	 // * @review 16/04/2026 - new CI4 version
+	 // */
+	// public function list_by_job_code()
+	// {
+		// $jobCode = $this->request->getPost('jobCode');
+		// $id_workorder = $this->haulingModel->list_by_job_code($jobCode);
 
-		echo $id_workorder;
-	}
+		// echo $id_workorder;
+	// }
 
-	/**
-	 * Work Order list
-	 * @since 9/1/2025
-	 * @author BMOTTAG
-	 * @review 16/04/2026 - new CI4 version
-	 */
-	public function woList()
-	{
-		$jobCode = $this->request->getPost('jobCode');
-		$list = $this->haulingModel->get_wo_job_code($jobCode);
-		echo "<option value=''>Select...</option>";
-		if ($list) {
-			foreach ($list as $fila) {
-				echo "<option value='" . $fila["id_workorder"] . "' >" . $fila["id_workorder"] . " - " . $fila["observation"] . "</option>";
-			}
-		}
-	}
+	// /**
+	 // * Work Order list
+	 // * @since 9/1/2025
+	 // * @author BMOTTAG
+	 // * @review 16/04/2026 - new CI4 version
+	 // */
+	// public function woList()
+	// {
+		// $jobCode = $this->request->getPost('jobCode');
+		// $list = $this->haulingModel->get_wo_job_code($jobCode);
+		// echo "<option value=''>Select...</option>";
+		// if ($list) {
+			// foreach ($list as $fila) {
+				// echo "<option value='" . $fila["id_workorder"] . "' >" . $fila["id_workorder"] . " - " . $fila["observation"] . "</option>";
+			// }
+		// }
+	// }
 
 	/**
 	 * Update hauling state
@@ -206,9 +208,10 @@ class Hauling extends BaseController
 			"value" => $state
 		];
 		if ($this->generalModel->updateRecord($arrParam)) {
-			if ($state == 3) {
-				$this->haulingModel->deleteOccasionalByHauling($idHauling);
-			}
+			// DISABLED 2026-10-15: hauling independiente de WO - al borrar la hauling no se toca la WO
+			// if ($state == 3) {
+				// $this->haulingModel->deleteOccasionalByHauling($idHauling);
+			// }
 			$data["status"] = "success";
 			session()->setFlashdata('retornoExito', 'You have closed the Hauling Report');
 		} else {

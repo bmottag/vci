@@ -1067,8 +1067,10 @@ const PB = {
         const sel  = document.getElementById('sub-co-' + pid);
         const warn = document.getElementById('sub-haul-warn-' + pid);
         if (!sel || !warn) return;
-        const hauling = sel.options[sel.selectedIndex]?.dataset.hauling;
-        warn.style.display = hauling == 1 ? 'block' : 'none';
+        // DISABLED 2026-10-15: hauling independiente de WO - ya no se crean hauling cards desde el planning
+        // const hauling = sel.options[sel.selectedIndex]?.dataset.hauling;
+        // warn.style.display = hauling == 1 ? 'block' : 'none';
+        warn.style.display = 'none';
     },
 
     toggleAddSub(pid) {

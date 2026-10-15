@@ -1,9 +1,9 @@
-<script type="text/javascript" src="<?php echo base_url("assets/js/validate/hauling/ajaxTruck.js?v=1.0.0"); ?>"></script>
-<script type="text/javascript" src="<?php echo base_url("assets/js/validate/hauling/hauling.js?v=1.0.0"); ?>"></script>
+<script type="text/javascript" src="<?php echo base_url("assets/js/validate/hauling/ajaxTruck.js?v=1.0.1"); ?>"></script>
+<script type="text/javascript" src="<?php echo base_url("assets/js/validate/hauling/hauling.js?v=1.0.1"); ?>"></script>
 
 <script>
 	$(document).ready(function() {
-		$('.js-example-basic-single').select2();
+		$('.js-example-basic-single').select2({ width: '100%' });
 	});
 </script>
 
@@ -20,11 +20,30 @@ if ($userRol == 99) {
 	<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
 <?php } ?>
 
+<style>
+	#hauling-form .panel-heading h4 { line-height: 1.6; }
+	#hauling-form .select2-container .select2-selection--single { height: 34px; }
+	#hauling-form .select2-container .select2-selection--single .select2-selection__rendered { line-height: 32px; }
+	#hauling-form .select2-container .select2-selection--single .select2-selection__arrow { height: 32px; }
+	#hauling-form .time-col { margin-bottom: 0; }
+	#hauling-form .form-actions { margin-top: 10px; }
+	@media (max-width: 767px) {
+		#hauling-form > .panel > .panel-body { padding: 10px; }
+		#hauling-form .form-horizontal .control-label { padding-bottom: 4px; }
+		#hauling-form .form-control,
+		#hauling-form .select2-container .select2-selection__rendered { font-size: 16px; } /* evita el zoom automatico en iOS */
+		#hauling-form .time-col + .time-col { padding-left: 5px; }
+		#hauling-form .time-col:first-of-type { padding-right: 5px; }
+		#hauling-form #btnSubmit { display: block; width: 100%; padding: 12px; font-size: 16px; }
+		#hauling-form .panel-heading .btn-xs { margin-bottom: 4px; }
+	}
+</style>
+
 <div id="page-wrapper">
 	<br>
 
 	<div class="row">
-		<div class="col-lg-12">
+		<div class="col-lg-12" id="hauling-form">
 			<div class="panel panel-primary">
 				<div class="panel-heading">
 					<h4 class="list-group-item-heading">
@@ -51,11 +70,9 @@ if ($userRol == 99) {
 					<?php
 					if ($HaulingClose) {
 					?>
-						<div class="col-lg-12">
-							<div class="alert alert-success ">
-								<span class="glyphicon glyphicon-ok" aria-hidden="true"></span>
-								This hauling form is close.
-							</div>
+						<div class="alert alert-success">
+							<span class="glyphicon glyphicon-ok" aria-hidden="true"></span>
+							This hauling form is close.
 						</div>
 					<?php
 					} else {
@@ -64,19 +81,18 @@ if ($userRol == 99) {
 						<?php
 						if ($information && $information["state"] != 1) {
 						?>
-							<div class="col-lg-12">
-								<div class="alert alert-danger ">
-									<span class="glyphicon glyphicon-exclamation-sign" aria-hidden="true"></span>
-									This hauling form is close.
-								</div>
+							<div class="alert alert-danger">
+								<span class="glyphicon glyphicon-exclamation-sign" aria-hidden="true"></span>
+								This hauling form is close.
 							</div>
 						<?php
 						}
 						?>
 
 						<?php if ($information) { ?>
+						<div class="row">
 
-							<div class="col-lg-6">
+							<div class="col-sm-6">
 								<div class="panel panel-primary">
 									<div class="panel-heading">
 										<i class="fa fa-edit fa-fw"></i> V-Contracting
@@ -98,7 +114,7 @@ if ($userRol == 99) {
 								</div>
 							</div>
 
-							<div class="col-lg-6">
+							<div class="col-sm-6">
 								<div class="panel panel-info">
 									<div class="panel-heading">
 										<i class="fa fa-edit fa-fw"></i> Subcontractor
@@ -119,6 +135,7 @@ if ($userRol == 99) {
 									</div>
 								</div>
 							</div>
+						</div>
 						<?php } ?>
 
 
@@ -186,11 +203,11 @@ if ($userRol == 99) {
 
 							<?php
 							$mostrar = "none";
-							$mostrarTruck = "inline";
+							$mostrarTruck = "";
 							$plateRequired = "";
 							$truckRequired = "";
 							if ($information && $information["company_type"] == 2) {
-								$mostrar = "inline";
+								$mostrar = "";
 								$mostrarTruck = "none";
 								$plateRequired = "required";
 								$truckRequired = "";
@@ -253,9 +270,10 @@ if ($userRol == 99) {
 
 <?php
 $deshabilitar = '';
-if ($information && $information["fk_id_workorder"] != null) { 
-	$deshabilitar = 'disabled';
-}	
+// DISABLED 2026-10-15: hauling independiente de WO - el Job Code ya no se bloquea por tener WO
+// if ($information && $information["fk_id_workorder"] != null) {
+// 	$deshabilitar = 'disabled';
+// }
 ?>
 
 							<div class="form-group">
@@ -287,8 +305,8 @@ if ($information && $information["fk_id_workorder"] != null) {
 							</div>
 
 							<div class="form-group">
-								<label class="col-sm-4 control-label" for="timeIn">Time In</label>
-								<div class="col-sm-2">
+								<label class="col-xs-12 col-sm-4 control-label" for="hourIn">Time In</label>
+								<div class="col-xs-6 col-sm-3 time-col">
 									<?php
 									$hourIn = $minIn = 0;
 									if ($information && $information["time_in"]) {
@@ -310,7 +328,7 @@ if ($information && $information["fk_id_workorder"] != null) {
 										<?php } ?>
 									</select>
 								</div>
-								<div class="col-sm-2">
+								<div class="col-xs-6 col-sm-2 time-col">
 									<select name="minIn" id="minIn" class="form-control js-example-basic-single" required>
 										<option value="00" <?php if ($information && $minIn == "00") {
 																echo "selected";
@@ -329,8 +347,8 @@ if ($information && $information["fk_id_workorder"] != null) {
 							</div>
 
 							<div class="form-group">
-								<label class="col-sm-4 control-label" for="fromSite">Time Out</label>
-								<div class="col-sm-2">
+								<label class="col-xs-12 col-sm-4 control-label" for="hourOut">Time Out</label>
+								<div class="col-xs-6 col-sm-3 time-col">
 									<?php
 									$hourOut = $minOut = 0;
 									if ($information && $information["time_out"]) {
@@ -352,7 +370,7 @@ if ($information && $information["fk_id_workorder"] != null) {
 										<?php } ?>
 									</select>
 								</div>
-								<div class="col-sm-2">
+								<div class="col-xs-6 col-sm-2 time-col">
 									<select name="minOut" id="minOut" class="form-control js-example-basic-single" required>
 										<option value="00" <?php if ($information && $minOut == "00") {
 																echo "selected";
@@ -384,7 +402,9 @@ if ($information && $information["fk_id_workorder"] != null) {
 								</div>
 							</div>
 
-							<?php if ($information && $information["fk_id_workorder"] != null) { ?>
+							<?php // DISABLED 2026-10-15: hauling independiente de WO - no se crean ni asignan WO desde la hauling
+							if (false) { // INICIO bloque deshabilitado
+							if ($information && $information["fk_id_workorder"] != null) { ?>
 								<div class="form-group">
 									<input type="hidden" name="id_work_order" id="id_work_order" value="">
 									<input type="hidden" name="list_work_order" id="list_work_order" value="<?php echo ($information["fk_id_workorder"]) ?>">
@@ -420,7 +440,8 @@ if ($information && $information["fk_id_workorder"] != null) {
 										</select>
 									</div>
 								</div>
-							<?php }  ?>
+							<?php }
+							} // FIN bloque deshabilitado ?>
 
 							<div class="form-group">
 								<label class="col-sm-4 control-label" for="comments">Comments</label>
@@ -429,21 +450,18 @@ if ($information && $information["fk_id_workorder"] != null) {
 								</div>
 							</div>
 
-							<div class="form-group">
-								<div class="row" align="center">
-									<div style="width:100%;" align="center">
+							<div class="form-group form-actions">
+								<div class="col-sm-offset-4 col-sm-5 text-center">
 
-										<button type="button" id="btnSubmit" name="btnSubmit" class="btn btn-primary">
-											Save <span class="glyphicon glyphicon-floppy-disk" aria-hidden="true">
-										</button>
+									<button type="button" id="btnSubmit" name="btnSubmit" class="btn btn-primary">
+										Save <span class="glyphicon glyphicon-floppy-disk" aria-hidden="true"></span>
+									</button>
 
-									</div>
 								</div>
 							</div>
 
 							<div class="form-group">
-								<div class="row" align="center">
-									<div style="width:80%;" align="center">
+								<div class="col-sm-offset-2 col-sm-8">
 										<div id="div_load" style="display:none">
 											<div class="progress progress-striped active">
 												<div class="progress-bar" role="progressbar" aria-valuenow="45" aria-valuemin="0" aria-valuemax="100" style="width: 45%">
@@ -457,7 +475,6 @@ if ($information && $information["fk_id_workorder"] != null) {
 												<span id="span_msj"></span>
 											</div>
 										</div>
-									</div>
 								</div>
 							</div>
 						</form>

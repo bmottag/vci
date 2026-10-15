@@ -104,17 +104,18 @@ class HaulingModel extends Model
 		//solo usuarios SUPER_ADMIN pueden ingresar la fecha de la inspeccion
 		$userRol = session()->get('rol');
 		$dateIssue = $post['date'] ?? null;
-		$fk_id_submodule = null;
+		// DISABLED 2026-10-15: hauling independiente de WO - fk_id_submodule solo se usaba para sincronizar con la WO
+		// $fk_id_submodule = null;
 
-		if (!empty($idHauling)) {
-			$row = $this->db->table('hauling')
-				->select('fk_id_submodule')
-				->where('id_hauling', $idHauling)
-				->get()
-				->getRowArray();
+		// if (!empty($idHauling)) {
+			// $row = $this->db->table('hauling')
+				// ->select('fk_id_submodule')
+				// ->where('id_hauling', $idHauling)
+				// ->get()
+				// ->getRowArray();
 
-			$fk_id_submodule = $row['fk_id_submodule'] ?? null;
-		}
+			// $fk_id_submodule = $row['fk_id_submodule'] ?? null;
+		// }
 
 
 		$hourIn = $post['hourIn'];
@@ -126,34 +127,35 @@ class HaulingModel extends Model
 		$timeIn = $hourIn . ":" . $post['minIn'];
 		$timeOut = $hourOut . ":" . $post['minOut'];
 
-		$isUsingWO = ($post['id_work_order'] == '') ? null : $post['id_work_order'];
-		$id_work_order = $post['list_work_order'];
+		// DISABLED 2026-10-15: hauling independiente de WO - no se crean ni asignan WO desde la hauling
+		// $isUsingWO = ($post['id_work_order'] == '') ? null : $post['id_work_order'];
+		// $id_work_order = $post['list_work_order'];
 
-		if ($isUsingWO == 1) {
-			$workOrderData = [
-				'date' => date("Y-m-d"),
-				'fk_id_job' => $post['fromSite'] ?? null,
-				'observation' => $post['comments'] ?? null,
-				'state' => 0,
-				'last_message' => 'A new Work Order was created from the Hauling',
-				'fk_id_user' => $idUser,
-				'date_issue' => date("Y-m-d H:i:s"),
-				'fk_id_company' => $post['company'] ?? null,
-			];
+		// if ($isUsingWO == 1) {
+			// $workOrderData = [
+				// 'date' => date("Y-m-d"),
+				// 'fk_id_job' => $post['fromSite'] ?? null,
+				// 'observation' => $post['comments'] ?? null,
+				// 'state' => 0,
+				// 'last_message' => 'A new Work Order was created from the Hauling',
+				// 'fk_id_user' => $idUser,
+				// 'date_issue' => date("Y-m-d H:i:s"),
+				// 'fk_id_company' => $post['company'] ?? null,
+			// ];
 
-			$this->db->table('workorder')->insert($workOrderData);
-			$id_work_order = $this->db->insertID();
+			// $this->db->table('workorder')->insert($workOrderData);
+			// $id_work_order = $this->db->insertID();
 
-			$workOrderState = [
-				'fk_id_workorder' => $id_work_order,
-				'fk_id_user' => $idUser,
-				'date_issue' => date("Y-m-d H:i:s"),
-				'observation' => 'A new Work Order was created from the Hauling',
-				'state' => 0
-			];
+			// $workOrderState = [
+				// 'fk_id_workorder' => $id_work_order,
+				// 'fk_id_user' => $idUser,
+				// 'date_issue' => date("Y-m-d H:i:s"),
+				// 'observation' => 'A new Work Order was created from the Hauling',
+				// 'state' => 0
+			// ];
 
-			$this->db->table('workorder_state')->insert($workOrderState);
-		}
+			// $this->db->table('workorder_state')->insert($workOrderState);
+		// }
 
 		$minIn = (int)$post['minIn'];
 		$minOut = (int)$post['minOut'];
@@ -189,90 +191,91 @@ class HaulingModel extends Model
 		// Redondear a dos decimales si es necesario
 		$fractionalHours = round($fractionalHours, 2);
 
-		if (!empty($id_work_order)) {
+		// DISABLED 2026-10-15: hauling independiente de WO - no se agrega equipo/subcontratista a la WO
+		// if (!empty($id_work_order)) {
 
-			$companyId = (int)($post['company'] ?? 0);
+			// $companyId = (int)($post['company'] ?? 0);
 
-			// 🔵 CASO 1: EQUIPO PROPIO
-			if ($companyId === 1) {
+			// // 🔵 CASO 1: EQUIPO PROPIO
+			// if ($companyId === 1) {
 
-				$dataEquipment = [
-					'fk_id_workorder' => $id_work_order,
-					'fk_id_type_2' => 10,
-					'fk_id_vehicle' => $post['truck'] ?? null,
-					'fk_id_attachment' => null,
-					'other' => null,
-					'operatedby' => $idUser,
-					'hours' => $fractionalHours,
-					'quantity' => 1,
-					'standby' => 2,
-					'description' => $post['comments'] ?? null,
-				];
+				// $dataEquipment = [
+					// 'fk_id_workorder' => $id_work_order,
+					// 'fk_id_type_2' => 10,
+					// 'fk_id_vehicle' => $post['truck'] ?? null,
+					// 'fk_id_attachment' => null,
+					// 'other' => null,
+					// 'operatedby' => $idUser,
+					// 'hours' => $fractionalHours,
+					// 'quantity' => 1,
+					// 'standby' => 2,
+					// 'description' => $post['comments'] ?? null,
+				// ];
 
-				if (empty($idHauling)) {
+				// if (empty($idHauling)) {
 
-					$this->db->table('workorder_equipment')->insert($dataEquipment);
-					$fk_id_submodule = $this->db->insertID();
+					// $this->db->table('workorder_equipment')->insert($dataEquipment);
+					// $fk_id_submodule = $this->db->insertID();
 
-				} else {
+				// } else {
 
-					if (!empty($fk_id_submodule)) {
-						$this->db->table('workorder_equipment')
-							->where('id_workorder_equipment', $fk_id_submodule)
-							->update($dataEquipment);
-					}
-				}
+					// if (!empty($fk_id_submodule)) {
+						// $this->db->table('workorder_equipment')
+							// ->where('id_workorder_equipment', $fk_id_submodule)
+							// ->update($dataEquipment);
+					// }
+				// }
 
-			} 
-			// 🔵 CASO 2: EQUIPO EXTERNO
-			else {
+			// } 
+			// // 🔵 CASO 2: EQUIPO EXTERNO
+			// else {
 
-				// Obtener compañía
-				$contactRow = $this->generalModel->get_basic_search([
-					"table" => "param_company",
-					"order" => "company_name",
-					"column" => "id_company",
-					"id" => $companyId
-				]);
+				// // Obtener compañía
+				// $contactRow = $this->generalModel->get_basic_search([
+					// "table" => "param_company",
+					// "order" => "company_name",
+					// "column" => "id_company",
+					// "id" => $companyId
+				// ]);
 
-				$contact = $contactRow[0]['contact'] ?? null;
+				// $contact = $contactRow[0]['contact'] ?? null;
 
-				// Obtener tipo equipo
-				$equipmentRow = $this->generalModel->get_basic_search([
-					"table" => "param_truck_type",
-					"order" => "truck_type",
-					"column" => "id_truck_type",
-					"id" => $post['truckType'] ?? null
-				]);
+				// // Obtener tipo equipo
+				// $equipmentRow = $this->generalModel->get_basic_search([
+					// "table" => "param_truck_type",
+					// "order" => "truck_type",
+					// "column" => "id_truck_type",
+					// "id" => $post['truckType'] ?? null
+				// ]);
 
-				$equipmentName = $equipmentRow[0]['truck_type'] ?? null;
+				// $equipmentName = $equipmentRow[0]['truck_type'] ?? null;
 
-				$dataOccasional = [
-					'fk_id_workorder' => $id_work_order,
-					'fk_id_company' => $companyId,
-					'equipment' => $equipmentName,
-					'quantity' => 1,
-					'unit' => $post['plate'] ?? null,
-					'hours' => $fractionalHours,
-					'contact' => $contact,
-					'description' => $post['comments'] ?? null,
-				];
+				// $dataOccasional = [
+					// 'fk_id_workorder' => $id_work_order,
+					// 'fk_id_company' => $companyId,
+					// 'equipment' => $equipmentName,
+					// 'quantity' => 1,
+					// 'unit' => $post['plate'] ?? null,
+					// 'hours' => $fractionalHours,
+					// 'contact' => $contact,
+					// 'description' => $post['comments'] ?? null,
+				// ];
 
-				if (empty($idHauling)) {
+				// if (empty($idHauling)) {
 
-					$this->db->table('workorder_ocasional')->insert($dataOccasional);
-					$fk_id_submodule = $this->db->insertID();
+					// $this->db->table('workorder_ocasional')->insert($dataOccasional);
+					// $fk_id_submodule = $this->db->insertID();
 
-				} else {
+				// } else {
 
-					if (!empty($fk_id_submodule)) {
-						$this->db->table('workorder_ocasional')
-							->where('id_workorder_ocasional', $fk_id_submodule)
-							->update($dataOccasional);
-					}
-				}
-			}
-		}
+					// if (!empty($fk_id_submodule)) {
+						// $this->db->table('workorder_ocasional')
+							// ->where('id_workorder_ocasional', $fk_id_submodule)
+							// ->update($dataOccasional);
+					// }
+				// }
+			// }
+		// }
 
 		$data = [
 			'fk_id_company' => $post['company'] ?? null,
@@ -286,8 +289,9 @@ class HaulingModel extends Model
 			'time_out' => $timeOut,
 			'fk_id_payment' => $post['payment'] ?? null,
 			'comments' => $post['comments'] ?? null,
-			'fk_id_workorder' => $id_work_order,
-			'fk_id_submodule' => $fk_id_submodule,
+			// DISABLED 2026-10-15: hauling independiente de WO - no se guarda el vinculo con la WO (en edicion se conserva el valor existente)
+			// 'fk_id_workorder' => $id_work_order,
+			// 'fk_id_submodule' => $fk_id_submodule,
 		];
 
 		$builder = $this->db->table('hauling');

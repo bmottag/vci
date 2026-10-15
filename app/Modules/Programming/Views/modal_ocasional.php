@@ -1,4 +1,4 @@
-<script type="text/javascript" src="<?php echo base_url("assets/js/validate/programming/ocasional.js?v=1.0.0"); ?>"></script>
+<script type="text/javascript" src="<?php echo base_url("assets/js/validate/programming/ocasional.js?v=1.0.1"); ?>"></script>
 <style>
     .select2-container .select2-dropdown .select2-results__option {
         text-align: left;

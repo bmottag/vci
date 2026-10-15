@@ -20,11 +20,12 @@ $(document).ready(function () {
 			hourOut:			{ required: true },
 			payment:			{ required: true },
 			plate: { minlength: 3, maxlength: 15 },
-			list_work_order: {
-				required: function() {
-					return $("#id_work_order").val() == "2";
-				}
-			}
+			// DISABLED 2026-10-15: hauling independiente de WO
+			// list_work_order: {
+			// 	required: function() {
+			// 		return $("#id_work_order").val() == "2";
+			// 	}
+			// }
 		},
 		errorElement: "em",
 		errorPlacement: function (error, element) {

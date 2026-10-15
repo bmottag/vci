@@ -58,63 +58,64 @@ $(document).ready(function () {
         });
     });
 
-    $('#id_work_order').change(function () {
-        $('#id_work_order option:selected').each(function () {
-            var workOrder = $('#id_work_order').val();
-            var jobCode = $('#fromSite').val();
-            if (workOrder != '') {
-                console.log(workOrder, jobCode, jobCode != '', 'workOrder');
+    // DISABLED 2026-10-15: hauling independiente de WO - no se crean ni asignan WO desde la hauling
+    // $('#id_work_order').change(function () {
+    //     $('#id_work_order option:selected').each(function () {
+    //         var workOrder = $('#id_work_order').val();
+    //         var jobCode = $('#fromSite').val();
+    //         if (workOrder != '') {
+    //             console.log(workOrder, jobCode, jobCode != '', 'workOrder');
 
-				if(workOrder==2){
-                    if (jobCode) {
-                        $.ajax ({
-                            type: 'POST',
-                            url: base_url + 'hauling/woList',
-                            data: {'jobCode': jobCode},
-                            cache: false,
-                            success: function (data)
-                            {
-                                console.log(data)
-                                $('#list_work_order').html(data);
-                            }
-                        });
-                        $("#div_list_work_order").show();
-                    } else {
-                        $('#id_work_order').val(null);
-                        alert('Please select a job code');
-                    }
-                } else {
-                    $("#div_list_work_order").hide();
-                }
-            } else {
-                $("#div_list_work_order").hide();
-            }
-        });
-    });
+    // 				if(workOrder==2){
+    //                 if (jobCode) {
+    //                     $.ajax ({
+    //                         type: 'POST',
+    //                         url: base_url + 'hauling/woList',
+    //                         data: {'jobCode': jobCode},
+    //                         cache: false,
+    //                         success: function (data)
+    //                         {
+    //                             console.log(data)
+    //                             $('#list_work_order').html(data);
+    //                         }
+    //                     });
+    //                     $("#div_list_work_order").show();
+    //                 } else {
+    //                     $('#id_work_order').val(null);
+    //                     alert('Please select a job code');
+    //                 }
+    //             } else {
+    //                 $("#div_list_work_order").hide();
+    //             }
+    //         } else {
+    //             $("#div_list_work_order").hide();
+    //         }
+    //     });
+    // });
 
-    $('#fromSite').change(function () {
-        var jobCode = $('#fromSite').val();
-        if (jobCode != '') {
-            $.ajax ({
-                type: 'POST',
-                url: base_url + 'hauling/list_by_job_code',
-                data: {'jobCode': jobCode},
-                cache: false,
-                success: function (data)
-                {
-                    console.log(data, data != 0, 'data');
+    // $('#fromSite').change(function () {
+    //     var jobCode = $('#fromSite').val();
+    //     if (jobCode != '') {
+    //         $.ajax ({
+    //             type: 'POST',
+    //             url: base_url + 'hauling/list_by_job_code',
+    //             data: {'jobCode': jobCode},
+    //             cache: false,
+    //             success: function (data)
+    //             {
+    //                 console.log(data, data != 0, 'data');
 
-                    if (data != 0) {
-                        $("#div_work_order").hide();
-                        $('#list_work_order').empty();
-                        $('#list_work_order').append('<option value="'+data+'" select>Select...</option>');
-                        $('#list_work_order').val(data).trigger('change');
-                    } else {
-                        $("#div_work_order").show();
-                    }
-                }
-            });
-        }
-    });
+    //                 if (data != 0) {
+    //                     $("#div_work_order").hide();
+    //                     $('#list_work_order').empty();
+    //                     $('#list_work_order').append('<option value="'+data+'" select>Select...</option>');
+    //                     $('#list_work_order').val(data).trigger('change');
+    //                 } else {
+    //                     $("#div_work_order").show();
+    //                 }
+    //             }
+    //         });
+    //     }
+    // });
 
 });

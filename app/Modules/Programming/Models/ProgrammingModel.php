@@ -550,10 +550,11 @@ class ProgrammingModel extends Model
             'column' => 'id_company',
             'id'     => $request->getPost('company'),
         ]);
-        $hauling  = $result[0]['does_hauling'];
+        // DISABLED 2026-10-15: hauling independiente de WO - ya no se divide la cantidad en filas de 1 (una por hauling card)
+        // $hauling  = $result[0]['does_hauling'];
         $query    = false;
 
-        if ($hauling == 2) {
+        // if ($hauling == 2) {
             $query = $this->db->table('programming_ocasional')->insert([
                 'fk_id_programming' => $request->getPost('hddidProgramming'),
                 'fk_id_company'     => $request->getPost('company'),
@@ -564,21 +565,22 @@ class ProgrammingModel extends Model
                 'contact'           => $request->getPost('contact'),
                 'description'       => $request->getPost('description'),
             ]);
-        } elseif ($hauling == 1) {
-            $quantity = (int) $request->getPost('quantity');
-            for ($i = 0; $i < $quantity; $i++) {
-                $query = $this->db->table('programming_ocasional')->insert([
-                    'fk_id_programming' => $request->getPost('hddidProgramming'),
-                    'fk_id_company'     => $request->getPost('company'),
-                    'equipment'         => $request->getPost('equipment'),
-                    'quantity'          => 1,
-                    'unit'              => $request->getPost('unit'),
-                    'hours'             => $request->getPost('hour'),
-                    'contact'           => $request->getPost('contact'),
-                    'description'       => $request->getPost('description'),
-                ]);
-            }
-        }
+        // DISABLED 2026-10-15: hauling independiente de WO
+        // } elseif ($hauling == 1) {
+        //     $quantity = (int) $request->getPost('quantity');
+        //     for ($i = 0; $i < $quantity; $i++) {
+        //         $query = $this->db->table('programming_ocasional')->insert([
+        //             'fk_id_programming' => $request->getPost('hddidProgramming'),
+        //             'fk_id_company'     => $request->getPost('company'),
+        //             'equipment'         => $request->getPost('equipment'),
+        //             'quantity'          => 1,
+        //             'unit'              => $request->getPost('unit'),
+        //             'hours'             => $request->getPost('hour'),
+        //             'contact'           => $request->getPost('contact'),
+        //             'description'       => $request->getPost('description'),
+        //         ]);
+        //     }
+        // }
 
         return (bool) $query;
     }

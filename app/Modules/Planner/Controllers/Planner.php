@@ -11,12 +11,14 @@ class Planner extends BaseController
     protected $plannerModel;
     protected $programmingModel;
     protected $generalModel;
+    protected $db;
 
     public function __construct()
     {
         $this->plannerModel      = new PlannerModel();
         $this->programmingModel  = new ProgrammingModel();
         $this->generalModel      = new GeneralModel();
+        $this->db                = \Config\Database::connect();
     }
 
     public function planner()
@@ -394,22 +396,23 @@ class Planner extends BaseController
         ];
 
         $inserted = [];
-        if ($hauling == 1) {
-            $qty = max(1, (int) $quantity);
-            for ($i = 0; $i < $qty; $i++) {
-                $this->db->table('programming_ocasional')->insert(array_merge($rowBase, ['quantity' => 1]));
-                $id = $this->db->insertID();
-                if ($id) {
-                    $inserted[] = ['id_programming_ocasional' => $id, 'quantity' => 1];
-                }
-            }
-        } else {
+        // DISABLED 2026-10-15: hauling independiente de WO - ya no se divide la cantidad en filas de 1 (una por hauling card)
+        // if ($hauling == 1) {
+        //     $qty = max(1, (int) $quantity);
+        //     for ($i = 0; $i < $qty; $i++) {
+        //         $this->db->table('programming_ocasional')->insert(array_merge($rowBase, ['quantity' => 1]));
+        //         $id = $this->db->insertID();
+        //         if ($id) {
+        //             $inserted[] = ['id_programming_ocasional' => $id, 'quantity' => 1];
+        //         }
+        //     }
+        // } else {
             $this->db->table('programming_ocasional')->insert(array_merge($rowBase, ['quantity' => $quantity]));
             $id = $this->db->insertID();
             if ($id) {
                 $inserted[] = ['id_programming_ocasional' => $id, 'quantity' => $quantity];
             }
-        }
+        // }
 
         if (!empty($inserted)) {
             $result = [];
@@ -694,20 +697,21 @@ class Planner extends BaseController
                     }
                     $insertedId = $this->programmingModel->add_item_workorder('workorder_ocasional', $item);
 
-                    if ($row['does_hauling'] == 1) {
-                        $this->programmingModel->add_item_workorder('hauling', [
-                            'fk_id_user'        => $infoPlanning[0]['fk_id_user'],
-                            'fk_id_company'     => $row['fk_id_company'],
-                            'fk_id_site_from'   => $infoPlanning[0]['fk_id_job'],
-                            'fk_id_site_to'     => $infoPlanning[0]['fk_id_job'],
-                            'comments'          => $row['description'],
-                            'plate'             => $row['unit'],
-                            'date_issue'        => $infoPlanning[0]['date_programming'],
-                            'fk_id_workorder'   => $idWorkorder,
-                            'fk_id_submodule'   => $insertedId,
-                            'fk_id_programming' => $idProgramming,
-                        ]);
-                    }
+                    // DISABLED 2026-10-15: hauling independiente de WO - no se crean hauling cards desde el planning
+                    // if ($row['does_hauling'] == 1) {
+                        // $this->programmingModel->add_item_workorder('hauling', [
+                            // 'fk_id_user'        => $infoPlanning[0]['fk_id_user'],
+                            // 'fk_id_company'     => $row['fk_id_company'],
+                            // 'fk_id_site_from'   => $infoPlanning[0]['fk_id_job'],
+                            // 'fk_id_site_to'     => $infoPlanning[0]['fk_id_job'],
+                            // 'comments'          => $row['description'],
+                            // 'plate'             => $row['unit'],
+                            // 'date_issue'        => $infoPlanning[0]['date_programming'],
+                            // 'fk_id_workorder'   => $idWorkorder,
+                            // 'fk_id_submodule'   => $insertedId,
+                            // 'fk_id_programming' => $idProgramming,
+                        // ]);
+                    // }
                 }
             }
 

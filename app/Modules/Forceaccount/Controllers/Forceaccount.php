@@ -748,26 +748,27 @@ class Forceaccount extends BaseController
                 ];
                 $this->forceaccountModel->clone_forceaccount($info);
 
-                $haulingList = $this->generalModel->get_basic_search([
-                    'table'  => 'hauling',
-                    'order'  => 'id_hauling',
-                    'column' => 'fk_id_forceaccount',
-                    'id'     => $data['idForceaccount'],
-                ]);
+                // DISABLED 2026-10-15: hauling independiente de WO - la WO ya no cierra las hauling cards
+                // $haulingList = $this->generalModel->get_basic_search([
+                    // 'table'  => 'hauling',
+                    // 'order'  => 'id_hauling',
+                    // 'column' => 'fk_id_forceaccount',
+                    // 'id'     => $data['idForceaccount'],
+                // ]);
 
-                if ($haulingList) {
-                    foreach ($haulingList as $hauling) {
-                        if ($hauling['state'] != 3) {
-                            $this->generalModel->updateRecord([
-                                'table'      => 'hauling',
-                                'primaryKey' => 'id_hauling',
-                                'id'         => $hauling['id_hauling'],
-                                'column'     => 'state',
-                                'value'      => 2,
-                            ]);
-                        }
-                    }
-                }
+                // if ($haulingList) {
+                    // foreach ($haulingList as $hauling) {
+                        // if ($hauling['state'] != 3) {
+                            // $this->generalModel->updateRecord([
+                                // 'table'      => 'hauling',
+                                // 'primaryKey' => 'id_hauling',
+                                // 'id'         => $hauling['id_hauling'],
+                                // 'column'     => 'state',
+                                // 'value'      => 2,
+                            // ]);
+                        // }
+                    // }
+                // }
             }
 
             $data['status']  = 'success';

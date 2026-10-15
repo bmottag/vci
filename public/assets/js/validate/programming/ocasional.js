@@ -80,12 +80,13 @@ $(document).ready(function () {
 		var companyValue = company.val();
 		var dataHauling = company.data('hauling');
 
-		if (dataHauling == 1) {
-			$('#divHauling').show();
-			$('#quantity').attr('required', true);
-		} else {
+		// DISABLED 2026-10-15: hauling independiente de WO - ya no se crean hauling cards desde el planning
+		// if (dataHauling == 1) {
+		// 	$('#divHauling').show();
+		// 	$('#quantity').attr('required', true);
+		// } else {
 			$('#divHauling').hide();
 			$('#quantity').removeAttr('required');
-		}
+		// }
     });
 });
