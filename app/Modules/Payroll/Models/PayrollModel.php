@@ -311,54 +311,381 @@ class PayrollModel extends Model
 	}
 
 	/**
-	 * Add PERIOD
-	 * @since 9/02/2022
-	 * @author BMOTTAG
-	 * @review 30/04/2026 - new CI4 version
+	 * Busca la semana (mitad del periodo) que contiene la fecha.
+	 * Si hay periodos traslapados gana el mas reciente.
+	 * @since 26/10/2026
 	 */
-	public function savePeriod(array $arrData)
+	public function get_weak_period_by_date(string $date)
 	{
-		$period = $arrData['periodoIniNew'] . ' - ' . $arrData['periodoFinNew'];
+		$row = $this->db->table('payroll_period_weaks W')
+			->select('W.id_period_weak')
+			->join('payroll_period P', 'P.id_period = W.fk_id_period', 'INNER')
+			->where('W.date_weak_start <=', $date)
+			->where('W.date_weak_finish >=', $date)
+			->orderBy('P.id_period', 'DESC')
+			->get(1)->getRowArray();
 
-		$this->db->table('payroll_period')->insert([
-			'date_start'  => $arrData['periodoIniNew'],
-			'date_finish' => $arrData['periodoFinNew'],
-			'period'      => $period,
-			'year_period' => $arrData['yearPeriodo'],
-		]);
-
-		$idPeriod = $this->db->insertID();
-		return $idPeriod ?: false;
+		return $row ? (int)$row['id_period_weak'] : false;
 	}
 
 	/**
-	 * Add Weak PERIOD
-	 * @since 9/02/2022
-	 * @author BMOTTAG
-	 * @review 30/04/2026 - new CI4 version
+	 * Periodos del ano con sus dos semanas y conteos de registros/paystubs
+	 * @since 26/10/2026
 	 */
-	public function saveWeakPeriod(array $arrData): bool
+	public function get_periods_with_weeks(int $year): array
 	{
-		$weak1 = $arrData['semana1IniNew'] . ' - ' . $arrData['semana1FinNew'];
-		$weak2 = $arrData['semana2IniNew'] . ' - ' . $arrData['semana2FinNew'];
+		$sql = "SELECT P.*,
+					W1.id_period_weak id_weak_1, W1.date_weak_start weak_1_start, W1.date_weak_finish weak_1_finish,
+					W2.id_period_weak id_weak_2, W2.date_weak_start weak_2_start, W2.date_weak_finish weak_2_finish,
+					CONCAT(U.first_name, ' ', U.last_name) approved_by_name,
+					(SELECT COUNT(*) FROM task T WHERE T.fk_id_weak_period IN (W1.id_period_weak, W2.id_period_weak)) tasks,
+					(SELECT COUNT(*) FROM payroll_paystub S WHERE S.fk_id_period = P.id_period AND S.commit = 1) paystubs_generated
+				FROM payroll_period P
+				LEFT JOIN payroll_period_weaks W1 ON W1.fk_id_period = P.id_period AND W1.weak_number = 1
+				LEFT JOIN payroll_period_weaks W2 ON W2.fk_id_period = P.id_period AND W2.weak_number = 2
+				LEFT JOIN user U ON U.id_user = P.approved_by
+				WHERE P.year_period = ?
+				ORDER BY P.date_start ASC";
 
-		$this->db->table('payroll_period_weaks')->insert([
-			'fk_id_period'     => $arrData['idPeriod'],
-			'date_weak_start'  => $arrData['semana1IniNew'],
-			'date_weak_finish' => $arrData['semana1FinNew'],
-			'period_weak'      => $weak1,
-			'weak_number'      => 1,
+		return $this->db->query($sql, [$year])->getResultArray();
+	}
+
+	/**
+	 * Resumen de registros de horas del ano: total, sin periodo y pagados
+	 * @since 26/10/2026
+	 */
+	public function get_year_task_summary(int $year): array
+	{
+		$sql = "SELECT COUNT(*) total,
+					SUM(T.fk_id_weak_period = 0 OR W.id_period_weak IS NULL) unassigned,
+					SUM(T.period_status = 2) paid
+				FROM task T
+				LEFT JOIN payroll_period_weaks W ON W.id_period_weak = T.fk_id_weak_period
+				WHERE T.start >= ? AND T.start < ?";
+
+		return $this->db->query($sql, [$year . '-01-01', ($year + 1) . '-01-01'])->getRowArray();
+	}
+
+	/**
+	 * Cantidad de paystubs generados (commit = 1) en periodos del ano
+	 * @since 26/10/2026
+	 */
+	public function count_generated_paystubs_year(int $year): int
+	{
+		return $this->db->table('payroll_paystub S')
+			->join('payroll_period P', 'P.id_period = S.fk_id_period', 'INNER')
+			->where('P.year_period', $year)
+			->where('S.commit', 1)
+			->countAllResults();
+	}
+
+	/**
+	 * Genera los 24 periodos semimensuales del ano (1-15 y 16-fin de mes),
+	 * cada uno dividido en 2 semanas a la mitad. Si el ano ya tenia periodos
+	 * se borran junto con sus semanas y paystubs en borrador, y los registros
+	 * de horas quedan sin periodo (fk_id_weak_period = 0) para reasignarlos.
+	 * @since 26/10/2026
+	 */
+	public function generateYearPeriods(int $year): bool
+	{
+		$this->db->transStart();
+
+		$oldPeriods = array_column(
+			$this->db->table('payroll_period')->select('id_period')->where('year_period', $year)->get()->getResultArray(),
+			'id_period'
+		);
+
+		if ($oldPeriods) {
+			$oldWeeks = array_column(
+				$this->db->table('payroll_period_weaks')->select('id_period_weak')->whereIn('fk_id_period', $oldPeriods)->get()->getResultArray(),
+				'id_period_weak'
+			);
+			if ($oldWeeks) {
+				$this->db->table('task')->whereIn('fk_id_weak_period', $oldWeeks)->update(['fk_id_weak_period' => 0]);
+			}
+			$this->db->table('payroll_paystub')->whereIn('fk_id_period', $oldPeriods)->where('commit !=', 1)->delete();
+			$this->db->table('payroll_period_weaks')->whereIn('fk_id_period', $oldPeriods)->delete();
+			$this->db->table('payroll_period')->whereIn('id_period', $oldPeriods)->delete();
+		}
+
+		for ($month = 1; $month <= 12; $month++) {
+			$lastDay = (int)date('t', mktime(0, 0, 0, $month, 1, $year));
+
+			foreach ([[1, 15], [16, $lastDay]] as [$dayStart, $dayFinish]) {
+				$start  = sprintf('%04d-%02d-%02d', $year, $month, $dayStart);
+				$finish = sprintf('%04d-%02d-%02d', $year, $month, $dayFinish);
+
+				// Mitad estimada: la primera semana se queda con el dia extra si el periodo es impar
+				$days       = $dayFinish - $dayStart + 1;
+				$weak1End   = sprintf('%04d-%02d-%02d', $year, $month, $dayStart + (int)ceil($days / 2) - 1);
+				$weak2Start = date('Y-m-d', strtotime('+1 day', strtotime($weak1End)));
+
+				$this->db->table('payroll_period')->insert([
+					'date_start'  => $start,
+					'date_finish' => $finish,
+					'period'      => $start . ' - ' . $finish,
+					'year_period' => $year,
+					'approved'    => 0,
+				]);
+				$idPeriod = $this->db->insertID();
+
+				$this->db->table('payroll_period_weaks')->insertBatch([
+					[
+						'fk_id_period'     => $idPeriod,
+						'date_weak_start'  => $start,
+						'date_weak_finish' => $weak1End,
+						'period_weak'      => $start . ' - ' . $weak1End,
+						'weak_number'      => 1,
+					],
+					[
+						'fk_id_period'     => $idPeriod,
+						'date_weak_start'  => $weak2Start,
+						'date_weak_finish' => $finish,
+						'period_weak'      => $weak2Start . ' - ' . $finish,
+						'weak_number'      => 2,
+					],
+				]);
+			}
+		}
+
+		$this->db->transComplete();
+
+		return $this->db->transStatus();
+	}
+
+	/**
+	 * Cambia la fecha donde termina la semana 1 (la semana 2 empieza al dia siguiente)
+	 * @since 26/10/2026
+	 */
+	public function updatePeriodWeeks(array $period, string $weak1End): bool
+	{
+		$weak2Start = date('Y-m-d', strtotime('+1 day', strtotime($weak1End)));
+
+		$this->db->transStart();
+
+		$this->db->table('payroll_period_weaks')
+			->where('fk_id_period', $period['id_period'])
+			->where('weak_number', 1)
+			->update([
+				'date_weak_finish' => $weak1End,
+				'period_weak'      => $period['date_start'] . ' - ' . $weak1End,
+			]);
+
+		$this->db->table('payroll_period_weaks')
+			->where('fk_id_period', $period['id_period'])
+			->where('weak_number', 2)
+			->update([
+				'date_weak_start' => $weak2Start,
+				'period_weak'     => $weak2Start . ' - ' . $period['date_finish'],
+			]);
+
+		$this->db->transComplete();
+
+		return $this->db->transStatus();
+	}
+
+	/**
+	 * Aprobar (1) o devolver a pendiente (0) un periodo
+	 * @since 26/10/2026
+	 */
+	public function updatePeriodApproval(int $idPeriod, int $approved): bool
+	{
+		return $this->db->table('payroll_period')->where('id_period', $idPeriod)->update([
+			'approved'      => $approved,
+			'approved_by'   => $approved ? session()->get('id') : null,
+			'approved_date' => $approved ? date('Y-m-d H:i:s') : null,
 		]);
+	}
 
-		$this->db->table('payroll_period_weaks')->insert([
-			'fk_id_period'     => $arrData['idPeriod'],
-			'date_weak_start'  => $arrData['semana2IniNew'],
-			'date_weak_finish' => $arrData['semana2FinNew'],
-			'period_weak'      => $weak2,
-			'weak_number'      => 2,
+	/**
+	 * Asigna a cada registro de horas del ano la semana del periodo que contiene su fecha de inicio.
+	 * No toca registros ya pagados (period_status = 2). Si se pasa $idPeriod solo reasigna
+	 * los registros de ese periodo.
+	 * @since 26/10/2026
+	 * @return int registros actualizados
+	 */
+	public function assignTasksToPeriods(int $year, ?int $idPeriod = null): int
+	{
+		$sql = "UPDATE task T
+				JOIN payroll_period_weaks W ON DATE(T.start) BETWEEN W.date_weak_start AND W.date_weak_finish
+				JOIN payroll_period P ON P.id_period = W.fk_id_period AND P.year_period = ?
+				SET T.fk_id_weak_period = W.id_period_weak
+				WHERE T.start >= ? AND T.start < ?
+				AND T.period_status <> 2";
+		$binds = [$year, $year . '-01-01', ($year + 1) . '-01-01'];
+
+		if ($idPeriod) {
+			$sql    .= " AND P.id_period = ?";
+			$binds[] = $idPeriod;
+		}
+
+		$this->db->query($sql, $binds);
+
+		return $this->db->affectedRows();
+	}
+
+	/**
+	 * Configuracion CPP/CPP2 por ano
+	 * @since 26/10/2026
+	 */
+	public function get_cpp_settings(array $arrData = [])
+	{
+		$builder = $this->db->table('payroll_cpp_settings C');
+		$builder->select("C.*, CONCAT(U.first_name, ' ', U.last_name) name");
+		$builder->join('user U', 'U.id_user = C.fk_id_user', 'LEFT');
+
+		if (array_key_exists('idCppSetting', $arrData)) {
+			$builder->where('C.id_cpp_setting', $arrData['idCppSetting']);
+		}
+		if (array_key_exists('year', $arrData)) {
+			$builder->where('C.year', $arrData['year']);
+		}
+		$builder->orderBy('C.year', 'DESC');
+
+		$result = $builder->get()->getResultArray();
+		return !empty($result) ? $result : false;
+	}
+
+	/**
+	 * Guardar configuracion CPP/CPP2 (insert o update)
+	 * @since 26/10/2026
+	 */
+	public function saveCppSettings(array $post): bool
+	{
+		$idCppSetting = $post['hddIdCppSetting'] ?? '';
+
+		$data = [
+			'year'                  => (int)$post['year'],
+			'basic_exemption'       => (float)$post['basic_exemption'],
+			'contribution_rate'     => (float)$post['contribution_rate'],
+			'max_contribution'      => (float)$post['max_contribution'],
+			'ympe'                  => (float)$post['ympe'],
+			'yampe'                 => (float)$post['yampe'],
+			'cpp2_rate'             => (float)$post['cpp2_rate'],
+			'cpp2_max_contribution' => (float)$post['cpp2_max_contribution'],
+			'fk_id_user'            => session()->get('id'),
+			'date_issue'            => date('Y-m-d H:i:s'),
+		];
+
+		if (empty($idCppSetting)) {
+			return $this->db->table('payroll_cpp_settings')->insert($data);
+		}
+
+		return $this->db->table('payroll_cpp_settings')->where('id_cpp_setting', $idCppSetting)->update($data);
+	}
+
+	/**
+	 * Configuracion EI por ano
+	 * @since 27/10/2026
+	 */
+	public function get_ei_settings(array $arrData = [])
+	{
+		$builder = $this->db->table('payroll_ei_settings E');
+		$builder->select("E.*, CONCAT(U.first_name, ' ', U.last_name) name");
+		$builder->join('user U', 'U.id_user = E.fk_id_user', 'LEFT');
+
+		if (array_key_exists('idEiSetting', $arrData)) {
+			$builder->where('E.id_ei_setting', $arrData['idEiSetting']);
+		}
+		if (array_key_exists('year', $arrData)) {
+			$builder->where('E.year', $arrData['year']);
+		}
+		$builder->orderBy('E.year', 'DESC');
+
+		$result = $builder->get()->getResultArray();
+		return !empty($result) ? $result : false;
+	}
+
+	/**
+	 * Guardar configuracion EI (insert o update)
+	 * @since 27/10/2026
+	 */
+	/**
+	 * Tablas de impuestos (Federal / Provincial) cargadas, con el rango de pago que cubren
+	 * @since 27/10/2026
+	 */
+	public function get_tax_tables(array $arrData = [])
+	{
+		$builder = $this->db->table('payroll_tax_tables T');
+		$builder->select("T.*, CONCAT(U.first_name, ' ', U.last_name) name, MIN(R.pay_from) min_pay, MAX(R.pay_less_than) max_pay");
+		$builder->join('user U', 'U.id_user = T.fk_id_user', 'LEFT');
+		$builder->join('payroll_tax_table_rows R', 'R.fk_id_tax_table = T.id_tax_table', 'LEFT');
+
+		if (array_key_exists('year', $arrData)) {
+			$builder->where('T.year', $arrData['year']);
+		}
+		if (array_key_exists('tableType', $arrData)) {
+			$builder->where('T.table_type', $arrData['tableType']);
+		}
+		$builder->groupBy('T.id_tax_table');
+		$builder->orderBy('T.year', 'DESC');
+		$builder->orderBy('T.table_type', 'ASC');
+
+		$result = $builder->get()->getResultArray();
+		return !empty($result) ? $result : false;
+	}
+
+	/**
+	 * Fila de la tabla de impuestos donde cae el pago: pay_from <= gross < pay_less_than
+	 * @since 27/10/2026
+	 * @return array|null
+	 */
+	public function get_tax_table_row(int $year, string $tableType, float $gross)
+	{
+		return $this->db->table('payroll_tax_table_rows R')
+			->select('R.*')
+			->join('payroll_tax_tables T', 'T.id_tax_table = R.fk_id_tax_table', 'INNER')
+			->where('T.year', $year)
+			->where('T.table_type', $tableType)
+			->where('R.pay_from <=', $gross)
+			->where('R.pay_less_than >', $gross)
+			->get()->getRowArray();
+	}
+
+	/**
+	 * Guardar tabla de impuestos de un ano: reemplaza la anterior del mismo tipo
+	 * @since 27/10/2026
+	 */
+	public function saveTaxTable(int $year, string $tableType, string $fileName, array $rows): bool
+	{
+		$this->db->transStart();
+
+		$this->db->table('payroll_tax_tables')->where('year', $year)->where('table_type', $tableType)->delete();
+		$this->db->table('payroll_tax_tables')->insert([
+			'year'       => $year,
+			'table_type' => $tableType,
+			'file_name'  => $fileName,
+			'total_rows' => count($rows),
+			'fk_id_user' => session()->get('id'),
+			'date_issue' => date('Y-m-d H:i:s'),
 		]);
+		$idTaxTable = $this->db->insertID();
 
-		return true;
+		foreach (array_chunk($rows, 200) as $chunk) {
+			$this->db->table('payroll_tax_table_rows')->insertBatch(array_map(fn($row) => ['fk_id_tax_table' => $idTaxTable] + $row, $chunk));
+		}
+
+		$this->db->transComplete();
+		return $this->db->transStatus();
+	}
+
+	public function saveEiSettings(array $post): bool
+	{
+		$idEiSetting = $post['hddIdEiSetting'] ?? '';
+
+		$data = [
+			'year'                   => (int)$post['year'],
+			'max_insurable_earnings' => (float)$post['max_insurable_earnings'],
+			'rate'                   => (float)$post['rate'],
+			'fk_id_user'             => session()->get('id'),
+			'date_issue'             => date('Y-m-d H:i:s'),
+		];
+
+		if (empty($idEiSetting)) {
+			return $this->db->table('payroll_ei_settings')->insert($data);
+		}
+
+		return $this->db->table('payroll_ei_settings')->where('id_ei_setting', $idEiSetting)->update($data);
 	}
 
 	/**
@@ -375,15 +702,19 @@ class PayrollModel extends Model
 		$costOvertime      = (float)($post['hddCostOvertime'] ?? 0);
 		$costVacation      = (float)($post['hddCostVacation'] ?? 0);
 		$totalIncome       = $costRegularSalary + $costOvertime;
-		$gross_salary      = $totalIncome + $costVacation;
+		$grossCalculated   = $totalIncome + $costVacation;
+		// Gross Salary confirmado con QuickBooks (lo envia save_paystub); sin el se usa el calculado
+		$gross_salary      = isset($post['gross_salary']) ? (float)$post['gross_salary'] : $grossCalculated;
 		$ee_cpp            = (float)($post['ee_cpp'] ?? 0);
 		$er_cpp            = $ee_cpp;
 		$ee_ei             = (float)($post['ee_ei'] ?? 0);
-		$er_ei             = $ee_ei * 1.4;
+		$ee_cpp2           = (float)($post['ee_cpp2'] ?? 0);
+		$er_cpp2           = $ee_cpp2;
+		$er_ei             = round($ee_ei * 1.4, 2);
 		$tax               = (float)($post['tax'] ?? 0);
 		$gwl_deductions    = (float)($post['gwl_deductions'] ?? 0);
-		$ee_total_taxes    = $ee_cpp + $ee_ei + $tax;
-		$remittance        = $ee_cpp + $er_cpp + $ee_ei + $er_ei + $tax;
+		$ee_total_taxes    = $ee_cpp + $ee_cpp2 + $ee_ei + $tax;
+		$remittance        = $ee_cpp + $er_cpp + $ee_cpp2 + $er_cpp2 + $ee_ei + $er_ei + $tax;
 		$net_pay           = $gross_salary - $ee_total_taxes - $gwl_deductions;
 		$btnGenerate       = $post['btnGenerate'] ?? null;
 		$valueCommit       = isset($btnGenerate) ? 1 : 2;
@@ -399,11 +730,18 @@ class PayrollModel extends Model
 			'total_income'                 => $totalIncome,
 			'cost_vacation_regular_salary' => $costVacation,
 			'gross_salary'                 => $gross_salary,
+			'gross_salary_calculated'      => $grossCalculated,
+			'quickbooks_check'             => (int)($post['quickbooks_check'] ?? 0),
 			'ee_cpp'                       => $ee_cpp,
 			'er_cpp'                       => $er_cpp,
+			'ee_cpp2'                      => $ee_cpp2,
+			'er_cpp2'                      => $er_cpp2,
 			'ee_ei'                        => $ee_ei,
 			'er_ei'                        => $er_ei,
 			'tax'                          => $tax,
+			'claim_code'                   => isset($post['claim_code']) ? (int)$post['claim_code'] : null,
+			'federal_tax'                  => (float)($post['federal_tax'] ?? 0),
+			'provincial_tax'               => (float)($post['provincial_tax'] ?? 0),
 			'ee_total_taxes'               => $ee_total_taxes,
 			'gwl_deductions'               => $gwl_deductions,
 			'remittance'                   => $remittance,
@@ -457,15 +795,17 @@ class PayrollModel extends Model
 		$costOvertime      = (float)($post['hddCostOvertime'] ?? 0);
 		$costVacation      = (float)($post['hddCostVacation'] ?? 0);
 		$totalIncome       = $costRegularSalary + $costOvertime;
-		$gross_salary      = $totalIncome + $costVacation;
+		$gross_salary      = isset($post['gross_salary']) ? (float)$post['gross_salary'] : $totalIncome + $costVacation;
 		$ee_cpp            = (float)($post['ee_cpp'] ?? 0);
 		$er_cpp            = $ee_cpp;
 		$ee_ei             = (float)($post['ee_ei'] ?? 0);
-		$er_ei             = $ee_ei * 1.4;
+		$ee_cpp2           = (float)($post['ee_cpp2'] ?? 0);
+		$er_cpp2           = $ee_cpp2;
+		$er_ei             = round($ee_ei * 1.4, 2);
 		$tax               = (float)($post['tax'] ?? 0);
 		$gwl_deductions    = (float)($post['gwl_deductions'] ?? 0);
-		$ee_total_taxes    = $ee_cpp + $ee_ei + $tax;
-		$remittance        = $ee_cpp + $er_cpp + $ee_ei + $er_ei + $tax;
+		$ee_total_taxes    = $ee_cpp + $ee_cpp2 + $ee_ei + $tax;
+		$remittance        = $ee_cpp + $er_cpp + $ee_cpp2 + $er_cpp2 + $ee_ei + $er_ei + $tax;
 		$net_pay           = $gross_salary - $ee_total_taxes - $gwl_deductions;
 
 		if ($arrData) {
@@ -480,6 +820,8 @@ class PayrollModel extends Model
 				'total_year_gross_salary'                 => $gross_salary + $row['total_year_gross_salary'],
 				'total_year_ee_cpp'                       => $ee_cpp + $row['total_year_ee_cpp'],
 				'total_year_er_cpp'                       => $er_cpp + $row['total_year_er_cpp'],
+				'total_year_ee_cpp2'                      => $ee_cpp2 + $row['total_year_ee_cpp2'],
+				'total_year_er_cpp2'                      => $er_cpp2 + $row['total_year_er_cpp2'],
 				'total_year_ee_ei'                        => $ee_ei + $row['total_year_ee_ei'],
 				'total_year_er_ei'                        => $er_ei + $row['total_year_er_ei'],
 				'total_year_tax'                          => $tax + $row['total_year_tax'],
@@ -499,6 +841,8 @@ class PayrollModel extends Model
 				'total_year_gross_salary'                 => $gross_salary,
 				'total_year_ee_cpp'                       => $ee_cpp,
 				'total_year_er_cpp'                       => $er_cpp,
+				'total_year_ee_cpp2'                      => $ee_cpp2,
+				'total_year_er_cpp2'                      => $er_cpp2,
 				'total_year_ee_ei'                        => $ee_ei,
 				'total_year_er_ei'                        => $er_ei,
 				'total_year_tax'                          => $tax,

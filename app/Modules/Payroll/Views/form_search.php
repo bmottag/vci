@@ -50,7 +50,7 @@
 								<select name="period" id="period" class="form-control" required >
 									<option value=''>Select...</option>
 									<?php for ($i = 0; $i < count($infoPeriod); $i++) { ?>
-										<option value="<?php echo $infoPeriod[$i]["id_period"]; ?>"><?php echo $infoPeriod[$i]["period"]; ?></option>	
+										<option value="<?php echo $infoPeriod[$i]["id_period"]; ?>"><?php echo date('F j, Y', strtotime($infoPeriod[$i]['date_start'])) . ' - ' . date('F j, Y', strtotime($infoPeriod[$i]['date_finish'])); ?></option>	
 									<?php } ?>
 								</select>
 							</div>
