@@ -31,7 +31,7 @@ class Payroll extends BaseController
 				FROM programming_worker pw
 				JOIN programming p ON pw.fk_id_programming = p.id_programming
 				WHERE pw.fk_id_programming_user = $idUser
-				AND DATE(p.date_programming) = CURDATE()";
+				AND DATE(p.date_programming) = '" . date('Y-m-d') . "'";
 
 		$query = db_connect()->query($sql);
 

@@ -53,7 +53,6 @@ class Dayoff extends BaseController
 		//verify ---- 24 hours in advaced for Family/medical appointment and 72 hours for regular
 		$type =  $post['type'];//1: Family/medical appointment; 2: Regular
 		
-		date_default_timezone_set('America/Phoenix');
 		$today = date("Y-m-d H:i:s"); 
 		$date =  $post['date'];
 

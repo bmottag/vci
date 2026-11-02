@@ -49,7 +49,6 @@ class Vacation extends BaseController
 	{
 		$post = $this->request->getPost();
 
-		date_default_timezone_set('America/Phoenix');
 		$today     = date("Y-m-d H:i:s");
 		$dateStart = $post['date_start'] ?? '';
 		$dateEnd   = $post['date_end'] ?? '';
