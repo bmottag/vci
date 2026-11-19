@@ -133,7 +133,9 @@ class App extends BaseConfig
      * @see https://www.php.net/manual/en/timezones.php for list of timezones
      *      supported by PHP.
      */
-    public string $appTimezone = 'America/Edmonton';
+    // Alberta is permanently UTC-6 since Nov 1, 2026. America/Regina is fixed at UTC-6 and
+    // does not depend on PHP's bundled timezone database having the new Alberta rule.
+    public string $appTimezone = 'America/Regina';
 
     /**
      * --------------------------------------------------------------------------

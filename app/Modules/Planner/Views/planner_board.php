@@ -686,6 +686,9 @@
    ================================================================ */
 const PB = {
 
+    /* Today according to the server (Alberta time), not the UTC date */
+    today: '<?= date('Y-m-d') ?>',
+
     state: {
         date: null,
         projects: [],
@@ -708,7 +711,7 @@ const PB = {
 
     /* ── Init ─────────────────────────────────────────────────── */
     init() {
-        const today = new Date().toISOString().split('T')[0];
+        const today = this.today;
         $('#pb-date').val(today);
         $('#pb-load').on('click', () => this.load($('#pb-date').val()));
         this.initBoardDrop();
@@ -725,7 +728,7 @@ const PB = {
             .done(data => {
                 this.state = {
                     date,
-                    readOnly:         date < new Date().toISOString().split('T')[0],
+                    readOnly:         date < this.today,
                     projects:         data.projects          || [],
                     projectPool:      data.project_pool      || [],
                     availableWorkers: data.available_workers  || [],
