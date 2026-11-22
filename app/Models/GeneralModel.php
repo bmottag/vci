@@ -2186,6 +2186,26 @@ class GeneralModel extends Model
 	}
 
 	/**
+	 * Horas de un usuario en un Force Account: personal + equipo que opero
+	 * (equivalente a countHoursPersonal + countHoursEquipmentPersonal para W.O.)
+	 * @since 22/11/2026
+	 */
+	public function countHoursForceAccountByUser($arrDatos)
+	{
+		$sql = "SELECT ROUND(
+					COALESCE((SELECT SUM(hours) FROM forceaccount_personal WHERE fk_id_forceaccount = ? AND fk_id_user = ?), 0)
+					+ COALESCE((SELECT SUM(hours) FROM forceaccount_equipment WHERE fk_id_forceaccount = ? AND operatedby = ?), 0)
+				, 2) TOTAL";
+
+		$query = $this->db->query($sql, [
+			$arrDatos["idForceAccount"], $arrDatos["idUser"],
+			$arrDatos["idForceAccount"], $arrDatos["idUser"]
+		]);
+		$row = $query->getRow();
+		return $row->TOTAL ?? 0;
+	}
+
+	/**
 	 * Sumatoria total de costos para un job_detail
 	 * @param $idJobDetail
 	 * @author BMOTTAG

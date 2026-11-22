@@ -810,6 +810,8 @@ class Dashboard extends BaseController
 				}
 				unset($task, $wo);
 			}
+
+			$data["forceAccountCheck"] = $this->forceAccountHoursByUser($data["forceAccountInfo"], $data["payrollInfo"]);
 		} elseif (isset($viewsMapping[$view])) {
 			// Si la vista es una específica, obtener solo esa
 			$method = $viewsMapping[$view];
@@ -888,6 +890,12 @@ class Dashboard extends BaseController
 					}
 					unset($task, $wo);
 				}
+
+				// Force Accounts del dia: columnas despues de las W.O. en la tabla de payroll
+				$data["forceAccountCheck"] = $this->forceAccountHoursByUser(
+					$this->generalModel->get_forceaccount_info($arrParam),
+					$data["payrollInfo"]
+				);
 			}
 		} else {
 			// Manejo de error si la vista no es válida
@@ -895,6 +903,33 @@ class Dashboard extends BaseController
 		}
 	
 		return $this->renderTopOnly('App\Modules\Dashboard\Views\info_by_day', $data);
+	}
+
+	/**
+	 * Agrega a cada Force Account las horas (personal + equipo) de cada usuario del payroll
+	 * @param array|false $forceAccounts
+	 * @param array|false $payrollInfo
+	 * @return array|false
+	 * @since 22/11/2026
+	 */
+	private function forceAccountHoursByUser($forceAccounts, $payrollInfo)
+	{
+		if (empty($forceAccounts) || empty($payrollInfo)) {
+			return $forceAccounts;
+		}
+
+		$userIds = array_unique(array_column($payrollInfo, 'fk_id_user'));
+		foreach ($forceAccounts as &$fa) {
+			foreach ($userIds as $userId) {
+				$fa['hours_by_user'][$userId] = (float)$this->generalModel->countHoursForceAccountByUser([
+					"idForceAccount" => $fa['id_forceaccount'],
+					"idUser"         => $userId
+				]);
+			}
+		}
+		unset($fa);
+
+		return $forceAccounts;
 	}
 
 	/**

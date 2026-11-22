@@ -7,7 +7,10 @@
 }
 
     .table-container {
-        max-height: 700px; /* Ajusta la altura según necesites */
+        /* Altura relativa a la pantalla (antes 700px fijos): al bajar con el scroll,
+           el encabezado del panel + la tabla ocupan toda la ventana sin dejar
+           espacio vacío debajo. 60px = encabezado del panel + margen inferior */
+        max-height: calc(100vh - 60px);
         overflow: auto; /* Scroll vertical y horizontal cuando hay muchas W.O. */
         border: 1px solid #ddd;
         position: relative;
@@ -84,6 +87,9 @@
         max-width: 170px;
     }
 
+    /* right: 170px es el valor inicial; ajustarColumnasFijasPayroll() lo recalcula con el
+       ancho real de Total (en tablas auto el navegador ignora max-width y Total puede
+       quedar mas ancha, tapando el encabezado de Payroll mientras ambas estan fijas) */
     #dataTablesPayroll .col-fixed-payroll {
         right: 170px;
         width: 150px;
@@ -127,6 +133,11 @@
         overflow: hidden;
         font-weight: normal;
         color: #777;
+    }
+
+    /* Columnas de Force Account: fondo naranja suave para distinguirlas de las W.O. */
+    #dataTablesPayroll th.fa-header {
+        background: #fcf3e6;
     }
 
     #dataTablesPayroll td.wo-hours {
@@ -431,12 +442,23 @@
                                             <a target='_blanck' href='<?= base_url('workorders/add_workorder/' . $wo['id_workorder']) ?>'>W.O. # <?= $wo['id_workorder'] ?></a>
                                             <div class='wo-header-job'><?= esc($wo['job_description']) ?></div>
                                         </th>
-                                <?php 
-                                        endforeach; 
+                                <?php
+                                        endforeach;
+                                    }
+
+                                    if (!empty($forceAccountCheck)) {
+                                        foreach ($forceAccountCheck as $fa) :
+                                ?>
+                                        <th class='text-center fa-header' title='<?= esc($fa['job_description']) ?>'>
+                                            <a target='_blanck' href='<?= base_url('forceaccount/add_forceaccount/' . $fa['id_forceaccount']) ?>'>F.A. # <?= $fa['id_forceaccount'] ?></a>
+                                            <div class='wo-header-job'><?= esc($fa['job_description']) ?></div>
+                                        </th>
+                                <?php
+                                        endforeach;
                                     }
                                 ?>
                                 <th class="text-center col-fixed-payroll">Payroll Working Hours</th>
-                                <th class='text-center col-fixed-total'>Total W.O. Hours</th>
+                                <th class='text-center col-fixed-total'>Total W.O. <?= !empty($forceAccountCheck) ? '+ F.A. ' : '' ?>Hours</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -532,6 +554,23 @@
 
                                     endforeach;
                                 endif;
+
+                                // Force Accounts despues de las W.O.; sus horas tambien suman al total
+                                if (!empty($forceAccountCheck)):
+                                    foreach ($forceAccountCheck as $fa):
+
+                                        $hoursWorked = $fa['hours_by_user'][$lista['fk_id_user']] ?? 0;
+                                ?>
+
+                                        <td class="text-center <?= $hoursWorked ? 'wo-hours' : 'wo-hours-empty' ?>">
+                                            <?= convert_hours_minutes($hoursWorked) ?>
+                                        </td>
+
+                                <?php
+                                        $sumWorkorders += $hoursWorked;
+
+                                    endforeach;
+                                endif;
                                 // Color de la celda segun la diferencia entre horas de W.O. y de payroll
                                 $tolerancia = 5 / 60; // 5 minutos en horas = 0.0833...
                                 $totalClass = '';
@@ -559,9 +598,9 @@
                                 if (abs($sumWorkorders - $lista['working_hours']) > $tolerancia) {
 
                                     if ($sumWorkorders < $lista['working_hours']) {
-                                        echo "<br><br><p class='text-danger'><b>Payroll hours exceeds Work Order hours.</b></p>";
+                                        echo "<br><br><p class='text-danger'><b>Payroll hours exceeds W.O./F.A. hours.</b></p>";
                                     } elseif ($sumWorkorders > $lista['working_hours']) {
-                                        echo "<br><br><p class='text-warning'><b>Work Order hours exceeds Payroll hours.</b></p>";
+                                        echo "<br><br><p class='text-warning'><b>W.O./F.A. hours exceeds Payroll hours.</b></p>";
                                     }
                                 }
                                 
@@ -790,7 +829,23 @@
             "ordering": true,
             paging: false
         });
+
+        ajustarColumnasFijasPayroll();
+        $(window).on('resize', ajustarColumnasFijasPayroll);
     });
+
+    /**
+     * Pega Payroll Working Hours justo a la izquierda de Total W.O. Hours usando el
+     * ancho real de Total, para que una columna no tape a la otra.
+     */
+    function ajustarColumnasFijasPayroll() {
+        var thTotal = document.querySelector('#dataTablesPayroll thead th.col-fixed-total');
+        if (!thTotal) {
+            return;
+        }
+        var anchoTotal = thTotal.getBoundingClientRect().width;
+        $('#dataTablesPayroll .col-fixed-payroll').css('right', anchoTotal + 'px');
+    }
 
     $('[id^=btnAssign_]').click(function() {
         var taskId = $(this).attr('id').split('_')[1];
