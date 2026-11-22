@@ -93,6 +93,8 @@ defined('ID_ROL_BASIC')   or define('ID_ROL_BASIC', 7);
 defined('ID_ROL_ENGINEER')   or define('ID_ROL_ENGINEER', 8);
 defined('ID_ROL_MECHANIC')   or define('ID_ROL_MECHANIC', 9);
 defined('ID_ROL_ACCOUNTING_ASSISTANT')   or define('ID_ROL_ACCOUNTING_ASSISTANT', 10);
+//JOBS
+defined('ID_JOB_OVERHEAD')   or define('ID_JOB_OVERHEAD', 1); // 001 Overhead & office work: planning does not create W.O.
 //NOTIFICATIONS
 defined('ID_NOTIFICATION_CERTIFICATION')   or define('ID_NOTIFICATION_CERTIFICATION', 1);
 defined('ID_NOTIFICATION_FLHA')   or define('ID_NOTIFICATION_FLHA', 2);
