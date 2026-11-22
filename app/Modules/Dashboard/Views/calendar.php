@@ -42,6 +42,8 @@
 			navLinks: true, // can click day/week names to navigate views
 			editable: true,
 			dayMaxEvents: true, // allow "more" link when too many events
+			// orden dentro del dia: Payroll, Planning, W.O., Force Account, Hauling (campo "order" de dashboard/consulta)
+			eventOrder: 'order,title',
 			events: {
 				url: consultaURL,
 				method: 'POST',

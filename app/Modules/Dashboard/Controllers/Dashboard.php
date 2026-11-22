@@ -536,6 +536,7 @@ class Dashboard extends BaseController
 						      "start": "' . $data['date'] . '",
 						      "end": "' . $data['date'] . '",
 						      "color": "green",
+						      "order": 3,
 						      "url": "' . base_url("dashboard/info_by_day/workOrderInfo/" . $data['date']) . '"
 						    }';
 
@@ -559,6 +560,7 @@ class Dashboard extends BaseController
 						      "start": "' . $data['date_programming'] . '",
 						      "end": "' . $data['date_programming'] . '",
 						      "color": "yellow",
+						      "order": 2,
 						      "url": "' . base_url("dashboard/info_by_day/planningInfo/" . $data['date_programming']) . '"
 						    }';
 
@@ -584,6 +586,7 @@ class Dashboard extends BaseController
 						      "start": "' . $data['date_issue'] . ' ' . $data['time_in'] . '",
 						      "end": "' . $data['date_issue'] . ' ' . $data['time_out'] . '",
 						      "color": "red",
+						      "order": 5,
 						      "url": "' . base_url("dashboard/info_by_day/haulingInfo/" . $data['date_issue']) . '"
 						    }';
 
@@ -615,6 +618,7 @@ class Dashboard extends BaseController
 							"start": "' . $date . '",
 							"end": "' . $date . '",
 							"color": "blue",
+							"order": 1,
 							"url": "' . base_url("dashboard/info_by_day/payrollInfo/" . $date) . '"
 						}';
 		
@@ -676,6 +680,7 @@ class Dashboard extends BaseController
 						      "start": "' . $data['date'] . '",
 						      "end": "' . $data['date'] . '",
 						      "color": "orange",
+						      "order": 4,
 						      "url": "' . base_url("dashboard/info_by_day/forceAccountInfo/" . $data['date']) . '"
 						    }';
 

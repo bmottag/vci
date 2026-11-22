@@ -313,10 +313,10 @@
                                 echo '<p class="' . $clase . '"><i class="fa ' . $icono . ' fa-fw"></i>' . $valor . '</p>';
                                 echo "<a href='" . base_url('workorders/generaWorkOrderPDF/' . $lista['id_workorder']) . "' target='_blanck'><img src='" . base_url('images/pdf.png') . "' ></a>";
                                 echo '</td>';
-                                echo "<td >" . $lista['job_description'] . "</td>";
-                                echo '<td>' . $lista['name'] . '</td>';
-                                echo "<td>" . $lista['observation'] . "</td>";
-                                echo "<td>" . $lista['last_message'] . "</td>";
+                                echo "<td >" . esc($lista['job_description']) . "</td>";
+                                echo '<td>' . esc($lista['name']) . '</td>';
+                                echo "<td>" . esc($lista['observation']) . "</td>";
+                                echo "<td>" . esc($lista['last_message']) . "</td>";
                                 echo "</tr>";
                             endforeach;
                             ?>
@@ -391,10 +391,10 @@
                                 echo '<p class="' . $clase . '"><i class="fa ' . $icono . ' fa-fw"></i>' . $valor . '</p>';
                                 echo "<a href='" . base_url('forceaccount/generaForceAccountPDF/' . $lista['id_forceaccount']) . "' target='_blanck'><img src='" . base_url('images/pdf.png') . "' ></a>";
                                 echo '</td>';
-                                echo "<td >" . $lista['job_description'] . "</td>";
-                                echo '<td>' . $lista['name'] . '</td>';
-                                echo "<td>" . $lista['observation'] . "</td>";
-                                echo "<td>" . $lista['last_message'] . "</td>";
+                                echo "<td >" . esc($lista['job_description']) . "</td>";
+                                echo '<td>' . esc($lista['name']) . '</td>';
+                                echo "<td>" . esc($lista['observation']) . "</td>";
+                                echo "<td>" . esc($lista['last_message']) . "</td>";
                                 echo "</tr>";
                             endforeach;
                             ?>

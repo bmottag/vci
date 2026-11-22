@@ -727,10 +727,9 @@ class GeneralModel extends Model
 	public function get_forceaccount_info($arrData)
 	{
 		$builder = $this->db->table('forceaccount W');
-		$builder->select('W.*, J.id_job, job_description, CONCAT(U.first_name, " ", U.last_name) name, C.company_name company, C.id_company, A.id_acs');
+		$builder->select('W.*, J.id_job, job_description, CONCAT(U.first_name, " ", U.last_name) name, C.company_name company, C.id_company');
 		$builder->join('param_jobs J', 'J.id_job = W.fk_id_job', 'INNER');
 		$builder->join('param_company C', 'C.id_company = W.fk_id_company', 'LEFT');
-		$builder->join('acs A', 'A.fk_id_workorder = W.id_forceaccount', 'LEFT');
 		$builder->join('user U', 'U.id_user = W.fk_id_user', 'INNER');
 
 		if (isset($arrData["from"]) && $arrData["from"] != '') {
@@ -738,6 +737,9 @@ class GeneralModel extends Model
 		}
 		if (isset($arrData["to"]) && $arrData["to"] != '' && $arrData["from"] != '') {
 			$builder->where('W.date <', $arrData["to"]);
+		}
+		if (isset($arrData["fecha"])) {
+			$builder->where('W.date', $arrData["fecha"]);
 		}
 
 		$builder->orderBy('W.id_forceaccount', 'desc');
