@@ -405,6 +405,8 @@ class Payroll extends BaseController
 
 			// Las vistas list_payroll* consultan el modelo por cada empleado (logica heredada de CI3)
 			$data['generalModel'] = $this->generalModel;
+			// ?useCurrent=<idUser>: el borrador de ese empleado se recalcula con su rate y tipo actuales (se guardan al dar Apply)
+			$data['useCurrentFor'] = (int)$this->request->getGet('useCurrent');
 
 			$cppSettings         = $data['infoPeriod'] ? $this->payrollModel->get_cpp_settings(['year' => $data['infoPeriod'][0]['year_period']]) : false;
 			$data['cppSettings'] = $cppSettings ? $cppSettings[0] : null;

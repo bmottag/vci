@@ -116,10 +116,21 @@
 				$infoPaystub = $generalModel->get_paystub_by_period($arrParam);
 
 				//si ya se guardo el paystub entonces tomo esos valores 
+				//en borrador (commit 2) se puede elegir el rate y tipo actuales del empleado con ?useCurrent=<idUser>
+				$currentHourRate = $employeeHourRate;
+				$currentType = $employeeType;
+				$draftChanged = false;
+				$usingCurrent = false;
 				if($infoPaystub){
-					$employeeHourRate = $infoPaystub[0]["employee_rate_paystub"];
-					$employeeType = $infoPaystub[0]["employee_type_paystub"];
+					$isDraft = $infoPaystub[0]["commit"] != 1;
+					$draftChanged = $isDraft && ((float)$infoPaystub[0]["employee_rate_paystub"] != (float)$currentHourRate || $infoPaystub[0]["employee_type_paystub"] != $currentType);
+					$usingCurrent = $draftChanged && ($useCurrentFor ?? 0) == $lista['fk_id_user'];
+					if(!$usingCurrent){
+						$employeeHourRate = $infoPaystub[0]["employee_rate_paystub"];
+						$employeeType = $infoPaystub[0]["employee_type_paystub"];
+					}
 				}
+				$pageUrl = base_url('payroll/payrollSearchForm/' . $contractType . '/' . $idPeriod . '/' . $lista['fk_id_user']);
 
 				//buscar el total de valores por año y usuario
 				$arrParam = array(
@@ -149,6 +160,7 @@
 							<br><small><b>Type: </b><?php echo $type = $employeeType==1?'Field':'Admin'; ?></small>
 							<br><small><b>Is using Bank Time: </b><?php echo $bankTime==1?'Active':'Inactive'; ?></small>
 						</h2>
+						<?php include __DIR__ . '/paystub_draft_rate_alert.php'; ?>
 					</div>
 					<table width="100%" class="table table-hover" id="dataTables">
 						<thead>
