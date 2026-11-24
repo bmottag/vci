@@ -244,7 +244,7 @@ class Payroll extends BaseController
 		}
 
 		if ($this->payrollModel->generateYearPeriods($year)) {
-			session()->setFlashdata('retornoExito', 'The 24 periods for ' . $year . ' were generated. Review the weeks, approve the periods and then assign the payroll records.');
+			session()->setFlashdata('retornoExito', 'The 24 periods for ' . $year . ' were generated and approved. Review the weeks if needed and then assign the payroll records.');
 			return $this->response->setJSON(['status' => 'success']);
 		}
 
@@ -718,7 +718,7 @@ class Payroll extends BaseController
 		$msj = 'CPP configuration for ' . $year . ' saved.';
 		if (!$this->generalModel->get_period(['year_period' => $year])) {
 			if ($this->payrollModel->generateYearPeriods($year)) {
-				$msj .= ' The 24 periods for ' . $year . ' were generated, review and approve them in Payroll Periods.';
+				$msj .= ' The 24 periods for ' . $year . ' were generated and approved, review them in Payroll Periods.';
 			} else {
 				$msj .= ' Error generating the periods, generate them from Payroll Periods.';
 			}

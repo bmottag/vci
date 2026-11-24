@@ -155,8 +155,8 @@ $(function(){
 
 					<div class="alert alert-info">
 						<strong>Steps:</strong>
-						1) Generate the 24 periods of the year (1-15 and 16-end of month).
-						2) Review the two weeks of each period, edit where week 1 ends if needed, and approve the period.
+						1) Generate the 24 periods of the year (1-15 and 16-end of month); they are created already approved.
+						2) Review the two weeks of each period. To edit where week 1 ends, set the period back to pending, edit it and approve it again.
 						3) Assign the period to the payroll records.
 						Paystubs can only be saved for approved periods.
 					</div>

@@ -381,13 +381,17 @@ class PayrollModel extends Model
 
 	/**
 	 * Genera los 24 periodos semimensuales del ano (1-15 y 16-fin de mes),
-	 * cada uno dividido en 2 semanas a la mitad. Si el ano ya tenia periodos
+	 * cada uno dividido en 2 semanas a la mitad. Los periodos quedan aprobados
+	 * desde que se generan. Si el ano ya tenia periodos
 	 * se borran junto con sus semanas y paystubs en borrador, y los registros
 	 * de horas quedan sin periodo (fk_id_weak_period = 0) para reasignarlos.
 	 * @since 26/10/2026
 	 */
 	public function generateYearPeriods(int $year): bool
 	{
+		$approvedBy   = session()->get('id');
+		$approvedDate = date('Y-m-d H:i:s');
+
 		$this->db->transStart();
 
 		$oldPeriods = array_column(
@@ -421,11 +425,13 @@ class PayrollModel extends Model
 				$weak2Start = date('Y-m-d', strtotime('+1 day', strtotime($weak1End)));
 
 				$this->db->table('payroll_period')->insert([
-					'date_start'  => $start,
-					'date_finish' => $finish,
-					'period'      => $start . ' - ' . $finish,
-					'year_period' => $year,
-					'approved'    => 0,
+					'date_start'    => $start,
+					'date_finish'   => $finish,
+					'period'        => $start . ' - ' . $finish,
+					'year_period'   => $year,
+					'approved'      => 1,
+					'approved_by'   => $approvedBy,
+					'approved_date' => $approvedDate,
 				]);
 				$idPeriod = $this->db->insertID();
 
