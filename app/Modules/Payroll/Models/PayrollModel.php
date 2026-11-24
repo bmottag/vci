@@ -748,6 +748,7 @@ class PayrollModel extends Model
 			'claim_code'                   => isset($post['claim_code']) ? (int)$post['claim_code'] : null,
 			'federal_tax'                  => (float)($post['federal_tax'] ?? 0),
 			'provincial_tax'               => (float)($post['provincial_tax'] ?? 0),
+			'manual_deductions'            => $post['manual_deductions'] ?? null,
 			'ee_total_taxes'               => $ee_total_taxes,
 			'gwl_deductions'               => $gwl_deductions,
 			'remittance'                   => $remittance,

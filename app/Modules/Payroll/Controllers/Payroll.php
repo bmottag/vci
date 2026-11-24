@@ -466,32 +466,48 @@ class Payroll extends BaseController
 			}
 			$post['quickbooks_check'] = $quickbooksCheck;
 
+			// Campos del empleado editados a mano (manual[]): se guarda el valor ingresado en vez del calculado
+			// Federal y Provincial siempre se calculan; el Total Tax (su suma) si se puede ajustar a mano
+			$manualLabels = ['ee_cpp' => 'CPP', 'ee_cpp2' => 'CPP2', 'ee_ei' => 'EI', 'tax' => 'Total Tax'];
+			$manual       = array_values(array_intersect(array_keys($manualLabels), (array)($post['manual'] ?? [])));
+			$manualValues = [];
+			foreach ($manual as $field) {
+				$value = trim((string)($post[$field] ?? ''));
+				if (!is_numeric($value) || $value < 0) {
+					session()->setFlashdata('retornoError', '<strong>Error!!!</strong> Enter a valid amount for ' . $manualLabels[$field] . '.');
+					return redirect()->to(base_url('payroll/payrollSearchForm/' . $contractType . '/' . $idPeriod . '/' . $idEmployee));
+				}
+				$manualValues[$field] = round((float)$value, 2);
+			}
+			$post['manual_deductions'] = $manual ? implode(',', $manual) : null;
+
 			$cpp = $this->calculate_cpp($post, (int)$infoPeriod[0]['year_period']);
 			if ($cpp === false) {
 				session()->setFlashdata('retornoError', '<strong>Error!!!</strong> There is no CPP configuration for ' . $infoPeriod[0]['year_period'] . '.');
 				return redirect()->to(base_url('payroll/payrollSearchForm/' . $contractType . '/' . $idPeriod . '/' . $idEmployee));
 			}
-			$post['ee_cpp']  = $cpp['ee_cpp'];
-			$post['ee_cpp2'] = $cpp['ee_cpp2'];
+			$post['ee_cpp']  = $manualValues['ee_cpp'] ?? $cpp['ee_cpp'];
+			$post['ee_cpp2'] = $manualValues['ee_cpp2'] ?? $cpp['ee_cpp2'];
 
 			$ei = $this->calculate_ei($post, (int)$infoPeriod[0]['year_period']);
 			if ($ei === false) {
 				session()->setFlashdata('retornoError', '<strong>Error!!!</strong> There is no EI configuration for ' . $infoPeriod[0]['year_period'] . '.');
 				return redirect()->to(base_url('payroll/payrollSearchForm/' . $contractType . '/' . $idPeriod . '/' . $idEmployee));
 			}
-			$post['ee_ei'] = $ei['ee_ei'];
+			$post['ee_ei'] = $manualValues['ee_ei'] ?? $ei['ee_ei'];
 
 			// TAX = Federal + Provincial de las tablas de la CRA con el claim code elegido (CC1 por defecto)
+			// Si el Total Tax se ingresa a mano se puede guardar aunque el pago este fuera de la tabla
 			$claimCode = (int)($post['claim_code'] ?? TaxTableCalculator::DEFAULT_CLAIM_CODE);
 			$taxes     = $this->calculate_tax((float)$post['gross_salary'], (int)$infoPeriod[0]['year_period'], $claimCode);
-			if ($taxes['error']) {
+			if ($taxes['error'] && !isset($manualValues['tax'])) {
 				session()->setFlashdata('retornoError', '<strong>Error!!!</strong> ' . $taxes['error']);
 				return redirect()->to(base_url('payroll/payrollSearchForm/' . $contractType . '/' . $idPeriod . '/' . $idEmployee));
 			}
 			$post['claim_code']     = $claimCode;
-			$post['federal_tax']    = $taxes['federal_tax'];
-			$post['provincial_tax'] = $taxes['provincial_tax'];
-			$post['tax']            = $taxes['tax'];
+			$post['federal_tax']    = (float)($taxes['federal_tax'] ?? 0);
+			$post['provincial_tax'] = (float)($taxes['provincial_tax'] ?? 0);
+			$post['tax']            = $manualValues['tax'] ?? round($post['federal_tax'] + $post['provincial_tax'], 2);
 		}
 
 		if ($this->payrollModel->savePaystub($post)) {

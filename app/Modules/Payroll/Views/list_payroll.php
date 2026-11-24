@@ -11,6 +11,10 @@
 	.deductions-table td:nth-child(2), .deductions-table td:nth-child(3) { width: 26%; }
 	.deductions-table .calc-value { width: 100%; border: 0; background: transparent; text-align: right; font-size: 16px; font-weight: bold; color: #333; padding: 0; }
 	.deductions-table .calc-value::placeholder { color: #bbb; font-weight: normal; }
+	/* campos del empleado editados a mano */
+	.deductions-table .calc-value.manual-on { border: 1px solid #f0ad4e; border-radius: 3px; background: #fff; padding: 2px 4px; }
+	.deductions-table .manual-toggle { font-size: 11px; font-weight: normal; color: #337ab7; margin: 0 0 0 4px; cursor: pointer; }
+	.deductions-table .manual-toggle input { margin: 0 2px 0 0; vertical-align: -2px; }
 	.result-summary > thead > tr > th { border-bottom-width: 1px; font-size: 11px; text-transform: uppercase; letter-spacing: .5px; color: #888; }
 	.result-summary .net-pay td { border-top: 2px solid #3c763d; font-size: 18px; font-weight: bold; color: #3c763d; }
 	.remittance-box { background: #f5f7fa; border-left: 3px solid #337ab7; padding: 8px 10px; margin-bottom: 12px; }
@@ -520,6 +524,15 @@
 							$formulas['federal_tax'] = \App\Libraries\TaxTableCalculator::explain($federalRow, (float)$grossForTaxes, $claimCode);
 							$formulas['provincial_tax'] = \App\Libraries\TaxTableCalculator::explain($provincialRow, (float)$grossForTaxes, $claimCode);
 						}
+						//valores calculados: se muestran debajo del campo cuando el usuario lo edita a mano
+						$calcValues = [
+							'ee_cpp'         => $cppCalc ? $cppCalc['ee_cpp'] : null,
+							'ee_cpp2'        => $cppCalc ? $cppCalc['ee_cpp2'] : null,
+							'ee_ei'          => $eiCalc ? $eiCalc['ee_ei'] : null,
+							'federal_tax'    => $taxCalc['federal_tax'],
+							'provincial_tax' => $taxCalc['provincial_tax'],
+							'tax'            => $taxCalc['federal_tax'] === null ? null : round((float)$taxCalc['federal_tax'] + (float)$taxCalc['provincial_tax'], 2),
+						];
 						//si el paystub ya se genero se muestran los valores guardados, sin formulas (el acumulado ya los incluye)
 						if($paystubCommitted){
 							$cppCalc = ['ee_cpp' => $infoPaystub[0]['ee_cpp'], 'ee_cpp2' => $infoPaystub[0]['ee_cpp2']];
@@ -531,6 +544,57 @@
 							$formulas = ['ee_cpp' => '', 'ee_cpp2' => '', 'ee_ei' => '', 'federal_tax' => $infoPaystub[0]['claim_code'] === null ? 'Total income tax (saved before the tax tables)' : '', 'provincial_tax' => ''];
 						}
 						$money = fn($value) => $value === null ? '' : number_format((float)$value, 2, '.', '');
+
+						//valores del empleado que se muestran; los editados a mano en el borrador se toman del paystub guardado
+						$manualFields = $infoPaystub && !empty($infoPaystub[0]['manual_deductions']) ? explode(',', $infoPaystub[0]['manual_deductions']) : [];
+						$deductionValues = [
+							'ee_cpp'         => $cppCalc ? $cppCalc['ee_cpp'] : null,
+							'ee_cpp2'        => $cppCalc ? $cppCalc['ee_cpp2'] : null,
+							'ee_ei'          => $eiCalc ? $eiCalc['ee_ei'] : null,
+							'federal_tax'    => $taxCalc['federal_tax'],
+							'provincial_tax' => $taxCalc['provincial_tax'],
+							'tax'            => $calcValues['tax'],
+						];
+						//TAX calculado = Federal + Provincial (en un paystub generado, con los valores guardados)
+						if($paystubCommitted){
+							$calcValues['tax'] = $taxCalc['federal_tax'] === null ? null : round((float)$taxCalc['federal_tax'] + (float)$taxCalc['provincial_tax'], 2);
+							$deductionValues['tax'] = $infoPaystub[0]['tax'];
+						}
+						foreach($manualFields as $field){
+							if(array_key_exists($field, $deductionValues)){
+								$deductionValues[$field] = $infoPaystub[0][$field];
+							}
+						}
+						$isManual = fn($field) => in_array($field, $manualFields);
+						$taxesManual = $isManual('tax');
+						//ER CPP = EE CPP, ER CPP2 = EE CPP2, ER EI = EE EI x 1.4 (con el valor del empleado, calculado o manual)
+						$erValues = [
+							'er_cpp'  => $deductionValues['ee_cpp'],
+							'er_cpp2' => $deductionValues['ee_cpp2'],
+							'er_ei'   => $deductionValues['ee_ei'] === null ? null : round((float)$deductionValues['ee_ei'] * 1.4, 2),
+						];
+						if($paystubCommitted){
+							$erValues = ['er_cpp' => $infoPaystub[0]['er_cpp'], 'er_cpp2' => $infoPaystub[0]['er_cpp2'], 'er_ei' => $infoPaystub[0]['er_ei']];
+						}
+
+						//fila del empleado: valor calculado con opcion de editarlo a mano
+						//$note = false: el calculado ya se muestra en la formula de la fila (Total Tax)
+						$deductionCell = function($field, $note = true) use ($deductionValues, $calcValues, $isManual, $money, $paystubCommitted, $idUser){
+							$manual = $isManual($field);
+							return '<input type="text" id="' . $field . '_' . $idUser . '" name="' . $field . '" value="' . $money($deductionValues[$field]) . '"'
+								. ' data-calc="' . $money($calcValues[$field]) . '" class="calc-value ee-value' . ($manual ? ' manual-on' : '') . '" placeholder="—"' . ($manual ? '' : ' readonly') . ' >'
+								. ($note ? '<p class="help-block calc-formula manual-note" style="' . ($manual && !$paystubCommitted ? '' : 'display:none') . '">Calculated: <span>' . ($calcValues[$field] === null ? '—' : '$ ' . $money($calcValues[$field])) . '</span></p>' : '');
+						};
+						$deductionLabel = function($field, $label, $editable = true) use ($isManual, $paystubCommitted, $idUser){
+							$manual = $isManual($field);
+							$html = '<b>' . $label . '</b> <small class="text-muted calc-label">' . ($manual ? '(manual)' : '(calculated)') . '</small>';
+							if(!$editable){
+								return $html;
+							}
+							return $html
+								. ' <label class="manual-toggle" title="Edit the value manually"><input type="checkbox" name="manual[]" value="' . $field . '" class="manual-check" data-user="' . $idUser . '"'
+								. ($manual ? ' checked' : '') . ($paystubCommitted ? ' disabled' : '') . '> Edit</label>';
+						};
 
 					?>
 						<?php
@@ -676,35 +740,35 @@
 											<tbody>
 												<tr>
 													<td>
-														<b>CPP</b> <small class="text-muted">(calculated)</small>
+														<?php echo $deductionLabel('ee_cpp', 'CPP'); ?>
 														<p class="help-block calc-formula formula-ee-cpp"><?php echo $formulas['ee_cpp']; ?></p>
 													</td>
-													<td class="text-right"><input type="text" id="ee_cpp" name="ee_cpp" value="<?php echo $cppCalc ? number_format($cppCalc['ee_cpp'], 2, '.', '') : ''; ?>" class="calc-value" placeholder="—" readonly ></td>
+													<td class="text-right"><?php echo $deductionCell('ee_cpp'); ?></td>
 													<td class="text-right">
-														<input type="text" value="<?php echo $cppCalc ? number_format($cppCalc['ee_cpp'], 2, '.', '') : ''; ?>" class="calc-value er-cpp" placeholder="—" readonly >
-														<p class="help-block calc-formula"><?php echo $formulas['ee_cpp'] !== '' ? '= EE CPP' : ''; ?></p>
+														<input type="text" value="<?php echo $money($erValues['er_cpp']); ?>" class="calc-value er-cpp" placeholder="—" readonly >
+														<p class="help-block calc-formula"><?php echo $formulas['ee_cpp'] !== '' || $isManual('ee_cpp') ? '= EE CPP' : ''; ?></p>
 													</td>
 												</tr>
 												<tr>
 													<td>
-														<b>CPP2</b> <small class="text-muted">(calculated)</small>
+														<?php echo $deductionLabel('ee_cpp2', 'CPP2'); ?>
 														<p class="help-block calc-formula formula-ee-cpp2"><?php echo $formulas['ee_cpp2']; ?></p>
 													</td>
-													<td class="text-right"><input type="text" id="ee_cpp2" name="ee_cpp2" value="<?php echo $cppCalc ? number_format($cppCalc['ee_cpp2'], 2, '.', '') : ''; ?>" class="calc-value" placeholder="—" readonly ></td>
+													<td class="text-right"><?php echo $deductionCell('ee_cpp2'); ?></td>
 													<td class="text-right">
-														<input type="text" value="<?php echo $cppCalc ? number_format($cppCalc['ee_cpp2'], 2, '.', '') : ''; ?>" class="calc-value er-cpp2" placeholder="—" readonly >
-														<p class="help-block calc-formula"><?php echo $formulas['ee_cpp2'] !== '' ? '= EE CPP2' : ''; ?></p>
+														<input type="text" value="<?php echo $money($erValues['er_cpp2']); ?>" class="calc-value er-cpp2" placeholder="—" readonly >
+														<p class="help-block calc-formula"><?php echo $formulas['ee_cpp2'] !== '' || $isManual('ee_cpp2') ? '= EE CPP2' : ''; ?></p>
 													</td>
 												</tr>
 												<tr>
 													<td>
-														<b>EI</b> <small class="text-muted">(calculated)</small>
+														<?php echo $deductionLabel('ee_ei', 'EI'); ?>
 														<p class="help-block calc-formula formula-ee-ei"><?php echo $formulas['ee_ei']; ?></p>
 													</td>
-													<td class="text-right"><input type="text" id="ee_ei" name="ee_ei" value="<?php echo $eiCalc ? number_format($eiCalc['ee_ei'], 2, '.', '') : ''; ?>" class="calc-value" placeholder="—" readonly ></td>
+													<td class="text-right"><?php echo $deductionCell('ee_ei'); ?></td>
 													<td class="text-right">
-														<input type="text" value="<?php echo $eiCalc ? number_format($eiCalc['er_ei'], 2, '.', '') : ''; ?>" class="calc-value er-ei" placeholder="—" readonly >
-														<p class="help-block calc-formula"><?php echo $formulas['ee_ei'] !== '' ? '= EE EI x 1.4' : ''; ?></p>
+														<input type="text" value="<?php echo $money($erValues['er_ei']); ?>" class="calc-value er-ei" placeholder="—" readonly >
+														<p class="help-block calc-formula"><?php echo $formulas['ee_ei'] !== '' || $isManual('ee_ei') ? '= EE EI x 1.4' : ''; ?></p>
 													</td>
 												</tr>
 												<tr>
@@ -723,18 +787,26 @@
 												</tr>
 												<tr>
 													<td>
-														<b>Federal Tax</b> <small class="text-muted">(calculated)</small>
+														<?php echo $deductionLabel('federal_tax', 'Federal Tax', false); ?>
 														<p class="help-block calc-formula formula-federal-tax"><?php echo $formulas['federal_tax']; ?></p>
 													</td>
-													<td class="text-right"><input type="text" name="federal_tax" value="<?php echo $money($taxCalc['federal_tax']); ?>" class="calc-value" placeholder="—" readonly ></td>
+													<td class="text-right"><?php echo $deductionCell('federal_tax'); ?></td>
 													<td></td>
 												</tr>
 												<tr>
 													<td>
-														<b>Provincial Tax</b> <small class="text-muted">(calculated)</small>
+														<?php echo $deductionLabel('provincial_tax', 'Provincial Tax', false); ?>
 														<p class="help-block calc-formula formula-provincial-tax"><?php echo $formulas['provincial_tax']; ?></p>
 													</td>
-													<td class="text-right"><input type="text" name="provincial_tax" value="<?php echo $money($taxCalc['provincial_tax']); ?>" class="calc-value" placeholder="—" readonly ></td>
+													<td class="text-right"><?php echo $deductionCell('provincial_tax'); ?></td>
+													<td></td>
+												</tr>
+												<tr>
+													<td>
+														<?php echo $deductionLabel('tax', 'Total Tax'); ?>
+														<p class="help-block calc-formula formula-tax">Calculated: Federal + Provincial = <span><?php echo $calcValues['tax'] === null ? '—' : '$ ' . $money($calcValues['tax']); ?></span></p>
+													</td>
+													<td class="text-right"><?php echo $deductionCell('tax', false); ?></td>
 													<td></td>
 												</tr>
 												<tr>
@@ -772,7 +844,7 @@
 										}
 									?>
 										<!-- el pago fuera de la tabla o un claim code que no aplica (el servidor no deja guardar) -->
-										<div class="alert alert-danger tax-error" style="<?php echo $taxCalc['error'] ? '' : 'display:none'; ?>"><small><?php echo esc($taxCalc['error'] ?? ''); ?></small></div>
+										<div class="alert alert-danger tax-error" data-error="<?php echo esc($taxCalc['error'] ?? ''); ?>" style="<?php echo $taxCalc['error'] && !$taxesManual ? '' : 'display:none'; ?>"><small><?php echo esc($taxCalc['error'] ?? ''); ?></small></div>
 										<div class="form-group" style="margin:0">
 											<button type="submit" id="btnSubmit" name="btnSubmit" class="btn btn-sm btn-primary" value="apply" <?php echo $deshabilitar; ?> >
 												Apply <span class="glyphicon glyphicon-floppy-disk" aria-hidden="true"></span>
@@ -1016,6 +1088,62 @@ $(document).on('change', '.claim-code', function () {
 	recalculateCpp($(this).data('user'));
 });
 
+// CPP, CPP2, EI y Total Tax del empleado: "Edit" permite cambiar el valor calculado a mano
+$(document).on('change', '.manual-check', function () {
+	var form = $(this).closest('form');
+	var row = $(this).closest('tr');
+	var input = form.find('[name=' + $(this).val() + ']');
+	var manual = $(this).is(':checked');
+
+	input.prop('readonly', !manual).toggleClass('manual-on', manual);
+	if (!manual) {
+		input.val(input.attr('data-calc'));
+	}
+	row.find('.calc-label').text(manual ? '(manual)' : '(calculated)');
+	row.find('.manual-note').toggle(manual);
+	updateEmployer(form);
+	if (manual) {
+		input.focus().select();
+	}
+});
+
+// al editar un valor del empleado se actualizan los del employer
+$(document).on('input', '.deductions-table .ee-value', function () {
+	updateEmployer($(this).closest('form'));
+});
+
+function isManual(form, field) {
+	return form.find('.manual-check[value=' + field + ']').is(':checked');
+}
+
+function setCalculated(form, field, value) {
+	var input = form.find('[name=' + field + ']');
+	input.attr('data-calc', value);
+	input.closest('td').find('.manual-note span').text(value === '' ? '—' : '$ ' + value);
+	if (!isManual(form, field)) {
+		input.val(value);
+	}
+}
+
+// ER CPP = EE CPP, ER CPP2 = EE CPP2, ER EI = EE EI x 1.4
+function updateEmployer(form) {
+	var amount = function (field) {
+		var value = parseFloat(form.find('[name=' + field + ']').val());
+		return isNaN(value) ? null : value;
+	};
+	var money = function (value) {
+		return value === null ? '' : (Math.round(value * 100) / 100).toFixed(2);
+	};
+	var eeEi = amount('ee_ei');
+	form.find('.er-cpp').val(money(amount('ee_cpp')));
+	form.find('.er-cpp2').val(money(amount('ee_cpp2')));
+	form.find('.er-ei').val(money(eeEi === null ? null : eeEi * 1.4));
+
+	//el error de las tablas de impuestos no aplica si el Total Tax se ingresa a mano
+	var taxError = form.find('.tax-error');
+	taxError.toggle(!!taxError.attr('data-error') && !isManual(form, 'tax'));
+}
+
 function recalculateCpp(idUser) {
 	var form = $('#paystub_' + idUser);
 	var check = $('.quickbooks-check[data-user=' + idUser + ']:checked');
@@ -1033,20 +1161,21 @@ function recalculateCpp(idUser) {
 		cache: false,
 		success: function (resp) {
 			if (resp.status === 'success') {
-				form.find('[name=ee_cpp]').val(resp.ee_cpp);
-				form.find('.er-cpp').val(resp.ee_cpp);
-				form.find('[name=ee_cpp2]').val(resp.ee_cpp2);
-				form.find('.er-cpp2').val(resp.ee_cpp2);
-				form.find('[name=ee_ei]').val(resp.ee_ei);
-				form.find('.er-ei').val(resp.er_ei);
+				//los campos editados a mano conservan su valor; solo se actualiza el calculado de referencia
+				$.each(['ee_cpp', 'ee_cpp2', 'ee_ei', 'federal_tax', 'provincial_tax'], function (i, field) {
+					setCalculated(form, field, resp[field]);
+				});
+				//Total Tax calculado = Federal + Provincial
+				var taxCalc = resp.federal_tax === '' ? '' : (Math.round((parseFloat(resp.federal_tax) + parseFloat(resp.provincial_tax || 0)) * 100) / 100).toFixed(2);
+				setCalculated(form, 'tax', taxCalc);
+				form.find('.formula-tax span').text(taxCalc === '' ? '—' : '$ ' + taxCalc);
 				form.find('.formula-ee-cpp').html(resp.formulas.ee_cpp);
 				form.find('.formula-ee-cpp2').html(resp.formulas.ee_cpp2);
 				form.find('.formula-ee-ei').html(resp.formulas.ee_ei);
-				form.find('[name=federal_tax]').val(resp.federal_tax);
-				form.find('[name=provincial_tax]').val(resp.provincial_tax);
 				form.find('.formula-federal-tax').html(resp.formulas.federal_tax);
 				form.find('.formula-provincial-tax').html(resp.formulas.provincial_tax);
-				form.find('.tax-error').toggle(!!resp.tax_error).find('small').text(resp.tax_error || '');
+				form.find('.tax-error').attr('data-error', resp.tax_error || '').find('small').text(resp.tax_error || '');
+				updateEmployer(form);
 			}
 		}
 	});

@@ -1,3 +1,4 @@
+<script type="text/javascript" src="<?php echo base_url("assets/js/validate/payroll/eiSettingsModal.js?v=1.1"); ?>"></script>
 <?php
 	$fieldsEi = [
 		'max_insurable_earnings' => ['Maximum annual insurable earnings ($)', '68900'],

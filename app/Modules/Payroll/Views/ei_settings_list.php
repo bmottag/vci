@@ -111,4 +111,3 @@ $(function(){
 	</div>
 </div>
 <!--FIN Modal configuracion EI -->
-<script type="text/javascript" src="<?php echo base_url("assets/js/validate/payroll/eiSettingsModal.js?v=1.0"); ?>"></script>
