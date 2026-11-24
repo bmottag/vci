@@ -365,7 +365,9 @@ class Programming extends BaseController
     {
         $arrParam          = ['idProgramming' => $idProgramming];
         $information       = $this->generalModel->get_programming($arrParam);
-        $idWorkorder       = $information[0]['fk_id_workorder'] ?: $this->create_work_order($information);
+        // 001 Overhead & office work does not create W.O. from the planning
+        $idWorkorder = $information[0]['fk_id_workorder']
+            ?: ($information[0]['fk_id_job'] == ID_JOB_OVERHEAD ? null : $this->create_work_order($information));
         $informationWorker = $this->generalModel->get_programming_workers($arrParam);
 
         $msgHeader  = date('F j, Y', strtotime($information[0]['date_programming']));
@@ -403,7 +405,7 @@ class Programming extends BaseController
                     $mensaje .= "\nJSO has being assigned to you.";
                 }
 
-                if ($info['creat_wo'] == 1) {
+                if ($info['creat_wo'] == 1 && $idWorkorder) {
                     $mensaje .= "\nYou are in charge of the W.O. #" . $idWorkorder;
                 }
 
