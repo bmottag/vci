@@ -754,6 +754,8 @@ class PayrollModel extends Model
 			'remittance'                   => $remittance,
 			'net_pay'                      => $net_pay,
 			'commit'                       => $valueCommit,
+			// saldo del bank time antes de este periodo; el controlador lo toma del banco en cada guardado
+			'actual_bank_time_balance'     => (float)($post['hddBankTimeBalance'] ?? 0),
 		];
 
 		if (empty($idPaytsub)) {
@@ -761,7 +763,6 @@ class PayrollModel extends Model
 			$data['paystub_fk_id_user']       = $idUser;
 			$data['fk_id_period']             = $post['hddIdPeriod'] ?? null;
 			$data['fk_id_employee']           = $post['hddIdUser'] ?? null;
-			$data['actual_bank_time_balance'] = $post['hddBankTimeBalance'] ?? null;
 			return $this->db->table('payroll_paystub')->insert($data);
 		} else {
 			return $this->db->table('payroll_paystub')->where('id_paystub', $idPaytsub)->update($data);
@@ -1022,5 +1023,31 @@ class PayrollModel extends Model
 	{
 		$row = $this->db->table('payroll_period')->select('year_period')->where('id_period', $idPeriod)->get()->getRowArray();
 		return $row ? (int)$row['year_period'] : null;
+	}
+
+	/**
+	 * Empleados para la pantalla de Bank Time: los que usan bank time o tienen movimientos,
+	 * con el saldo y el ultimo movimiento
+	 * @since 25/11/2026
+	 */
+	public function get_bank_time_employees(): array
+	{
+		$last = $this->db->table('payroll_bank_time')
+			->select('MAX(id_bank_time)', false)
+			->groupBy('fk_id_employee')
+			->getCompiledSelect();
+
+		return $this->db->table('user U')
+			->select("U.id_user, CONCAT(U.first_name, ' ', U.last_name) employee, U.state, U.bank_time,
+				B.balance, B.time_in, B.time_out, B.fk_id_period, B.date_issue last_movement")
+			->join("payroll_bank_time B", "B.fk_id_employee = U.id_user AND B.id_bank_time IN ($last)", 'LEFT', false)
+			->groupStart()
+				->where('U.bank_time', 1)
+				->orWhere('B.id_bank_time IS NOT NULL', null, false)
+			->groupEnd()
+			->orderBy('U.state = 1', 'DESC', false)
+			->orderBy('U.first_name, U.last_name', 'ASC')
+			->get()
+			->getResultArray();
 	}
 }

@@ -48,6 +48,11 @@ $routes->group('payroll', ['namespace' => 'App\Modules\Payroll\Controllers'], fu
     $routes->match(['GET', 'POST'], 'reviewPaystubs',      'Payroll::reviewPaystubs');
     $routes->match(['GET', 'POST'], 'reviewYearly',        'Payroll::reviewYearly');
     $routes->get('remittance',                             'Payroll::remittance');
+    $routes->get('bankTime',                               'Payroll::bankTime');
+    $routes->get('bankTimeHistory/(:num)',                 'Payroll::bankTimeHistory/$1');
+    $routes->get('myBankTime',                             'Payroll::myBankTime');
+    $routes->post('cargarModalBankTime',                   'Payroll::cargarModalBankTime');
+    $routes->post('save_bank_time',                        'Payroll::save_bank_time');
     $routes->match(['GET', 'POST'], 'payrollSearchTimeSheet',                      'Payroll::payrollSearchTimeSheet');
     $routes->match(['GET', 'POST'], 'payrollSearchTimeSheet/(:any)/(:any)',        'Payroll::payrollSearchTimeSheet/$1/$2');
 });

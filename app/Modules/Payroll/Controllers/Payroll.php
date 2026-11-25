@@ -8,6 +8,7 @@ use App\Libraries\PdfBuilder;
 use App\Libraries\CppCalculator;
 use App\Libraries\EiCalculator;
 use App\Libraries\TaxTableCalculator;
+use App\Libraries\BankTimeCalculator;
 use InvalidArgumentException;
 
 class Payroll extends BaseController
@@ -439,14 +440,39 @@ class Payroll extends BaseController
 		$contractType = $post['contractType'];
 		$idPeriod     = $post['period'];
 		$idEmployee   = $post['employee'];
-		$userBankTime = $post['hddBankTime'];
-		$bankTimeFlag = $post['hddBankTimeFlag'];
 		$btnGenerate  = $post['btnGenerate'] ?? null;
+		$idUser       = (int)($post['hddIdUser'] ?? 0);
+		$idPaystubPeriod = (int)($post['hddIdPeriod'] ?? 0);
+		$backUrl      = base_url('payroll/payrollSearchForm/' . $contractType . '/' . $idPeriod . '/' . $idEmployee);
 
-		$infoPeriod = $this->generalModel->get_period(['idPeriod' => $idPeriod]);
+		$infoPeriod = $this->generalModel->get_period(['idPeriod' => $idPaystubPeriod]);
 		if (!$infoPeriod || $infoPeriod[0]['approved'] != 1) {
 			session()->setFlashdata('retornoError', '<strong>Error!!!</strong> The period must be approved before saving paystubs.');
-			return redirect()->to(base_url('payroll/payrollSearchForm/' . $contractType . '/' . $idPeriod . '/' . $idEmployee));
+			return redirect()->to($backUrl);
+		}
+
+		// Un paystub generado (commit 1) ya no se puede volver a guardar
+		$infoPaystub = $this->generalModel->get_paystub_by_period(['idEmployee' => $idUser, 'idPeriod' => $idPaystubPeriod]);
+		if ($infoPaystub && $infoPaystub[0]['commit'] == 1) {
+			session()->setFlashdata('retornoError', '<strong>Error!!!</strong> This paystub was already generated.');
+			return redirect()->to($backUrl);
+		}
+
+		// Bank Time: se recalcula con el saldo actual del banco, no con lo que trae el formulario
+		$bankTime = null;
+		$infoUser = $this->generalModel->get_user(['idUser' => $idUser]);
+		$post['hddBankTimeBalance'] = 0;
+		if ($contractType == 2 && $infoUser && $infoUser[0]['bank_time'] == 1) {
+			$bankTime = BankTimeCalculator::calculate(
+				(float)($post['hddTotalWorkedHours'] ?? 0),
+				$this->generalModel->get_bank_time_balance($idUser)
+			);
+			// Si el saldo cambio desde que se cargo la pagina, las horas pagadas ya no coinciden
+			if (abs($bankTime['paid_hours'] - (float)($post['hddRegularHours'] ?? 0)) > 0.001 || (float)($post['hddOvertimeHours'] ?? 0) != 0) {
+				session()->setFlashdata('retornoError', '<strong>Error!!!</strong> The bank time balance changed since the page was loaded. Review the paystub and save again.');
+				return redirect()->to($backUrl);
+			}
+			$post['hddBankTimeBalance'] = $bankTime['balance'];
 		}
 
 		// Empleados: EE CPP, EE CPP2 y EE EI se calculan en el servidor con la configuracion del ano
@@ -514,14 +540,15 @@ class Payroll extends BaseController
 			session()->setFlashdata('retornoExito', 'You have saved the Paystub!!');
 
 			if (isset($btnGenerate)) {
-				if ($userBankTime == 1 && $bankTimeFlag != '') {
+				// un solo movimiento del banco por empleado y periodo
+				if ($bankTime && $bankTime['movement'] !== '' && !$this->generalModel->get_bank_time(['idUser' => $idUser, 'idPeriod' => $idPaystubPeriod])) {
 					$this->generalModel->saveBankTimeBalance([
-						'idPeriod'            => $idPeriod,
-						'idEmployee'          => $post['hddIdUser'],
-						'bankTimeAdd'         => $post['hddBankTimeAdd'],
-						'bankTimeSubtract'    => $post['hddBankTimeSubtract'],
-						'bankNewBalance'      => $post['hddBankTimeNewBalance'],
-						'observation'         => 'New Paystub',
+						'idPeriod'            => $idPaystubPeriod,
+						'idEmployee'          => $idUser,
+						'bankTimeAdd'         => $bankTime['to_bank'],
+						'bankTimeSubtract'    => $bankTime['from_bank'],
+						'bankNewBalance'      => $bankTime['new_balance'],
+						'observation'         => 'Paystub generated',
 					]);
 				}
 
@@ -1039,6 +1066,162 @@ class Payroll extends BaseController
 		$total['employees'] = count($rows);
 
 		return $total;
+	}
+
+	/**
+	 * Roles que administran el bank time (los mismos de Generate Paystubs)
+	 * @since 25/11/2026
+	 */
+	private function can_manage_bank_time(): bool
+	{
+		return in_array((int)session()->get('rol'), [ID_ROL_SUPER_ADMIN, ID_ROL_ACCOUNTING], true);
+	}
+
+	/**
+	 * Bank Time: empleados con su saldo actual
+	 * @since 25/11/2026
+	 */
+	public function bankTime()
+	{
+		if (!$this->can_manage_bank_time()) {
+			return redirect()->to(base_url(session()->get('dashboardURL')));
+		}
+
+		$data['info'] = $this->payrollModel->get_bank_time_employees();
+
+		return $this->render('App\Modules\Payroll\Views\bank_time_list', $data);
+	}
+
+	/**
+	 * Bank Time: historial de movimientos de un empleado
+	 * @since 25/11/2026
+	 */
+	public function bankTimeHistory($idUser)
+	{
+		if (!$this->can_manage_bank_time()) {
+			return redirect()->to(base_url(session()->get('dashboardURL')));
+		}
+
+		$infoUser = $this->generalModel->get_user(['idUser' => (int)$idUser]);
+		if (!$infoUser) {
+			return redirect()->to(base_url('payroll/bankTime'));
+		}
+
+		return $this->render('App\Modules\Payroll\Views\bank_time_history', $this->bank_time_history_data($infoUser[0], true));
+	}
+
+	/**
+	 * Bank Time del usuario en sesion (solo lectura)
+	 * @since 25/11/2026
+	 */
+	public function myBankTime()
+	{
+		$infoUser = $this->generalModel->get_user(['idUser' => (int)session()->get('id')]);
+
+		return $this->render('App\Modules\Payroll\Views\bank_time_history', $this->bank_time_history_data($infoUser[0], false));
+	}
+
+	/**
+	 * Datos del historial: movimientos y totales por tipo
+	 * @since 25/11/2026
+	 */
+	private function bank_time_history_data(array $user, bool $canEdit): array
+	{
+		$movements = $this->generalModel->get_bank_time(['idUser' => $user['id_user']]) ?: [];
+
+		$totals = ['manual_in' => 0.0, 'manual_out' => 0.0, 'period_in' => 0.0, 'period_out' => 0.0];
+		foreach ($movements as $m) {
+			$prefix = $m['fk_id_period'] == 0 ? 'manual' : 'period';
+			$totals[$prefix . '_in']  += (float)$m['time_in'];
+			$totals[$prefix . '_out'] += (float)$m['time_out'];
+		}
+
+		return [
+			'user'      => $user,
+			'movements' => $movements,
+			'balance'   => $movements ? (float)$movements[0]['balance'] : 0.0,
+			'totals'    => $totals,
+			'canEdit'   => $canEdit,
+		];
+	}
+
+	/**
+	 * Cargo modal - agregar o quitar horas del bank time a mano
+	 * @since 25/11/2026
+	 */
+	public function cargarModalBankTime()
+	{
+		if (!$this->can_manage_bank_time()) {
+			return $this->response->setStatusCode(403);
+		}
+
+		$idUser   = (int)$this->request->getPost('idUser');
+		$infoUser = $this->generalModel->get_user(['idUser' => $idUser]);
+		if (!$infoUser) {
+			return $this->response->setStatusCode(404);
+		}
+
+		$data['user']    = $infoUser[0];
+		$data['balance'] = $this->generalModel->get_bank_time_balance($idUser);
+
+		return $this->response
+			->setContentType('text/html')
+			->setBody(view('App\Modules\Payroll\Views\modal_bank_time', $data));
+	}
+
+	/**
+	 * Guardar movimiento manual del bank time (agregar o quitar horas)
+	 * @since 25/11/2026
+	 */
+	public function save_bank_time()
+	{
+		if (!$this->can_manage_bank_time()) {
+			return $this->response->setJSON(['status' => 'error', 'message' => 'You do not have permission to change the bank time.']);
+		}
+
+		$idUser      = (int)$this->request->getPost('hddIdUser');
+		$type        = $this->request->getPost('movement');
+		$hours       = $this->request->getPost('hours');
+		$observation = trim((string)$this->request->getPost('observation'));
+
+		$infoUser = $this->generalModel->get_user(['idUser' => $idUser]);
+		if (!$infoUser) {
+			return $this->response->setJSON(['status' => 'error', 'message' => 'Employee not found.']);
+		}
+		if ($infoUser[0]['bank_time'] != 1) {
+			return $this->response->setJSON(['status' => 'error', 'message' => 'The employee is not using bank time. Activate it in Employee Settings first.']);
+		}
+		if (!in_array($type, ['add', 'subtract'], true)) {
+			return $this->response->setJSON(['status' => 'error', 'message' => 'Select if the hours are added or removed.']);
+		}
+		if (!is_numeric($hours) || (float)$hours <= 0 || (float)$hours > 9999) {
+			return $this->response->setJSON(['status' => 'error', 'message' => 'Enter a valid number of hours.']);
+		}
+		if ($observation === '') {
+			return $this->response->setJSON(['status' => 'error', 'message' => 'The note is required.']);
+		}
+
+		$hours   = round((float)$hours, 3);
+		$balance = $this->generalModel->get_bank_time_balance($idUser);
+		if ($type === 'subtract' && $hours > $balance) {
+			return $this->response->setJSON(['status' => 'error', 'message' => 'You cannot remove more hours than the current balance (' . number_format($balance, 3) . ' h).']);
+		}
+
+		$saved = $this->generalModel->saveBankTimeBalance([
+			'idPeriod'         => 0,
+			'idEmployee'       => $idUser,
+			'bankTimeAdd'      => $type === 'add' ? $hours : 0,
+			'bankTimeSubtract' => $type === 'subtract' ? $hours : 0,
+			'bankNewBalance'   => round($balance + ($type === 'add' ? $hours : -$hours), 3),
+			'observation'      => $observation,
+		]);
+
+		if (!$saved) {
+			return $this->response->setJSON(['status' => 'error', 'message' => 'Error saving the bank time. Ask for help.']);
+		}
+
+		session()->setFlashdata('retornoExito', 'Bank time ' . ($type === 'add' ? 'added' : 'removed') . ': ' . number_format($hours, 3) . ' h.');
+		return $this->response->setJSON(['status' => 'success']);
 	}
 
 	/**

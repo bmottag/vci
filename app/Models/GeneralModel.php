@@ -1804,6 +1804,9 @@ class GeneralModel extends Model
 		if (array_key_exists('idUser', $arrData)) {
 			$builder->where('T.fk_id_employee', $arrData['idUser']);
 		}
+		if (array_key_exists('idPeriod', $arrData)) {
+			$builder->where('T.fk_id_period', $arrData['idPeriod']);
+		}
 
 		$builder->orderBy('id_bank_time', 'DESC');
 
@@ -1814,6 +1817,22 @@ class GeneralModel extends Model
 		}
 
 		return $query->getNumRows() >= 1 ? $query->getResultArray() : false;
+	}
+
+	/**
+	 * Saldo actual del bank time del empleado (balance del ultimo movimiento)
+	 * @since 25/11/2026
+	 */
+	public function get_bank_time_balance(int $idUser): float
+	{
+		$row = $this->db->table('payroll_bank_time')
+			->select('balance')
+			->where('fk_id_employee', $idUser)
+			->orderBy('id_bank_time', 'DESC')
+			->get(1)
+			->getRowArray();
+
+		return $row ? (float)$row['balance'] : 0.0;
 	}
 
 	/**

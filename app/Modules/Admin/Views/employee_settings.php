@@ -146,8 +146,10 @@ if($count == 10){
 								</select>
 						<?php
 								if($lista["bank_time"] == 1){
-						?>		
-
+						?>
+								<a class="btn btn-info btn-xs" style="margin-top:6px" href="<?php echo base_url('payroll/bankTimeHistory/' . $lista['id_user']); ?>">
+									<i class="fa fa-university"></i> View Bank Time
+								</a>
 						<?php
 								}
 								echo "</td>";

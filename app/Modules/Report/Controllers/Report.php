@@ -1509,21 +1509,6 @@ class Report extends BaseController
     }
 
     /**
-     * Employee bank time list
-     * @since 11/9/2022
-     * @author BMOTTAG
-     * @review 01/05/2026 - new CI4 version
-     */
-    public function employeBankTime()
-    {
-        $idUser         = $this->session->get('id');
-        $data['info']   = $this->generalModel->get_bank_time(['idUser' => $idUser]);
-        $data['view']   = 'employee_bank_time';
-
-        return $this->renderTopOnly('App\Modules\Report\Views\employee_bank_time', $data);
-    }
-
-    /**
      * Apply header styles to XLS sheet range
      */
     private function _xlsHeaderStyle(Spreadsheet $spreadsheet, string $range): void

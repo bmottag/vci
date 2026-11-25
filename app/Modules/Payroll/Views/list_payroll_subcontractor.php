@@ -46,7 +46,6 @@
 				$employeeHourRate = $infoUser[0]["employee_rate"];
 				$employeeType = $infoUser[0]["employee_type"];
 				$bankTime = $infoUser[0]["bank_time"];
-				$bankTimeFlag = "";
 				$idPeriod = $infoPeriod[0]["id_period"];
 				//buscar por usuario y por periodo las horas de cada semana
 				$arrParam = array(
@@ -244,8 +243,6 @@
 												<input type="hidden" id="hddIdWeakPeriod2" name="hddIdWeakPeriod2" value="<?php echo $infoWeakPeriod[1]['id_period_weak']; ?>" />
 												<input type="hidden" id="hddIdUser" name="hddIdUser" value="<?php echo $idUser; ?>" />
 
-												<input type="hidden" id="hddBankTime" name="hddBankTime" value="<?php echo $bankTime; ?>" />
-												<input type="hidden" id="hddBankTimeFlag" name="hddBankTimeFlag" value="<?php echo $bankTimeFlag; ?>" />			
 
 												<input type="hidden" id="hddEmployeeRate" name="hddEmployeeRate" value="<?php echo $employeeHourRate; ?>" />
 												<input type="hidden" id="hddEmployeeType" name="hddEmployeeType" value="<?php echo $employeeType; ?>" />
@@ -267,7 +264,6 @@
 												<input type="hidden" id="ee_ei" name="ee_ei" value=0 />
 												<input type="hidden" id="tax" name="tax" value=0 />
 												<input type="hidden" id="gwl_deductions" name="gwl_deductions" value=0 />
-												<input type="hidden" id="hddBankTimeBalance" name="hddBankTimeBalance" value=0 />
 
 												<?php if($infoPeriod[0]["approved"] != 1){ ?>
 													<div class="alert alert-warning"><small>The period is pending approval.</small></div>

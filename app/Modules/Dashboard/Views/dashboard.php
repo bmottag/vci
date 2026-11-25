@@ -431,7 +431,7 @@
 						$userBankTime = $session->get('bankTime');
 						if ($userBankTime == 1) {
 						?>
-							<a href="<?php echo base_url("report/employeBankTime"); ?>" class="btn btn-outline btn-info btn-block">
+							<a href="<?php echo base_url("payroll/myBankTime"); ?>" class="btn btn-outline btn-info btn-block">
 								View Bank Time records <span class="fa fa-flag" aria-hidden="true">
 							</a>
 						<?php   } ?>

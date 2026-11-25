@@ -162,7 +162,12 @@
 						<h2><i class="fa fa-user"></i> <b>Employee: </b> <?php echo $employeeName; ?>
 							<br><small><b>Hour rate: </b>$ <?php echo $employeeHourRate; ?></small>
 							<br><small><b>Type: </b><?php echo $type = $employeeType==1?'Field':'Admin'; ?></small>
-							<br><small><b>Is using Bank Time: </b><?php echo $bankTime==1?'Active':'Inactive'; ?></small>
+							<br><small><b>Is using Bank Time: </b><?php echo $bankTime==1?'Active':'Inactive'; ?>
+							<?php if($bankTime==1){ ?>
+								<a class="btn btn-info btn-xs" href="<?php echo base_url('payroll/bankTimeHistory/' . $lista['fk_id_user']); ?>" target="_blank" rel="noopener">
+									<i class="fa fa-university"></i> Bank Time history
+								</a>
+							<?php } ?></small>
 						</h2>
 						<?php include __DIR__ . '/paystub_draft_rate_alert.php'; ?>
 					</div>
@@ -384,42 +389,17 @@
 										]);
 									}elseif($bankTime == 1){
 
-										//bank time info
-										$arrParam = array(
-											"idUser" => $lista['fk_id_user'],
-											"limit" => 1
-										);
-										$infoBankTime = $generalModel->get_bank_time($arrParam);
+										//bank time: saldo actual del banco; si el paystub ya se genero, el saldo con el que se genero
+										$bankTimeBalance = ($infoPaystub && $infoPaystub[0]["commit"] == 1)
+											? (float)$infoPaystub[0]["actual_bank_time_balance"]
+											: $generalModel->get_bank_time_balance((int)$lista['fk_id_user']);
 
-										
-										if($infoBankTime){
-											$bankTimeBalance = $infoBankTime[0]["balance"];
-										}
-										//si ya se guardo el paystub entonces tomo esos valores 
-										if($infoPaystub){
-											$bankTimeBalance = $infoPaystub[0]["actual_bank_time_balance"];
-										}
-
-										if($totalWorked >= 88){
-											$payHours = 88;
-											$toBankTime = $totalWorked - 88;
-											$newBankTimeBalance = $bankTimeBalance + $toBankTime;
-											$bankTimeFlag = $totalWorked == 88 ? "":"add";
-										}else{
-											$payHours = $totalWorked;
-											if($bankTimeBalance > 0){
-												$timeNeeded = 88 - $payHours;
-												$bankTimeFlag = "subtract";
-												if($bankTimeBalance >= $timeNeeded){
-													$newBankTimeBalance = $bankTimeBalance - $timeNeeded;
-													$takeFromBanktime = $bankTimeBalance - $newBankTimeBalance;
-													$payHours = $payHours + $takeFromBanktime;
-												}else{
-													$takeFromBanktime = $bankTimeBalance;
-													$payHours = $payHours + $bankTimeBalance;
-												}
-											}
-										}
+										$bankCalc = \App\Libraries\BankTimeCalculator::calculate($totalWorked, $bankTimeBalance);
+										$payHours = $bankCalc['paid_hours'];
+										$toBankTime = $bankCalc['to_bank'];
+										$takeFromBanktime = $bankCalc['from_bank'];
+										$newBankTimeBalance = $bankCalc['new_balance'];
+										$bankTimeFlag = $bankCalc['movement'];
 
 										$totalRegularHours = $payHours;
 										$totalOvertimeHours = 0;
@@ -433,17 +413,18 @@
 										}
 
 										//con Bank Time no se paga overtime: todo es regular hasta 88 h por periodo
-										if($totalWorked > 88){
-											$bankNote = $f3($totalWorked) . " h worked; up to 88 h are paid as regular hours and the extra <b>" . $f3($toBankTime) . "</b> h go to the bank.";
-										}elseif($totalWorked == 88){
-											$bankNote = "88 h worked, all paid as regular hours; nothing goes to the bank.";
+										$bankHours = \App\Libraries\BankTimeCalculator::PAID_HOURS;
+										if($toBankTime > 0){
+											$bankNote = $f3($totalWorked) . " h worked; up to {$bankHours} h are paid as regular hours and the extra <b>" . $f3($toBankTime) . "</b> h go to the bank.";
 										}elseif($takeFromBanktime > 0){
-											$bankNote = $f3($totalWorked) . " h worked, " . $f3(88 - $totalWorked) . " h missing to reach 88 h; <b>" . $f3($takeFromBanktime) . "</b> h are taken from the bank (balance " . $f3($bankTimeBalance) . ").";
+											$bankNote = $f3($totalWorked) . " h worked, " . $f3($bankHours - $totalWorked) . " h missing to reach {$bankHours} h; <b>" . $f3($takeFromBanktime) . "</b> h are taken from the bank (balance " . $f3($bankTimeBalance) . ").";
+										}elseif($payHours >= $bankHours){
+											$bankNote = "{$bankHours} h worked, all paid as regular hours; nothing goes to the bank.";
 										}else{
-											$bankNote = $f3($totalWorked) . " h worked, below 88 h and there is no bank balance to complete them.";
+											$bankNote = $f3($totalWorked) . " h worked, below {$bankHours} h and there is no bank balance to complete them.";
 										}
 										echo $explainRow([
-											"<b>Bank Time:</b> overtime is not paid; the hours worked in the period are paid as regular hours up to 88 h.",
+											"<b>Bank Time:</b> overtime is not paid; the hours worked in the period are paid as regular hours up to {$bankHours} h.",
 											$bankNote,
 											"<b>Total regular hours</b> = <b>" . $f3($payHours) . "</b> &nbsp;·&nbsp; <b>Total overtime hours</b> = <b>0.000</b>",
 										]);
@@ -705,13 +686,6 @@
 										<input type="hidden" id="hddIdWeakPeriod1" name="hddIdWeakPeriod1" value="<?php echo $infoWeakPeriod[0]['id_period_weak']; ?>" />
 										<input type="hidden" id="hddIdWeakPeriod2" name="hddIdWeakPeriod2" value="<?php echo $infoWeakPeriod[1]['id_period_weak']; ?>" />
 										<input type="hidden" id="hddIdUser" name="hddIdUser" value="<?php echo $idUser; ?>" />
-
-										<input type="hidden" id="hddBankTime" name="hddBankTime" value="<?php echo $bankTime; ?>" />
-										<input type="hidden" id="hddBankTimeFlag" name="hddBankTimeFlag" value="<?php echo $bankTimeFlag; ?>" />
-										<input type="hidden" id="hddBankTimeBalance" name="hddBankTimeBalance" value="<?php echo $bankTimeBalance; ?>" />
-										<input type="hidden" id="hddBankTimeAdd" name="hddBankTimeAdd" value="<?php echo $toBankTime; ?>" />
-										<input type="hidden" id="hddBankTimeSubtract" name="hddBankTimeSubtract" value="<?php echo $takeFromBanktime; ?>" />
-										<input type="hidden" id="hddBankTimeNewBalance" name="hddBankTimeNewBalance" value="<?php echo $newBankTimeBalance; ?>" />
 
 										<input type="hidden" id="hddEmployeeRate" name="hddEmployeeRate" value="<?php echo $employeeHourRate; ?>" />
 										<input type="hidden" id="hddEmployeeType" name="hddEmployeeType" value="<?php echo $employeeType; ?>" />

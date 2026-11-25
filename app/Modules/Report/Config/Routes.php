@@ -51,5 +51,4 @@ $routes->group('report', ['namespace' => 'App\Modules\Report\Controllers'], func
 
     // Views with top-only layout
     $routes->get('botonEditHour/(:num)', 'Report::botonEditHour/$1');
-    $routes->get('employeBankTime',      'Report::employeBankTime');
 });
