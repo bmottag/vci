@@ -947,4 +947,80 @@ class PayrollModel extends Model
 
 		return true;
 	}
+
+
+	/**
+	 * Remittance: columnas de dinero del paystub que se suman en el reporte
+	 * @since 25/11/2026
+	 */
+	private const REMITTANCE_COLUMNS = [
+		'gross_salary', 'ee_cpp', 'ee_cpp2', 'er_cpp', 'er_cpp2',
+		'ee_ei', 'er_ei', 'tax', 'gwl_deductions', 'remittance', 'net_pay',
+	];
+
+	/**
+	 * Remittance de un periodo: un registro por paystub (sin subcontratistas)
+	 * @since 25/11/2026
+	 */
+	public function get_remittance_period(int $idPeriod, bool $includeDrafts): array
+	{
+		$builder = $this->db->table('payroll_paystub P');
+		$builder->select("P.id_paystub, P.fk_id_employee, P.employee_type_paystub, P.commit, " . implode(', ', array_map(fn($c) => "P.$c", self::REMITTANCE_COLUMNS)) . ",
+			CONCAT(U.first_name, ' ', U.last_name) employee");
+		$builder->join('user U', 'U.id_user = P.fk_id_employee', 'INNER');
+		$builder->where('P.fk_id_period', $idPeriod);
+		$builder->where('U.employee_subcontractor !=', 1);
+		$builder->whereIn('P.commit', $includeDrafts ? [1, 2] : [1]);
+		$builder->orderBy('P.employee_type_paystub, U.first_name, U.last_name', 'ASC');
+
+		return $builder->get()->getResultArray();
+	}
+
+	/**
+	 * Remittance del ano: los periodos del ano con los totales de sus paystubs (sin subcontratistas)
+	 * @since 25/11/2026
+	 */
+	public function get_remittance_yearly(int $year, bool $includeDrafts): array
+	{
+		$sums   = implode(', ', array_map(fn($c) => "COALESCE(SUM(S.$c), 0) $c", self::REMITTANCE_COLUMNS));
+		$commit = $includeDrafts ? '1, 2' : '1';
+
+		$sql = "SELECT X.id_period, X.date_start, X.date_finish,
+					COUNT(S.id_paystub) employees, COALESCE(SUM(S.commit = 2), 0) drafts, $sums
+				FROM payroll_period X
+				LEFT JOIN (
+					SELECT P.*
+					FROM payroll_paystub P
+					INNER JOIN user U ON U.id_user = P.fk_id_employee
+					WHERE U.employee_subcontractor != 1 AND P.commit IN ($commit)
+				) S ON S.fk_id_period = X.id_period
+				WHERE X.year_period = ?
+				GROUP BY X.id_period, X.date_start, X.date_finish
+				ORDER BY X.date_start ASC";
+
+		return $this->db->query($sql, [$year])->getResultArray();
+	}
+
+	/**
+	 * Periodos de un ano para el selector del remittance
+	 * @since 25/11/2026
+	 */
+	public function get_periods_year(int $year): array
+	{
+		return $this->db->table('payroll_period')
+			->select('id_period, date_start, date_finish')
+			->where('year_period', $year)
+			->orderBy('date_start', 'ASC')
+			->get()->getResultArray();
+	}
+
+	/**
+	 * Ano de un periodo
+	 * @since 25/11/2026
+	 */
+	public function get_period_year(int $idPeriod): ?int
+	{
+		$row = $this->db->table('payroll_period')->select('year_period')->where('id_period', $idPeriod)->get()->getRowArray();
+		return $row ? (int)$row['year_period'] : null;
+	}
 }

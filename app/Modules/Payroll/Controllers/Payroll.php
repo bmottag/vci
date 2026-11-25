@@ -940,6 +940,108 @@ class Payroll extends BaseController
 	}
 
 	/**
+	 * Remittance: detalle por periodo (por empleado) y resumen del ano (por periodo)
+	 * GET: year, period (id del periodo o "yearly"), drafts (1 = incluir borradores)
+	 * @since 25/11/2026
+	 */
+	public function remittance()
+	{
+		if (!in_array((int)session()->get('rol'), [ID_ROL_SUPER_ADMIN, ID_ROL_ACCOUNTING], true)) {
+			return redirect()->to(base_url($this->session->get('dashboardURL')));
+		}
+
+		$includeDrafts = $this->request->getGet('drafts') == 1;
+		$period        = (string)$this->request->getGet('period');
+		$year          = (int)$this->request->getGet('year');
+
+		// Si llega un periodo, el ano sale del periodo
+		if (ctype_digit($period) && ($periodYear = $this->payrollModel->get_period_year((int)$period))) {
+			$year = $periodYear;
+		}
+		if ($year < 2022 || $year > (int)date('Y') + 1) {
+			$year = (int)date('Y');
+		}
+
+		$periods = $this->payrollModel->get_periods_year($year);
+		$ids     = array_map('intval', array_column($periods, 'id_period'));
+
+		// Por defecto: el ultimo periodo del ano que ya empezo
+		if ($period !== 'yearly' && !in_array((int)$period, $ids, true)) {
+			$period = 'yearly';
+			foreach ($periods as $p) {
+				if ($p['date_start'] <= date('Y-m-d')) {
+					$period = (string)$p['id_period'];
+				}
+			}
+		}
+
+		$data = [
+			'year'          => $year,
+			'periods'       => $periods,
+			'period'        => $period,
+			'includeDrafts' => $includeDrafts,
+		];
+
+		if ($period === 'yearly') {
+			$rows = $this->payrollModel->get_remittance_yearly($year, $includeDrafts);
+
+			$accumulated = 0;
+			foreach ($rows as &$row) {
+				$accumulated += (float)$row['remittance'];
+				$row['accumulated'] = $accumulated;
+			}
+			unset($row);
+
+			$data['rows']  = $rows;
+			$data['total'] = $this->sum_remittance($rows);
+		} else {
+			$pos  = array_search((int)$period, $ids, true);
+			$rows = $this->payrollModel->get_remittance_period((int)$period, $includeDrafts);
+
+			$data['currentPeriod'] = $periods[$pos];
+			$data['prevPeriod']    = $periods[$pos - 1] ?? null;
+			$data['nextPeriod']    = $periods[$pos + 1] ?? null;
+			$data['rows']          = $rows;
+			$data['total']         = $this->sum_remittance($rows);
+			$data['totalDirect']   = $this->sum_remittance(array_filter($rows, fn($r) => $r['employee_type_paystub'] == 1));
+			$data['totalAdmin']    = $this->sum_remittance(array_filter($rows, fn($r) => $r['employee_type_paystub'] == 2));
+			$data['drafts']        = count(array_filter($rows, fn($r) => $r['commit'] == 2));
+		}
+
+		$t = $data['total'];
+		$data['summary'] = [
+			'cpp'      => $t['ee_cpp'] + $t['ee_cpp2'] + $t['er_cpp'] + $t['er_cpp2'],
+			'ei'       => $t['ee_ei'] + $t['er_ei'],
+			'tax'      => $t['tax'],
+			// Canada Life: el empleador aporta lo mismo que se descuenta al empleado
+			'employee' => $t['ee_cpp'] + $t['ee_cpp2'] + $t['ee_ei'] + $t['tax'] + $t['gwl_deductions'],
+			'employer' => $t['er_cpp'] + $t['er_cpp2'] + $t['er_ei'] + $t['gwl_deductions'],
+		];
+		$data['summary']['total'] = $data['summary']['cpp'] + $data['summary']['ei'] + $data['summary']['tax'];
+
+		return $this->render('App\Modules\Payroll\Views\remittance', $data);
+	}
+
+	/**
+	 * Suma las columnas de dinero del remittance
+	 * @since 25/11/2026
+	 */
+	private function sum_remittance(array $rows): array
+	{
+		$columns = ['gross_salary', 'ee_cpp', 'ee_cpp2', 'er_cpp', 'er_cpp2', 'ee_ei', 'er_ei', 'tax', 'gwl_deductions', 'remittance', 'net_pay'];
+		$total   = array_fill_keys($columns, 0.0);
+
+		foreach ($rows as $row) {
+			foreach ($columns as $c) {
+				$total[$c] += (float)$row[$c];
+			}
+		}
+		$total['employees'] = count($rows);
+
+		return $total;
+	}
+
+	/**
 	 * Payroll form search - time sheet
 	 * @since 10/04/2022
 	 * @author BMOTTAG

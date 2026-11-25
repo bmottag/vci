@@ -47,6 +47,7 @@ $routes->group('payroll', ['namespace' => 'App\Modules\Payroll\Controllers'], fu
 
     $routes->match(['GET', 'POST'], 'reviewPaystubs',      'Payroll::reviewPaystubs');
     $routes->match(['GET', 'POST'], 'reviewYearly',        'Payroll::reviewYearly');
+    $routes->get('remittance',                             'Payroll::remittance');
     $routes->match(['GET', 'POST'], 'payrollSearchTimeSheet',                      'Payroll::payrollSearchTimeSheet');
     $routes->match(['GET', 'POST'], 'payrollSearchTimeSheet/(:any)/(:any)',        'Payroll::payrollSearchTimeSheet/$1/$2');
 });
